@@ -1,5 +1,5 @@
 import PublicKey from '../security/PublicKey';
-import { DidPublicKey } from 'did-common-typescript';
+import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
 import { PrivateKey } from '..';
 
 /** A dictionary with the did document key type mapping to the public key constructor */

@@ -1,4 +1,4 @@
-import { DidDocument, DidResolver } from 'did-common-typescript';
+import { DidDocument, DidResolver } from '@decentralized-identity/did-common-typescript';
 import PrivateKey from './security/PrivateKey';
 import CryptoSuite from './interfaces/CryptoSuite';
 import Constants from './Constants';

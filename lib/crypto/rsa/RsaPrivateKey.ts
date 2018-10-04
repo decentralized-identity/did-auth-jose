@@ -1,7 +1,7 @@
 import RsaPublicKey from './RsaPublicKey';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey from '../../security/PublicKey';
-import { DidPublicKey } from 'did-common-typescript';
+import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
 
 const jose = require('node-jose');
 const keystore = jose.JWK.createKeyStore();

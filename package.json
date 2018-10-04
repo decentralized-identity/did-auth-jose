@@ -16,7 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@decentralized-identity/did-common-typescript": "^0.1.0",
+    "@decentralized-identity/did-common-typescript": "^0.1.1",
     "jwk-to-pem": "^2.0.0",
     "node-jose": "^1.0.0",
     "uuid": "^3.3.2"

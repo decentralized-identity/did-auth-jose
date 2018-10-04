@@ -1,5 +1,5 @@
 import PublicKey, { RecommendedKeyType } from '../../security/PublicKey';
-import { DidPublicKey } from 'did-common-typescript';
+import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
 
 /**
  * Represents an Rsa public key

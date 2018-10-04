@@ -1,4 +1,4 @@
-import { DidDocument, unitTestExports } from 'did-common-typescript';
+import { DidDocument, unitTestExports } from '@decentralized-identity/did-common-typescript';
 import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
 

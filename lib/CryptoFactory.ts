@@ -1,5 +1,5 @@
 import CryptoSuite, { Encrypter, Signer, PublicKeyConstructors } from './interfaces/CryptoSuite';
-import { DidPublicKey } from 'did-common-typescript';
+import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
 import JweToken from './security/JweToken';
 import JwsToken from './security/JwsToken';
 

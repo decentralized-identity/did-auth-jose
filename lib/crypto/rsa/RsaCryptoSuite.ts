@@ -1,6 +1,6 @@
 import RsaPublicKey from './RsaPublicKey';
 import CryptoSuite from '../../interfaces/CryptoSuite';
-import { DidPublicKey } from 'did-common-typescript';
+import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
 // TODO: Create and reference TypeScript definition file for 'jwk-to-pem'
 const jwkToPem = require('jwk-to-pem');
 import * as crypto from 'crypto';

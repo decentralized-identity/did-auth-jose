@@ -1,6 +1,6 @@
 {
   "name": "did-auth-jose",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Authentication library using JOSE and DIDs to form secure end to end messages",
   "main": "dist/lib/index.js",
   "scripts": {

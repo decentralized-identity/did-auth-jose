@@ -67,7 +67,7 @@ describe('JwsToken', () => {
       description: 'JWSToken test'
     };
 
-    it('should throw an error because algorithm unsupported', async () => {
+    it('should throw an error because the algorithm is not supported', async () => {
       const privateKey = new TestPrivateKey();
       privateKey.defaultSignAlgorithm = 'unsupported';
       const jwsToken = new JwsToken(data, registry);
@@ -84,7 +84,7 @@ describe('JwsToken', () => {
       const jwsToken = new JwsToken(data, registry);
       crypto.reset();
       await jwsToken.sign(new TestPrivateKey());
-      expect(crypto.wasVerifyCalled()).toBeTruthy();
+      expect(crypto.wasSignCalled()).toBeTruthy();
     });
   });
 });

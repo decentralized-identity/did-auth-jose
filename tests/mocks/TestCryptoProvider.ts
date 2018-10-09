@@ -39,7 +39,7 @@ export default class TestCryptoSuite implements CryptoSuite {
   private sign (id: number): ({}, {}) => Promise<string> {
     return (_, __) => {
       TestCryptoSuite.called[id] |= TestCryptoSuite.SIGN;
-      return Promise.reject(null);
+      return Promise.resolve('');
     };
   }
 

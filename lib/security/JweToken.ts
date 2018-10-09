@@ -107,10 +107,63 @@ export default class JweToken extends JoseToken {
    * @returns Decrypted plaintext.
    */
   public async decrypt (jwk: PrivateKey): Promise<string> {
-    const key = await jose.JWK.asKey(jwk); // NOTE: Must use library object for decryption.
-    const decryptedData = await jose.JWE.createDecrypt(key).decrypt(this.content);
-    const decryptedPlaintext = decryptedData.plaintext.toString();
+    // following steps for JWE Decryption in RFC7516 section 5.2
+    // 1. Parse JWE for components: BASE64URL(UTF8(JWE Header)) || '.' || BASE64URL(JWE Encrypted Key) || '.' ||
+    //    BASE64URL(JWE Initialization Vector) || '.' || BASE64URL(JWE Ciphertext) || '.' || 
+    //    BASE64URL(JWE Authentication Tag)
+    const base64EncodedValues = this.content.split('.');
+    // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
+    const [headerString, encryptedKey, iv, cipherText, authTag] =
+      base64EncodedValues.map((encodedValue) => { return Base64Url.decode(encodedValue); });
+    // 3. let the JWE Header be a JSON object
+    const headers = JSON.parse(headerString);
+    // 4. only applies to JWE JSON Serializaiton
+    // 5. verify header fields
+    ['alg', 'enc', 'kid'].forEach((header: string) => {
+      if (!(header in headers)) {
+        throw new Error(`Missing required header: ${header}`)
+      }
+    });
+    if ('crit' in headers) { // RFC7516 4.1.13/RFC7515 4.1.11
+      const extensions = headers.crit as string[]
+      if (extensions) {
+        // TODO: determine which additional header fields are supported
+        const supported: string[] = [];
+        const unsupported = extensions.filter((extension) => { return !(extension in supported); });
+        if (unsupported.length > 0) {
+          throw new Error(`Unsupported "crit" headers: ${unsupported.join(', ')}`);
+        }
+      } else {
+        throw new Error('Malformed "crit" header field');
+      }
+    }
+    // 6. Determine the Key management mode by the "alg" header
+    // TODO: Support other methods beyond key wrapping
+    // 7. Verify that the JWE key is known
+    if (headers.kid !== jwk.kid) {
+      throw new Error('JWEToken key does not match provided jwk key');
+    }
+    // 8. With keywrapping or direct key, let the jwk.kid be used to decrypt the encryptedkey
+    // 9. Unwrap the encryptedkey to produce the content encryption key (CEK)
+    const cek = (this.cryptoFactory.getEncrypter(headers.alg)).decrypt(Buffer.from(encryptedKey, 'utf-8'), jwk);
+    // TODO: Verify CEK length meets "enc" algorithm's requirement
+    // 10. TODO: Support direct key, then ensure encryptedKey === ""
+    // 11. TODO: Support direct encryption, let CEK be the shared symmetric key
+    // 12. record successful CEK for this recipient or not
+    // 13. Skip due to JWE JSON Serialization format specific
+    // 14. Compute the protected header: BASE64URL(UTF8(JWE Header))
+    // this would be base64Encodedvalues[0]
+    // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
+    const aad = base64EncodedValues[0];
+    // 16. Decrypt JWE Ciphertext using CEK, IV, AAD, and authTag, using "enc" algorithm.
+    
+    // TODO: complex work involving symmetric key encryption here
 
-    return decryptedPlaintext;
+    // 17. if a "zip" parameter was included, uncompress the plaintext using the specified algorithm
+    if ('zip' in headers) {
+      throw new Error('"zip" is not currently supported');
+    }
+    // 18. If there was no recipient, the JWE is invalid. Otherwise output the plaintext.
+    return plaintext;
   }
 }

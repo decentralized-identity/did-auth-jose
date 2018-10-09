@@ -162,7 +162,7 @@ export default class JweToken extends JoseToken {
       A128GCM: 'aes-128-gcm',
       A192GCM: 'aes-192-gcm',
       A256GCM: 'aes-256-gcm'
-    }
+    };
     const enc = cryptoMap[headers.enc];
 
     const decipher = crypto.createDecipheriv(enc, cek, iv);

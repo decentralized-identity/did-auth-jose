@@ -23,11 +23,24 @@ export default class JwsToken extends JoseToken {
    * @returns Signed payload in compact JWS format.
    */
   public async sign (jwk: PrivateKey, jwsHeaderParameters?: { [name: string]: string }): Promise<string> {
-    const contentBuffer = Buffer.from(this.content);
+    // Steps according to RTC7515 5.1
+    // 2. Compute encoded payload vlaue base64URL(JWS Payload)
+    const encodedContent = Base64Url.encode(this.content);
+    // 3. Compute the headers
     const headers = jwsHeaderParameters || {};
-    const contentJwsString = await jose.JWS.createSign({ format: 'compact', fields: headers }, jwk).update(contentBuffer).final();
-
-    return contentJwsString;
+    headers['alg'] = jwk.defaultSignAlgorithm;
+    headers['kid'] = jwk.kid;
+    // 4. Compute BASE64URL(UTF8(JWS Header))
+    const encodedHeaders = Base64Url.encode(JSON.stringify(headers))
+    // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)
+    //    using the "alg" signature algorithm.
+    const signatureInput = `${encodedHeaders}.${encodedContent}`;
+    const signature = await (this.cryptoFactory.getSigner(headers['alg'])).sign(signatureInput, jwk);
+    // 6. Compute BASE64URL(JWS Signature)
+    const encodedSignature = Base64Url.encode(signature);
+    // 7. Only applies to JWS JSON Serializaiton
+    // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
+    return `${signatureInput}.${encodedSignature}`;
   }
 
   /**

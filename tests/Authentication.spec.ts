@@ -165,12 +165,9 @@ describe('Authentication', () => {
       };
       const jws = new JwsToken(payload, registry);
 
-      const unknownKeyHeader = {
-        alg: 'RS256',
-        kid: 'did:example:123456789abcdefghi#unknown-key'
-      };
+      const unknownPublicKey = await PrivateKeyRsa.generatePrivateKey(`${exampleDID}#unknown-key`);
 
-      const data = await jws.sign(examplekey, unknownKeyHeader);
+      const data = await jws.sign(unknownPublicKey);
 
       const jwe = new JweToken(data, registry);
       const request = await jwe.encrypt(hubPublicKey);

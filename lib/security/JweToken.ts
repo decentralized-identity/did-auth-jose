@@ -109,7 +109,7 @@ export default class JweToken extends JoseToken {
   public async decrypt (jwk: PrivateKey): Promise<string> {
     // following steps for JWE Decryption in RFC7516 section 5.2
     // 1. Parse JWE for components: BASE64URL(UTF8(JWE Header)) || '.' || BASE64URL(JWE Encrypted Key) || '.' ||
-    //    BASE64URL(JWE Initialization Vector) || '.' || BASE64URL(JWE Ciphertext) || '.' || 
+    //    BASE64URL(JWE Initialization Vector) || '.' || BASE64URL(JWE Ciphertext) || '.' ||
     //    BASE64URL(JWE Authentication Tag)
     const base64EncodedValues = this.content.split('.');
     // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
@@ -121,11 +121,11 @@ export default class JweToken extends JoseToken {
     // 5. verify header fields
     ['alg', 'enc', 'kid'].forEach((header: string) => {
       if (!(header in headers)) {
-        throw new Error(`Missing required header: ${header}`)
+        throw new Error(`Missing required header: ${header}`);
       }
     });
     if ('crit' in headers) { // RFC7516 4.1.13/RFC7515 4.1.11
-      const extensions = headers.crit as string[]
+      const extensions = headers.crit as string[];
       if (extensions) {
         // TODO: determine which additional header fields are supported
         const supported: string[] = [];
@@ -156,7 +156,7 @@ export default class JweToken extends JoseToken {
     // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
     const aad = base64EncodedValues[0];
     // 16. Decrypt JWE Ciphertext using CEK, IV, AAD, and authTag, using "enc" algorithm.
-    
+
     // TODO: complex work involving symmetric key encryption here
 
     // 17. if a "zip" parameter was included, uncompress the plaintext using the specified algorithm

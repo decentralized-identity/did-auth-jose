@@ -8,9 +8,6 @@ import * as constants from 'constants';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey from '../../security/PublicKey';
 
-// TODO: Rewrite to allow additional cryptographic algorithms to be added easily then remove dependency on 'node-jose'.
-const jose = require('node-jose');
-
 /**
  * Encrypter plugin for RsaSignature2018
  */
@@ -93,11 +90,10 @@ export class RsaCryptoSuite implements CryptoSuite {
    * @returns Signed payload in compact JWS format.
    */
   public static async signRs512 (content: string, jwk: PrivateKey): Promise<string> {
-    let contentBuffer = Buffer.from(content);
-
-    const contentJwsString = await jose.JWS.createSign({ format: 'compact', fields: {} }, jwk).update(contentBuffer).final();
-
-    return contentJwsString;
+    const privateKey = jwkToPem(jwk, { private: true });
+    const signer = crypto.createSign('RSA-SHA512');
+    signer.update(content);
+    return signer.sign(privateKey, 'base64');
   }
 
   /**

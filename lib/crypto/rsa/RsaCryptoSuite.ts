@@ -65,10 +65,10 @@ export class RsaCryptoSuite implements CryptoSuite {
    * @returns Signed payload in compact JWS format.
    */
   public static async signRs256 (content: string, jwk: PrivateKey): Promise<string> {
-    let contentBuffer = Buffer.from(content);
-    const contentJwsString = await jose.JWS.createSign({ format: 'compact', fields: {} }, jwk).update(contentBuffer).final();
-
-    return contentJwsString;
+    const privateKey = jwkToPem(jwk, { private: true });
+    const signer = crypto.createSign('RSA-SHA256');
+    signer.update(content);
+    return signer.sign(privateKey, 'base64');
   }
 
   /**

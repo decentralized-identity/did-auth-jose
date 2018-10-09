@@ -32,8 +32,10 @@ export default interface CryptoSuite {
  * Interface for Encryption/Decryption
  */
 export interface Encrypter {
+  /** Given the data to encrypt and a JWK public key, encrypts the data */
   encrypt (data: Buffer, jwk: PublicKey): Buffer;
 
+  /** Given the encrypted data and a jwk private key, decrypts the data */
   decrypt (data: Buffer, jwk: PrivateKey): Buffer;
 }
 
@@ -41,7 +43,12 @@ export interface Encrypter {
  *  Interface for Signing/Signature Verification
  */
 export interface Signer {
+  /** Given signature input content and a JWK private key, creates and returns a signature as a base64 string */
   sign (content: string, jwk: PrivateKey): Promise<string>;
 
+  /**
+   * Given the content used in the original signature input, the signature, and a JWK public key,
+   * returns true if the signature is valid, else false
+   */
   verify (signedContent: string, signature: string, jwk: PublicKey): boolean;
 }

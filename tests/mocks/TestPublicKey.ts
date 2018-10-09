@@ -6,7 +6,7 @@ import PublicKey from '../../lib/security/PublicKey';
 export class TestPublicKey extends PublicKey {
   /** Its unique identifier */
   uid: number;
-  static readonly defaultEncryptionAlgorithm = 'test';
+  defaultEncryptionAlgorithm = 'test';
 
   constructor (kid?: string) {
     super();

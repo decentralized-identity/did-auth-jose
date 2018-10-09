@@ -3,9 +3,6 @@ import JoseToken from './JoseToken';
 import PublicKey from '../security/PublicKey';
 import { PrivateKey } from '..';
 
-// TODO: Rewrite sign() to allow additional cryptographic algorithms to be added easily then remove dependency on 'node-jose'.
-const jose = require('node-jose');
-
 /**
  * Definition for a delegate that can verfiy signed data.
  */
@@ -37,7 +34,7 @@ export default class JwsToken extends JoseToken {
     const signatureInput = `${encodedHeaders}.${encodedContent}`;
     const signature = await (this.cryptoFactory.getSigner(headers['alg'])).sign(signatureInput, jwk);
     // 6. Compute BASE64URL(JWS Signature)
-    const encodedSignature = Base64Url.encode(signature);
+    const encodedSignature = Base64Url.fromBase64(signature);
     // 7. Only applies to JWS JSON Serializaiton
     // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
     return `${signatureInput}.${encodedSignature}`;

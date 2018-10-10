@@ -126,7 +126,7 @@ export default class JweToken extends JoseToken {
     });
     if ('crit' in headers) { // RFC7516 4.1.13/RFC7515 4.1.11
       const extensions = headers.crit as string[];
-      if (extensions) {
+      if (extensions.filter) {
         // TODO: determine which additional header fields are supported
         const supported: string[] = [];
         const unsupported = extensions.filter((extension) => { return !(extension in supported); });

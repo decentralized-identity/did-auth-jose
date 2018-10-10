@@ -158,6 +158,23 @@ describe('JweToken', () => {
       jwe = new JweToken(message, registry);
       await expectToThrow(jwe, 'decrypt decrypted data with mis-matched headers', 'authenticat'); // e or ion
     });
+
+    it('should require the key ids to match', async () => {
+      const newMessage = usingheaders({
+        kty: 'test',
+        kid: privateKey.kid + '1',
+        enc: 'A128GCM',
+        alg: 'test'
+      });
+      const jwe = new JweToken(newMessage, registry);
+      await expectToThrow(jwe, 'decrypt succeeded when the private key does not match the headers key');
+    });
+
+    it('should decrypt encrypted JWEs', async () => {
+      const jwe = new JweToken(encryptedMessage, registry);
+      const payload = await jwe.decrypt(privateKey);
+      expect(payload).toEqual(plaintext);
+    });
   });
 
 });

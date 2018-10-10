@@ -111,8 +111,8 @@ export class RsaCryptoSuite implements CryptoSuite {
    * TODO: correctly implement this after getting rid of node-jose dependency.
    */
   public static decryptRsaOaep (data: Buffer, jwk: PrivateKey): Buffer {
-    const publicKey = jwkToPem(jwk);
-    const decryptedDataBuffer = crypto.publicDecrypt({ key: publicKey, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
+    const privateKey = jwkToPem(jwk, { private: true });
+    const decryptedDataBuffer = crypto.privateDecrypt({ key: privateKey, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
 
     return decryptedDataBuffer;
   }

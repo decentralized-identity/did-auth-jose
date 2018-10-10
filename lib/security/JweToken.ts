@@ -110,9 +110,11 @@ export default class JweToken extends JoseToken {
     //    BASE64URL(JWE Authentication Tag)
     const base64EncodedValues = this.content.split('.');
     // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
-    const [headerString, encryptedKey, iv, ciphertextAsText, authTag] =
-      base64EncodedValues.map((encodedValue) => { return Base64Url.decode(encodedValue); });
-    const ciphertext = Buffer.from(ciphertextAsText, 'utf8').toString('base64');
+    const headerString = Base64Url.decode(base64EncodedValues[0]);
+    const encryptedKey = Buffer.from(Base64Url.toBase64(base64EncodedValues[1]), 'base64');
+    const iv = Buffer.from(Base64Url.toBase64(base64EncodedValues[2]), 'base64');
+    const ciphertext = Buffer.from(Base64Url.toBase64(base64EncodedValues[3]), 'base64');
+    const authTag = Buffer.from(Base64Url.toBase64(base64EncodedValues[4]), 'base64');
     // 3. let the JWE Header be a JSON object
     const headers = JSON.parse(headerString);
     // 4. only applies to JWE JSON Serializaiton
@@ -143,7 +145,7 @@ export default class JweToken extends JoseToken {
     }
     // 8. With keywrapping or direct key, let the jwk.kid be used to decrypt the encryptedkey
     // 9. Unwrap the encryptedkey to produce the content encryption key (CEK)
-    const cek = (this.cryptoFactory.getEncrypter(headers.alg)).decrypt(Buffer.from(encryptedKey, 'utf8'), jwk);
+    const cek = (this.cryptoFactory.getEncrypter(headers.alg)).decrypt(encryptedKey, jwk);
     // TODO: Verify CEK length meets "enc" algorithm's requirement
     // 10. TODO: Support direct key, then ensure encryptedKey === ""
     // 11. TODO: Support direct encryption, let CEK be the shared symmetric key
@@ -165,7 +167,7 @@ export default class JweToken extends JoseToken {
 
     const decipher = crypto.createDecipheriv(enc, cek, iv) as crypto.DecipherGCM;
     decipher.setAAD(Buffer.from(aad, 'utf8'));
-    decipher.setAuthTag(Buffer.from(authTag, 'utf8'));
+    decipher.setAuthTag(authTag);
     const plaintext = decipher.update(ciphertext, 'base64', 'utf8');
     if (decipher.final().length !== 0) {
       throw new Error('crypto cipher final returned additional data');

@@ -2,10 +2,7 @@ import * as crypto from 'crypto';
 import Base64Url from '../utilities/Base64Url';
 import JoseToken from './JoseToken';
 import PublicKey from '../security/PublicKey';
-import { PrivateKey } from '..';
-
-// TODO: Rewrite decrypt() to allow additional cryptographic algorithms to be added easily then remove dependency on 'node-jose'.
-const jose = require('node-jose');
+import PrivateKey from '../security/PrivateKey';
 
 /**
  * Definition for a delegate that can encrypt data.
@@ -113,9 +110,9 @@ export default class JweToken extends JoseToken {
     //    BASE64URL(JWE Authentication Tag)
     const base64EncodedValues = this.content.split('.');
     // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
-    const [headerString, encryptedKey, iv, _, authTag] =
+    const [headerString, encryptedKey, iv, ciphertextAsText, authTag] =
       base64EncodedValues.map((encodedValue) => { return Base64Url.decode(encodedValue); });
-    const ciphertext = Base64Url.toBase64(base64EncodedValues[3])
+    const ciphertext = Buffer.from(ciphertextAsText, 'utf8').toString('base64');
     // 3. let the JWE Header be a JSON object
     const headers = JSON.parse(headerString);
     // 4. only applies to JWE JSON Serializaiton

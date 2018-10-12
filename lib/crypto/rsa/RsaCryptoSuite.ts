@@ -45,13 +45,15 @@ export class RsaCryptoSuite implements CryptoSuite {
    *
    * @returns true if passed signature verification, false otherwise.
    */
-  public static verifySignatureRs256 (signedContent: string, signature: string, jwk: PublicKey): boolean {
-    const publicKey = jwkToPem(jwk);
-    const verifier = crypto.createVerify('RSA-SHA256');
-    verifier.write(signedContent);
+  public static verifySignatureRs256 (signedContent: string, signature: string, jwk: PublicKey): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const publicKey = jwkToPem(jwk);
+      const verifier = crypto.createVerify('RSA-SHA256');
+      verifier.write(signedContent);
 
-    const passedVerification = verifier.verify(publicKey, signature, 'base64');
-    return passedVerification;
+      const passedVerification = verifier.verify(publicKey, signature, 'base64');
+      resolve(passedVerification);
+    });
   }
 
   /**
@@ -73,13 +75,15 @@ export class RsaCryptoSuite implements CryptoSuite {
    *
    * @returns true if passed signature verification, false otherwise.
    */
-  public static verifySignatureRs512 (signedContent: string, signature: string, jwk: PublicKey): boolean {
-    const publicKey = jwkToPem(jwk);
-    const verifier = crypto.createVerify('RSA-SHA512');
-    verifier.write(signedContent);
+  public static verifySignatureRs512 (signedContent: string, signature: string, jwk: PublicKey): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const publicKey = jwkToPem(jwk);
+      const verifier = crypto.createVerify('RSA-SHA512');
+      verifier.write(signedContent);
 
-    const passedVerification = verifier.verify(publicKey, signature, 'base64');
-    return passedVerification;
+      const passedVerification = verifier.verify(publicKey, signature, 'base64');
+      resolve(passedVerification);
+    });
   }
 
   /**
@@ -99,21 +103,25 @@ export class RsaCryptoSuite implements CryptoSuite {
   /**
    * Rsa-OAEP encrypts the given data using the given public key in JWK format.
    */
-  public static encryptRsaOaep (data: Buffer, jwk: PublicKey): Buffer {
-    const publicKey = jwkToPem(jwk);
-    const encryptedDataBuffer = crypto.publicEncrypt({ key: publicKey, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
+  public static encryptRsaOaep (data: Buffer, jwk: PublicKey): Promise<Buffer> {
+    return new Promise<Buffer>((resolve) => {
+      const publicKey = jwkToPem(jwk);
+      const encryptedDataBuffer = crypto.publicEncrypt({ key: publicKey, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
 
-    return encryptedDataBuffer;
+      resolve(encryptedDataBuffer);
+    });
   }
 
   /**
    * Rsa-OAEP decrypts the given data using the given private key in JWK format.
    * TODO: correctly implement this after getting rid of node-jose dependency.
    */
-  public static decryptRsaOaep (data: Buffer, jwk: PrivateKey): Buffer {
-    const privateKey = jwkToPem(jwk, { private: true });
-    const decryptedDataBuffer = crypto.privateDecrypt({ key: privateKey, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
+  public static decryptRsaOaep (data: Buffer, jwk: PrivateKey): Promise<Buffer> {
+    return new Promise<Buffer>((resolve) => {
+      const privateKey = jwkToPem(jwk, { private: true });
+      const decryptedDataBuffer = crypto.privateDecrypt({ key: privateKey, padding: constants.RSA_PKCS1_OAEP_PADDING }, data);
 
-    return decryptedDataBuffer;
+      resolve(decryptedDataBuffer);
+    });
   }
 }

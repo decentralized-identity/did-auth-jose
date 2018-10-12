@@ -33,10 +33,10 @@ export default interface CryptoSuite {
  */
 export interface Encrypter {
   /** Given the data to encrypt and a JWK public key, encrypts the data */
-  encrypt (data: Buffer, jwk: PublicKey): Buffer;
+  encrypt (data: Buffer, jwk: PublicKey): Promise<Buffer>;
 
   /** Given the encrypted data and a jwk private key, decrypts the data */
-  decrypt (data: Buffer, jwk: PrivateKey): Buffer;
+  decrypt (data: Buffer, jwk: PrivateKey): Promise<Buffer>;
 }
 
 /**
@@ -50,5 +50,5 @@ export interface Signer {
    * Given the content used in the original signature input, the signature, and a JWK public key,
    * returns true if the signature is valid, else false
    */
-  verify (signedContent: string, signature: string, jwk: PublicKey): boolean;
+  verify (signedContent: string, signature: string, jwk: PublicKey): Promise<boolean>;
 }

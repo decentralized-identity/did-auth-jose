@@ -77,12 +77,12 @@ export default class Authentication {
         // no access token was given, this should be a seperate endpoint request
         return this.issueNewAccessToken(requester, nonce, localKey, requesterKey);
       }
-      if (!this.verifyJwt(localKey, accessTokenString, requester)) {
+      if (!await this.verifyJwt(localKey, accessTokenString, requester)) {
         throw new Error('Invalid access token');
       }
     }
 
-    const plaintext = jwsToken.verifySignature(requesterKey);
+    const plaintext = await jwsToken.verifySignature(requesterKey);
 
     return {
       localKeyId: localKey.kid,
@@ -255,7 +255,7 @@ export default class Authentication {
    * @param expectedRequesterDid Expected requester ID in the 'sub' field of the JWT payload.
    * @returns true if token passes all validation, false otherwise.
    */
-  private verifyJwt (publicKey: PublicKey, signedJwtString: string, expectedRequesterDid: string): boolean {
+  private async verifyJwt (publicKey: PublicKey, signedJwtString: string, expectedRequesterDid: string): Promise<boolean> {
     if (!publicKey || !signedJwtString || !expectedRequesterDid) {
       return false;
     }
@@ -263,7 +263,7 @@ export default class Authentication {
     try {
       const jwsToken = this.factory.constructJws(signedJwtString);
 
-      const verifiedData = jwsToken.verifySignature(publicKey);
+      const verifiedData = await jwsToken.verifySignature(publicKey);
 
       // Verify that the token was issued to the same person making the current request.
       const token = JSON.parse(verifiedData);

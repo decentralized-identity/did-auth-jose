@@ -7,7 +7,7 @@ import PrivateKey from '../security/PrivateKey';
 /**
  * Definition for a delegate that can encrypt data.
  */
-type EncryptDelegate = (data: Buffer, jwk: PublicKey) => Buffer;
+type EncryptDelegate = (data: Buffer, jwk: PublicKey) => Promise<Buffer>;
 
 /**
  * Class for performing JWE encryption operations.
@@ -42,7 +42,7 @@ export default class JweToken extends JoseToken {
     const keyBuffer = crypto.randomBytes(16);
 
     // Encrypt content encryption key then base64-url encode it.
-    const encryptedKeyBuffer = this.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk);
+    const encryptedKeyBuffer = await this.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk);
     const encryptedKeyBase64Url = Base64Url.encode(encryptedKeyBuffer);
 
     // Generate initialization vector then base64-url encode it.
@@ -81,8 +81,8 @@ export default class JweToken extends JoseToken {
    * @param keyBuffer The content encryption key to be encrypted.
    * @param jwk The asymmetric public key used to encrypt the content encryption key.
    */
-  private encryptContentEncryptionKey (keyEncryptionAlgorithm: string, keyBuffer: Buffer,
-                                             jwk: PublicKey): Buffer {
+  private async encryptContentEncryptionKey (keyEncryptionAlgorithm: string, keyBuffer: Buffer,
+                                             jwk: PublicKey): Promise<Buffer> {
 
     let encrypt: EncryptDelegate;
     let encrypter = this.cryptoFactory.getEncrypter(keyEncryptionAlgorithm);
@@ -145,7 +145,7 @@ export default class JweToken extends JoseToken {
     }
     // 8. With keywrapping or direct key, let the jwk.kid be used to decrypt the encryptedkey
     // 9. Unwrap the encryptedkey to produce the content encryption key (CEK)
-    const cek = (this.cryptoFactory.getEncrypter(headers.alg)).decrypt(encryptedKey, jwk);
+    const cek = await (this.cryptoFactory.getEncrypter(headers.alg)).decrypt(encryptedKey, jwk);
     // TODO: Verify CEK length meets "enc" algorithm's requirement
     // 10. TODO: Support direct key, then ensure encryptedKey === ""
     // 11. TODO: Support direct encryption, let CEK be the shared symmetric key

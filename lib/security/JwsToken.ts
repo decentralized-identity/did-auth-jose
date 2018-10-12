@@ -6,7 +6,7 @@ import { PrivateKey } from '..';
 /**
  * Definition for a delegate that can verfiy signed data.
  */
-type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: PublicKey) => boolean;
+type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: PublicKey) => Promise<boolean>;
 
 /**
  * Class for containing JWS token operations.
@@ -45,14 +45,14 @@ export default class JwsToken extends JoseToken {
    *
    * @returns The payload if signature is verified. Throws exception otherwise.
    */
-  public verifySignature (jwk: PublicKey): string {
+  public async verifySignature (jwk: PublicKey): Promise<string> {
     const algorithm = this.getHeader().alg;
     const signer = this.cryptoFactory.getSigner(algorithm);
 
     // Get the correct signature verification function based on the given algorithm.
-    let verifySignature: VerifySignatureDelegate;
+    let verify: VerifySignatureDelegate;
     if (signer) {
-      verifySignature = signer.verify;
+      verify = signer.verify;
     } else {
       const err = new Error(`Unsupported signing algorithm: ${algorithm}`);
       throw err;
@@ -60,7 +60,7 @@ export default class JwsToken extends JoseToken {
 
     const signedContent = this.getSignedContent();
     const signature = this.getSignature();
-    const passedSignatureValidation = verifySignature(signedContent, signature, jwk);
+    const passedSignatureValidation = await verify(signedContent, signature, jwk);
 
     if (!passedSignatureValidation) {
       const err = new Error('Failed signature validation');

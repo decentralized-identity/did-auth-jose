@@ -22,31 +22,31 @@ export default class TestCryptoSuite implements CryptoSuite {
     this.id = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
   }
 
-  private encrypt (id: number): (data: Buffer, key: object) => Buffer {
+  private encrypt (id: number): (data: Buffer, key: object) => Promise<Buffer> {
     return (data, _) => {
       TestCryptoSuite.called[id] |= TestCryptoSuite.ENCRYPT;
-      return data;
+      return Promise.resolve(data);
     };
   }
 
-  private decrypt (id: number): (data: Buffer, key: object) => Buffer {
+  private decrypt (id: number): (data: Buffer, key: object) => Promise<Buffer> {
     return (data, _) => {
       TestCryptoSuite.called[id] |= TestCryptoSuite.DECRYPT;
-      return data;
+      return Promise.resolve(data);
     };
   }
 
   private sign (id: number): ({}, {}) => Promise<string> {
     return (_, __) => {
       TestCryptoSuite.called[id] |= TestCryptoSuite.SIGN;
-      return Promise.reject(null);
+      return Promise.resolve('');
     };
   }
 
-  private verify (id: number): ({}, {}, {}) => boolean {
+  private verify (id: number): ({}, {}, {}) => Promise<boolean> {
     return (_, __, ___) => {
       TestCryptoSuite.called[id] |= TestCryptoSuite.VERIFY;
-      return false;
+      return Promise.resolve(true);
     };
   }
 

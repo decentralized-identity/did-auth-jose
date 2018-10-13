@@ -3,13 +3,10 @@ import JoseToken from './JoseToken';
 import PublicKey from '../security/PublicKey';
 import { PrivateKey } from '..';
 
-// TODO: Rewrite sign() to allow additional cryptographic algorithms to be added easily then remove dependency on 'node-jose'.
-const jose = require('node-jose');
-
 /**
  * Definition for a delegate that can verfiy signed data.
  */
-type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: PublicKey) => boolean;
+type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: PublicKey) => Promise<boolean>;
 
 /**
  * Class for containing JWS token operations.
@@ -23,11 +20,24 @@ export default class JwsToken extends JoseToken {
    * @returns Signed payload in compact JWS format.
    */
   public async sign (jwk: PrivateKey, jwsHeaderParameters?: { [name: string]: string }): Promise<string> {
-    const contentBuffer = Buffer.from(this.content);
+    // Steps according to RTC7515 5.1
+    // 2. Compute encoded payload vlaue base64URL(JWS Payload)
+    const encodedContent = Base64Url.encode(this.content);
+    // 3. Compute the headers
     const headers = jwsHeaderParameters || {};
-    const contentJwsString = await jose.JWS.createSign({ format: 'compact', fields: headers }, jwk).update(contentBuffer).final();
-
-    return contentJwsString;
+    headers['alg'] = jwk.defaultSignAlgorithm;
+    headers['kid'] = jwk.kid;
+    // 4. Compute BASE64URL(UTF8(JWS Header))
+    const encodedHeaders = Base64Url.encode(JSON.stringify(headers));
+    // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)
+    //    using the "alg" signature algorithm.
+    const signatureInput = `${encodedHeaders}.${encodedContent}`;
+    const signature = await (this.cryptoFactory.getSigner(headers['alg'])).sign(signatureInput, jwk);
+    // 6. Compute BASE64URL(JWS Signature)
+    const encodedSignature = Base64Url.fromBase64(signature);
+    // 7. Only applies to JWS JSON Serializaiton
+    // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
+    return `${signatureInput}.${encodedSignature}`;
   }
 
   /**
@@ -35,14 +45,14 @@ export default class JwsToken extends JoseToken {
    *
    * @returns The payload if signature is verified. Throws exception otherwise.
    */
-  public verifySignature (jwk: PublicKey): string {
+  public async verifySignature (jwk: PublicKey): Promise<string> {
     const algorithm = this.getHeader().alg;
     const signer = this.cryptoFactory.getSigner(algorithm);
 
     // Get the correct signature verification function based on the given algorithm.
-    let verifySignature: VerifySignatureDelegate;
+    let verify: VerifySignatureDelegate;
     if (signer) {
-      verifySignature = signer.verify;
+      verify = signer.verify;
     } else {
       const err = new Error(`Unsupported signing algorithm: ${algorithm}`);
       throw err;
@@ -50,7 +60,7 @@ export default class JwsToken extends JoseToken {
 
     const signedContent = this.getSignedContent();
     const signature = this.getSignature();
-    const passedSignatureValidation = verifySignature(signedContent, signature, jwk);
+    const passedSignatureValidation = await verify(signedContent, signature, jwk);
 
     if (!passedSignatureValidation) {
       const err = new Error('Failed signature validation');

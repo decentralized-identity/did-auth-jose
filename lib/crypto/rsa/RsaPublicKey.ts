@@ -29,7 +29,7 @@ export default class RsaPublicKey extends PublicKey {
 
     if ('publicKeyJwk' in data) {
       const jwk = data.publicKeyJwk;
-      if (jwk.kid !== keyData.id) {
+      if (!keyData.id.endsWith(jwk.kid)) {
         throw new Error('JWK kid does not match Did publickey id');
       }
       if (!jwk.n || !jwk.e) {

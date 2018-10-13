@@ -30,7 +30,7 @@ export default class Base64Url {
    * Converts a Base64URL string to a Base64 string.
    * TODO: Improve implementation perf.
    */
-  private static toBase64 (base64UrlString: string): string {
+  static toBase64 (base64UrlString: string): string {
     return (base64UrlString + '==='.slice((base64UrlString.length + 3) % 4))
       .replace(/-/g, '+')
       .replace(/_/g, '/');
@@ -40,7 +40,7 @@ export default class Base64Url {
    * Converts a Base64 string to a Base64URL string.
    * TODO: Improve implementation perf.
    */
-  private static fromBase64 (base64String: string): string {
+  static fromBase64 (base64String: string): string {
     return base64String
       .replace(/\+/g, '-')
       .replace(/\//g, '_')

@@ -180,7 +180,7 @@ This section lists the signature and encryption algorithms currently supported (
 > Discussion: Current implementation assumes Compact Serialization in the HTTP POST body and payload. We might want to support JSON serialization for POST body instead/in addition.
 
 ### Key Encryption
-Asymmetric algorithms that can be used by the Server to encrypt the symmetric content encryption key in the Server response JWE:
+Asymmetric algorithms that can be used by the Server to encrypt the symmetric content encryption key in the Server response JWE:  
 | Algorithm                | Support           | JOSE specified | JWK specified |
 | ------------------------ | ----------------- | -------------- | ------------- |
 | RSA-OAEP                 | Yes               | Yes            | Yes           |
@@ -188,7 +188,7 @@ Asymmetric algorithms that can be used by the Server to encrypt the symmetric co
 | SECP256K1                | To be implemented | To be added    | To be added   |
 
 ### Key Decryption
-Asymmetric algorithms that can be used by the Server to decrypt the symmetric content encryption key in the Server request JWE:
+Asymmetric algorithms that can be used by the Server to decrypt the symmetric content encryption key in the Server request JWE:  
 | Algorithm                | Support           | JOSE specified | JWK specified |
 | ------------------------ | ----------------- | -------------- | ------------- |
 | RSA-OAEP                 | Yes               | Yes            | Yes           |
@@ -197,14 +197,14 @@ Asymmetric algorithms that can be used by the Server to decrypt the symmetric co
 | SECP256K1                | To be implemented | To be added    | To be added   |
 
 ### Content Encryption
-Symmetric algorithms that can be used by the Server to encrypt the content of the Server response JWE:
+Symmetric algorithms that can be used by the Server to encrypt the content of the Server response JWE:  
 | Algorithm                     | Support            | JOSE specified |
 | ----------------------------- | ------------------ | -------------- |
 | A128GCM                       | Yes                | Yes            |
 | XSalsa20-Poly1305             | To be implemented  | To be added    |
 
 ### Content Decryption
-Symmetric algorithms that can be used by the Server to decrypt the content of the Server request JWE:
+Symmetric algorithms that can be used by the Server to decrypt the content of the Server request JWE:  
 | Algorithm                     | Support            | JOSE specified |
 | ----------------------------- | ------------------ | -------------- |
 | A128GCM                       | Yes                | Yes            |

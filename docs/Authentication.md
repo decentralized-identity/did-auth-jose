@@ -180,7 +180,7 @@ This section lists the signature and encryption algorithms currently supported (
 > Discussion: Current implementation assumes Compact Serialization in the HTTP POST body and payload. We might want to support JSON serialization for POST body instead/in addition.
 
 ### Key Encryption
-Asymmetric algorithms that can be used by the Server to encrypt the symmetric content encryption key in the Server response JWE:
+Asymmetric algorithms that can be used by the Server to encrypt the symmetric content encryption key in the Server response JWE:  
 | Algorithm                | Support           | JOSE specified | JWK specified |
 | ------------------------ | ----------------- | -------------- | ------------- |
 | RSA-OAEP                 | Yes               | Yes            | Yes           |
@@ -188,7 +188,7 @@ Asymmetric algorithms that can be used by the Server to encrypt the symmetric co
 | SECP256K1                | To be implemented | To be added    | To be added   |
 
 ### Key Decryption
-Asymmetric algorithms that can be used by the Server to decrypt the symmetric content encryption key in the Server request JWE:
+Asymmetric algorithms that can be used by the Server to decrypt the symmetric content encryption key in the Server request JWE:  
 | Algorithm                | Support           | JOSE specified | JWK specified |
 | ------------------------ | ----------------- | -------------- | ------------- |
 | RSA-OAEP                 | Yes               | Yes            | Yes           |
@@ -197,59 +197,18 @@ Asymmetric algorithms that can be used by the Server to decrypt the symmetric co
 | SECP256K1                | To be implemented | To be added    | To be added   |
 
 ### Content Encryption
-Symmetric algorithms that can be used by the Server to encrypt the content of the Server response JWE:
+Symmetric algorithms that can be used by the Server to encrypt the content of the Server response JWE:  
 | Algorithm                     | Support            | JOSE specified |
 | ----------------------------- | ------------------ | -------------- |
 | A128GCM                       | Yes                | Yes            |
 | XSalsa20-Poly1305             | To be implemented  | To be added    |
 
 ### Content Decryption
-Symmetric algorithms that can be used by the Server to decrypt the content of the Server request JWE:
+Symmetric algorithms that can be used by the Server to decrypt the content of the Server request JWE:  
 | Algorithm                     | Support            | JOSE specified |
 | ----------------------------- | ------------------ | -------------- |
 | A128GCM                       | Yes                | Yes            |
 | XSalsa20-Poly1305             | To be implemented  | To be added    |
-
-
-
-# Cryptographic Algorithm Extensibility
-This section describes how to add additional cryptographic algorithm support in the Server.
-
-## did-auth-jose package
-Authentication is handled by the `did-auth-jose` package, such that application may use this package without needing the entire Server-node-core. 
-This module contains definitions for `CryptoSuite`, `PublicKey`, and `PrivateKey` which are required for cryptogrpahic support. By implementing a `CryptoSuite`, one may pass it to the auth package directly, or
-through the Server via the `Context`'s `cryptoSuites` array. 
-
-### CryptoSuite
-CryptoSuite contains three methods returning dictionaries. These dictionaries map the algorithm name or DID Document's PublicKey type (Cryptographic suite name) 
-to their `Encrypter`s, `Signer`s, and constructors. By overriding these methods, a `CryptoSuite` can be added to the Authentication's supported libraries.
-
-#### Encrypters
-An encrypter is an object containing two methods, `encrypt` and `decrypt`. These methods are given the data to 
-encrypt or decrypt, and the corresponding `Publickey` or `PrivateKey`. They are expected to return a Buffer 
-of the encrypted or decrypted content.
-
-#### Signers
-a signer is an object containing two methods, `sign` and `verify`. `sign` is given the content to sign, and 
-a `PrivateKey` used to sign it with. It is expected to return a compact JWS string.
-`verify` is given the signed content, the signature, and the `PublicKey`, and is expected to return true if 
-valid, else false.
-
-#### constructors
-In the map of Cryptographic suite names to constructors, the constructors must match a single signature:
-```Typescript
-constructor (data: DidPublicKey) => PublicKey
-```
-where `data` is the entire public key object found on the DID Document as a JSON object. Additional parameters 
-specified by the Cryptographic suite will be found in this object, if provided.
-
-### PublicKey
-`PublicKey` is a JWK representation of a public key. In addition to required JWK parameters per the used key type, 
-`PublicKey` required a `defaultEncryptionAlgorithm` to indicate which encryption algorithm to use. These algorithm names **MUST** match Encrypter algorithm names.
-
-### PrivateKey
-`PrivateKey` is a JWK representation of a private key. In addition to required JWK parameters per the used key type, 
-`PrivateKey` required a `defaultSignAlgorithm` to indicate which signature algorithm to use. These algorithm names **MUST** match Signer algorithm names.
 
 # Future Work
 - Stateful authentication scheme to prevent any replay attack.

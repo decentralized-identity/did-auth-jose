@@ -7,7 +7,8 @@
     "precommit": "npm run lint",
     "build": "tsc",
     "test": "nyc jasmine-ts --config=./tests/jasmine.json",
-    "lint": "tslint --fix --project ."
+    "lint": "tslint --fix --project .",
+    "build:docs": "jsdoc2md --files lib/**/*.ts --configure jsdoc2md.json > docs/api.md"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,11 @@
     "uuid": "^3.3.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.1.2",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-typescript": "^7.1.0",
     "@types/jasmine": "^2.8.8",
     "@types/node": "^10.10.1",
     "@types/uuid": "^3.4.4",
@@ -29,6 +35,8 @@
     "jasmine": "^3.2.0",
     "jasmine-reporters": "^2.3.2",
     "jasmine-ts": "^0.2.1",
+    "jsdoc-babel": "^0.5.0",
+    "jsdoc-to-markdown": "^4.0.1",
     "nyc": "^13.0.1",
     "source-map-support": "^0.5.9",
     "tslint": "^5.11.0",

@@ -53,13 +53,13 @@ export default class Authentication {
   }
 
   /** Serializes challenges */
-  public async formChallenge(challenge: Challenge): Promise<string> {
+  public async formChallenge (challenge: Challenge): Promise<string> {
     // identity function in place of later signing
     return JSON.stringify(challenge);
   }
 
   /** Deserializes challenges */
-  public async getChallenge(challenge: Buffer | string): Promise<Challenge> {
+  public async getChallenge (challenge: Buffer | string): Promise<Challenge> {
     // identity function in place of later signature verification
     let challengeString: string;
     if (challenge instanceof Buffer) {

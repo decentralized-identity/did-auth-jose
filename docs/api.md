@@ -48,7 +48,9 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [Authentication](#Authentication)
     * [new Authentication(options)](#new_Authentication_new)
+    * [.formChallengeResponse(challenge, responseDid, expiration)](#Authentication+formChallengeResponse)
     * [.getVerifiedRequest(request, accessTokenCheck)](#Authentication+getVerifiedRequest) ⇒
+    * [.getVerifiedResponse(request)](#Authentication+getVerifiedResponse) ⇒
     * [.getAuthenticatedResponse(request, response)](#Authentication+getAuthenticatedResponse) ⇒
     * [.getAuthenticatedRequest(content, privateKey, recipient, accessToken)](#Authentication+getAuthenticatedRequest)
     * [.getPrivateKeyForJwe(jweToken)](#Authentication+getPrivateKeyForJwe) ⇒
@@ -69,6 +71,19 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- |
 | options | <p>Arguments to a constructor in a named object</p> |
 
+<a name="Authentication+formChallengeResponse"></a>
+
+### authentication.formChallengeResponse(challenge, responseDid, expiration)
+<p>Given a challenge, forms a signed response using a given DID that expires at expiration, or a default expiration.</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+
+| Param | Description |
+| --- | --- |
+| challenge | <p>Challenge to respond to</p> |
+| responseDid | <p>The DID to respond with</p> |
+| expiration | <p>optional expiration datetime of the response</p> |
+
 <a name="Authentication+getVerifiedRequest"></a>
 
 ### authentication.getVerifiedRequest(request, accessTokenCheck) ⇒
@@ -81,6 +96,18 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- | --- |
 | request |  | <p>The JOSE Authenticated Request to decrypt and validate</p> |
 | accessTokenCheck | <code>true</code> | <p>Check the validity of the access token</p> |
+
+<a name="Authentication+getVerifiedResponse"></a>
+
+### authentication.getVerifiedResponse(request) ⇒
+<p>Given a JOSE Authenticated Response, decrypts and validates the response</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+**Returns**: <p>the content of the response as a VerifiedResponse</p>  
+
+| Param | Description |
+| --- | --- |
+| request | <p>THe JOSE Authenticated Response</p> |
 
 <a name="Authentication+getAuthenticatedResponse"></a>
 

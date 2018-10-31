@@ -9,6 +9,9 @@ import JweToken from './security/JweToken';
 import JwsToken from './security/JwsToken';
 import uuid from 'uuid/v4';
 import VerifiedRequest from './interfaces/VerifiedRequest';
+import VerifiedResponse from './interfaces/VerifiedResponse';
+import Challenge from './interfaces/Challenge';
+import ChallengeResponse from './interfaces/ChallengeResponse';
 
 /**
  * Named arguments to construct an Authentication object
@@ -47,6 +50,47 @@ export default class Authentication {
     this.tokenValidDurationInMinutes = options.tokenValidDurationInMinutes || Constants.defaultTokenDurationInMinutes;
     this.keys = options.keys;
     this.factory = new CryptoFactory(options.cryptoSuites || [new RsaCryptoSuite()]);
+  }
+
+  /**
+   * Given a challenge, forms a signed response using a given DID that expires at expiration, or a default expiration.
+   * @param challenge Challenge to respond to
+   * @param responseDid The DID to respond with
+   * @param expiration optional expiration datetime of the response
+   */
+  public async formChallengeResponse (challenge: Challenge, responseDid: string, expiration?: Date): Promise<string> {
+    let key: PrivateKey | undefined;
+    for (const keyId in this.keys) {
+      if (keyId.startsWith(responseDid)) {
+        key = this.keys[keyId];
+        break;
+      }
+    }
+    if (!key) {
+      throw new Error(`Could not find a key for ${responseDid}`);
+    }
+
+    // milliseconds to seconds
+    const milliseconds = 1000;
+    if (!expiration) {
+      const expirationTimeOffset = 
+      expiration = new Date(Date.now() + milliseconds * 60 * 5); // 5 minutes from now
+    }
+    const iat = Math.floor(Date.now() / milliseconds); // ms to seconds
+    const response: ChallengeResponse = {
+      iat,
+      iss: responseDid,
+      aud: challenge.client_id,
+      exp: Math.floor(expiration.getTime() / milliseconds),
+      nonce: challenge.nonce,
+      state: challenge.state
+    };
+
+    const token = new JwsToken(response, this.factory);
+    return token.sign(key, {
+      iat: iat.toString(),
+      exp: Math.floor(expiration.getTime() / milliseconds).toString()
+    });
   }
 
   /**
@@ -89,6 +133,25 @@ export default class Authentication {
       requesterPublicKey: requesterKey,
       nonce,
       request: plaintext
+    };
+  }
+
+  /**
+   * Given a JOSE Authenticated Response, decrypts and validates the response
+   * @param request THe JOSE Authenticated Response
+   * @returns the content of the response as a VerifiedResponse
+   */
+  public async getVerifiedResponse (request: Buffer): Promise <VerifiedResponse> {
+    const response = await this.getVerifiedRequest(request, false);
+    if (response instanceof Buffer) {
+      // this should never happen
+      throw new Error('Response verification required an authorization token');
+    }
+    return {
+      localKeyId: response.localKeyId,
+      responderPublicKey: response.requesterPublicKey,
+      nonce: response.nonce,
+      response: response.request
     };
   }
 

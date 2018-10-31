@@ -73,8 +73,8 @@ export default class Authentication {
     // milliseconds to seconds
     const milliseconds = 1000;
     if (!expiration) {
-      const expirationTimeOffset = 
-      expiration = new Date(Date.now() + milliseconds * 60 * 5); // 5 minutes from now
+      const expirationTimeOffsetInMinutes = 5;
+      expiration = new Date(Date.now() + milliseconds * 60 * expirationTimeOffsetInMinutes); // 5 minutes from now
     }
     const iat = Math.floor(Date.now() / milliseconds); // ms to seconds
     const response: ChallengeResponse = {

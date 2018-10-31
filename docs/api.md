@@ -49,6 +49,7 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 * [Authentication](#Authentication)
     * [new Authentication(options)](#new_Authentication_new)
     * [.formChallengeResponse(challenge, responseDid, expiration)](#Authentication+formChallengeResponse)
+    * [.verifyChallengeResponse(challengeResponse)](#Authentication+verifyChallengeResponse) ⇒
     * [.getVerifiedRequest(request, accessTokenCheck)](#Authentication+getVerifiedRequest) ⇒
     * [.getVerifiedResponse(request)](#Authentication+getVerifiedResponse) ⇒
     * [.getAuthenticatedResponse(request, response)](#Authentication+getAuthenticatedResponse) ⇒
@@ -83,6 +84,18 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | challenge | <p>Challenge to respond to</p> |
 | responseDid | <p>The DID to respond with</p> |
 | expiration | <p>optional expiration datetime of the response</p> |
+
+<a name="Authentication+verifyChallengeResponse"></a>
+
+### authentication.verifyChallengeResponse(challengeResponse) ⇒
+<p>Verifies the signature on a challengeResponse and returns a ChallengeResponse object</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+**Returns**: <p>the challengeResponse as a ChallengeResponse</p>  
+
+| Param | Description |
+| --- | --- |
+| challengeResponse | <p>ChallengeResponse to verify as a string or buffer</p> |
 
 <a name="Authentication+getVerifiedRequest"></a>
 

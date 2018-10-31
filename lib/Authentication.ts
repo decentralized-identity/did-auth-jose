@@ -94,6 +94,41 @@ export default class Authentication {
   }
 
   /**
+   * Verifies the signature on a challengeResponse and returns a ChallengeResponse object
+   * @param challengeResponse ChallengeResponse to verify as a string or buffer
+   * @returns the challengeResponse as a ChallengeResponse
+   */
+  public async verifyChallengeResponse(challengeResponse: Buffer | string): Promise<ChallengeResponse> {
+    const clockSkew = 5 * 60 * 1000; // 5 minutes
+    let jwsToken: JwsToken;
+    if (challengeResponse instanceof Buffer) {
+      jwsToken = new JwsToken(challengeResponse.toString(), this.factory);
+    } else {
+      jwsToken = new JwsToken(challengeResponse, this.factory);
+    }
+    const exp = jwsToken.getHeader().exp;
+    if (exp) {
+      if (exp * 1000 + clockSkew < Date.now()) {
+        throw new Error('Response expired');
+      }
+    }
+    const keyId = jwsToken.getHeader().kid;
+    const keyDid = DidDocument.getDidFromKeyId(keyId);
+    const results = await this.resolver.resolve(keyDid);
+    const didPublicKey = results.didDocument.getPublicKey(keyId);
+    if (!didPublicKey) {
+      throw new Error('Could not find public key');
+    }
+    const publicKey = this.factory.constructPublicKey(didPublicKey);
+    const content = await jwsToken.verifySignature(publicKey);
+    const response: ChallengeResponse = JSON.parse(content);
+    if (response.iss !== keyDid) {
+      throw new Error('Signing DID does not match issuer');
+    }
+    return response;
+  }
+
+  /**
    * Given a JOSE Authenticated Request, will decrypt the request, resolve the requester's did, and validate the signature.
    * @param request The JOSE Authenticated Request to decrypt and validate
    * @param accessTokenCheck Check the validity of the access token

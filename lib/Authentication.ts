@@ -52,6 +52,24 @@ export default class Authentication {
     this.factory = new CryptoFactory(options.cryptoSuites || [new RsaCryptoSuite()]);
   }
 
+  /** Serializes challenges */
+  public async formChallenge(challenge: Challenge): Promise<string> {
+    // identity function in place of later signing
+    return JSON.stringify(challenge);
+  }
+
+  /** Deserializes challenges */
+  public async getChallenge(challenge: Buffer | string): Promise<Challenge> {
+    // identity function in place of later signature verification
+    let challengeString: string;
+    if (challenge instanceof Buffer) {
+      challengeString = challenge.toString();
+    } else {
+      challengeString = challenge;
+    }
+    return JSON.parse(challengeString);
+  }
+
   /**
    * Given a challenge, forms a signed response using a given DID that expires at expiration, or a default expiration.
    * @param challenge Challenge to respond to

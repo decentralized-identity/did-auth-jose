@@ -48,6 +48,8 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [Authentication](#Authentication)
     * [new Authentication(options)](#new_Authentication_new)
+    * [.formChallenge()](#Authentication+formChallenge)
+    * [.getChallenge()](#Authentication+getChallenge)
     * [.formChallengeResponse(challenge, responseDid, expiration)](#Authentication+formChallengeResponse)
     * [.verifyChallengeResponse(challengeResponse)](#Authentication+verifyChallengeResponse) ⇒
     * [.getVerifiedRequest(request, accessTokenCheck)](#Authentication+getVerifiedRequest) ⇒
@@ -72,6 +74,18 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- |
 | options | <p>Arguments to a constructor in a named object</p> |
 
+<a name="Authentication+formChallenge"></a>
+
+### authentication.formChallenge()
+<p>Serializes challenges</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+<a name="Authentication+getChallenge"></a>
+
+### authentication.getChallenge()
+<p>Deserializes challenges</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
 <a name="Authentication+formChallengeResponse"></a>
 
 ### authentication.formChallengeResponse(challenge, responseDid, expiration)

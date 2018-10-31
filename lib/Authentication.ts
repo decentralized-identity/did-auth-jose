@@ -98,7 +98,7 @@ export default class Authentication {
    * @param challengeResponse ChallengeResponse to verify as a string or buffer
    * @returns the challengeResponse as a ChallengeResponse
    */
-  public async verifyChallengeResponse(challengeResponse: Buffer | string): Promise<ChallengeResponse> {
+  public async verifyChallengeResponse (challengeResponse: Buffer | string): Promise<ChallengeResponse> {
     const clockSkew = 5 * 60 * 1000; // 5 minutes
     let jwsToken: JwsToken;
     if (challengeResponse instanceof Buffer) {

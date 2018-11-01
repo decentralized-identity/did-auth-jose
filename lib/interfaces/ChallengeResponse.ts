@@ -12,5 +12,5 @@ export default interface ChallengeResponse {
   /** Nonce of the challenge */
   nonce: string;
   /** Opaque value used by issuer for state */
-  state: string;
+  state: string | undefined;
 }

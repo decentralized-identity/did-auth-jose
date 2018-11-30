@@ -18,7 +18,7 @@ describe('Secp256k1CryptoSuite', async () => {
     expect(signers['P256K']['verify']).toEqual(Secp256k1CryptoSuite.verify);
   });
 
-  it('it should return expected KeyConstructors and subsequent key', async () => {
+  it('it should return expected KeyConstructors and subsequent key for Secp256k1VerificationKey2018', async () => {
     const cryptoSuite = new Secp256k1CryptoSuite();
     const keyConstructors: any = cryptoSuite.getKeyConstructors();
     expect(keyConstructors).toBeDefined();
@@ -36,6 +36,72 @@ describe('Secp256k1CryptoSuite', async () => {
     };
 
     const keyConstructor = keyConstructors['Secp256k1VerificationKey2018'];
+    const key = keyConstructor(keyData);
+    expect(key).toBeDefined();
+  });
+
+  it('it should return expected KeyConstructors and subsequent key for EdDsaSAPublicKeySecp256k1', async () => {
+    const cryptoSuite = new Secp256k1CryptoSuite();
+    const keyConstructors: any = cryptoSuite.getKeyConstructors();
+    expect(keyConstructors).toBeDefined();
+    expect(keyConstructors['EdDsaSAPublicKeySecp256k1']).toBeDefined();
+
+    const keyData = {
+      id: 'key-1',
+      type: 'EdDsaSAPublicKeySecp256k1',
+      publicKeyJwk: {
+        kid: 'key-1',
+        x: 'skdjc4398ru',
+        y: 'skdjc4398ru',
+        crv: 'P-256K'
+      }
+    };
+
+    const keyConstructor = keyConstructors['EdDsaSAPublicKeySecp256k1'];
+    const key = keyConstructor(keyData);
+    expect(key).toBeDefined();
+  });
+
+  it('it should return expected KeyConstructors and subsequent key for EdDsaSASignatureSecp256k1', async () => {
+    const cryptoSuite = new Secp256k1CryptoSuite();
+    const keyConstructors: any = cryptoSuite.getKeyConstructors();
+    expect(keyConstructors).toBeDefined();
+    expect(keyConstructors['EdDsaSASignatureSecp256k1']).toBeDefined();
+
+    const keyData = {
+      id: 'key-1',
+      type: 'EdDsaSASignatureSecp256k1',
+      publicKeyJwk: {
+        kid: 'key-1',
+        x: 'skdjc4398ru',
+        y: 'skdjc4398ru',
+        crv: 'P-256K'
+      }
+    };
+
+    const keyConstructor = keyConstructors['EdDsaSASignatureSecp256k1'];
+    const key = keyConstructor(keyData);
+    expect(key).toBeDefined();
+  });
+
+  it('it should return expected KeyConstructors and subsequent key for EcdsaPublicKeySecp256k1', async () => {
+    const cryptoSuite = new Secp256k1CryptoSuite();
+    const keyConstructors: any = cryptoSuite.getKeyConstructors();
+    expect(keyConstructors).toBeDefined();
+    expect(keyConstructors['EcdsaPublicKeySecp256k1']).toBeDefined();
+
+    const keyData = {
+      id: 'key-1',
+      type: 'EcdsaPublicKeySecp256k1',
+      publicKeyJwk: {
+        kid: 'key-1',
+        x: 'skdjc4398ru',
+        y: 'skdjc4398ru',
+        crv: 'P-256K'
+      }
+    };
+
+    const keyConstructor = keyConstructors['EcdsaPublicKeySecp256k1'];
     const key = keyConstructor(keyData);
     expect(key).toBeDefined();
   });

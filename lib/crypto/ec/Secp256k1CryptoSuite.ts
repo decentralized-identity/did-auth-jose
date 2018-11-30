@@ -24,11 +24,17 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
     };
   }
 
+  /**
+   * Defines constructors for the identifiers proposed in Linked Data Cryptographic Suite Registry
+   * https://w3c-ccg.github.io/ld-cryptosuite-registry/#eddsasasignaturesecp256k1 plus the additional
+   * ones spotted in the wild.
+   */
   getKeyConstructors () {
     return {
-      Secp256k1VerificationKey2018: (keyData: DidPublicKey) => {
-        return new EcPublicKey(keyData);
-      }
+      Secp256k1VerificationKey2018: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); },
+      EdDsaSAPublicKeySecp256k1: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); },
+      EdDsaSASignatureSecp256k1: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); },
+      EcdsaPublicKeySecp256k1: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); }
     };
   }
 

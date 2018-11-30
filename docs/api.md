@@ -294,6 +294,7 @@ information</p>
 * [Secp256k1CryptoSuite](#Secp256k1CryptoSuite)
     * _instance_
         * [.getEncrypters()](#Secp256k1CryptoSuite+getEncrypters)
+        * [.getKeyConstructors()](#Secp256k1CryptoSuite+getKeyConstructors)
     * _static_
         * [.verify()](#Secp256k1CryptoSuite.verify) ⇒
         * [.sign(jwsHeaderParameters)](#Secp256k1CryptoSuite.sign) ⇒
@@ -302,6 +303,14 @@ information</p>
 
 ### secp256k1CryptoSuite.getEncrypters()
 <p>Encryption with Secp256k1 keys not supported</p>
+
+**Kind**: instance method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
+<a name="Secp256k1CryptoSuite+getKeyConstructors"></a>
+
+### secp256k1CryptoSuite.getKeyConstructors()
+<p>Defines constructors for the identifiers proposed in Linked Data Cryptographic Suite Registry
+https://w3c-ccg.github.io/ld-cryptosuite-registry/#eddsasasignaturesecp256k1 plus the additional
+ones spotted in the wild.</p>
 
 **Kind**: instance method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
 <a name="Secp256k1CryptoSuite.verify"></a>

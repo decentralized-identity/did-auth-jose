@@ -39,7 +39,7 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
   static wrapJwk (kid: string, jwk: any): EcPrivateKey {
     return new EcPrivateKey({
       id: kid,
-      type: 'Secp256k1VerificationKey2018',
+      type: 'EdDsaSAPublicKeySecp256k1',
       publicKeyJwk: jwk
     } as DidPublicKey);
   }

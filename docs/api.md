@@ -5,6 +5,12 @@
 <dd><p>Class for decrypting and verifying, or signing and encrypting content in an End to End DID Authentication format</p></dd>
 <dt><a href="#Constants">Constants</a></dt>
 <dd><p>Class containing constants used in Authentication.</p></dd>
+<dt><a href="#EcPrivateKey">EcPrivateKey</a> ⇐ <code><a href="#PrivateKey">PrivateKey</a></code></dt>
+<dd><p>Represents an Elliptic Curve private key</p></dd>
+<dt><a href="#EcPublicKey">EcPublicKey</a> ⇐ <code>PublicKey</code></dt>
+<dd><p>Represents an Elliptic Curve public key</p></dd>
+<dt><a href="#Secp256k1CryptoSuite">Secp256k1CryptoSuite</a></dt>
+<dd><p>Encrypter plugin for Elliptic Curve P-256K1</p></dd>
 <dt><a href="#RsaCryptoSuite">RsaCryptoSuite</a></dt>
 <dd><p>Encrypter plugin for RsaSignature2018</p></dd>
 <dt><a href="#RsaPrivateKey">RsaPrivateKey</a> ⇐ <code><a href="#PrivateKey">PrivateKey</a></code></dt>
@@ -214,6 +220,118 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 <p>Class containing constants used in Authentication.</p>
 
 **Kind**: global class  
+<a name="EcPrivateKey"></a>
+
+## EcPrivateKey ⇐ [<code>PrivateKey</code>](#PrivateKey)
+<p>Represents an Elliptic Curve private key</p>
+
+**Kind**: global class  
+**Extends**: [<code>PrivateKey</code>](#PrivateKey)  
+
+* [EcPrivateKey](#EcPrivateKey) ⇐ [<code>PrivateKey</code>](#PrivateKey)
+    * [new EcPrivateKey(key)](#new_EcPrivateKey_new)
+    * [.wrapJwk(kid, jwk)](#EcPrivateKey.wrapJwk)
+    * [.generatePrivateKey(kid)](#EcPrivateKey.generatePrivateKey)
+
+<a name="new_EcPrivateKey_new"></a>
+
+### new EcPrivateKey(key)
+<p>Constructs a private key given a Did Document public key object containing additional private key
+information</p>
+
+
+| Param | Description |
+| --- | --- |
+| key | <p>public key object with additional private key information</p> |
+
+<a name="EcPrivateKey.wrapJwk"></a>
+
+### EcPrivateKey.wrapJwk(kid, jwk)
+<p>Wraps a EC private key in jwk format into a Did Document public key object with additonal information</p>
+
+**Kind**: static method of [<code>EcPrivateKey</code>](#EcPrivateKey)  
+
+| Param | Description |
+| --- | --- |
+| kid | <p>Key ID</p> |
+| jwk | <p>JWK of the private key</p> |
+
+<a name="EcPrivateKey.generatePrivateKey"></a>
+
+### EcPrivateKey.generatePrivateKey(kid)
+<p>Generates a new private key</p>
+
+**Kind**: static method of [<code>EcPrivateKey</code>](#EcPrivateKey)  
+
+| Param | Description |
+| --- | --- |
+| kid | <p>Key ID</p> |
+
+<a name="EcPublicKey"></a>
+
+## EcPublicKey ⇐ <code>PublicKey</code>
+<p>Represents an Elliptic Curve public key</p>
+
+**Kind**: global class  
+**Extends**: <code>PublicKey</code>  
+<a name="new_EcPublicKey_new"></a>
+
+### new EcPublicKey(keyData)
+<p>An Elliptic Curve JWK</p>
+
+
+| Param | Description |
+| --- | --- |
+| keyData | <p>The DidPublicKey containing the elliptic curve public key parameters.</p> |
+
+<a name="Secp256k1CryptoSuite"></a>
+
+## Secp256k1CryptoSuite
+<p>Encrypter plugin for Elliptic Curve P-256K1</p>
+
+**Kind**: global class  
+
+* [Secp256k1CryptoSuite](#Secp256k1CryptoSuite)
+    * _instance_
+        * [.getEncrypters()](#Secp256k1CryptoSuite+getEncrypters)
+        * [.getKeyConstructors()](#Secp256k1CryptoSuite+getKeyConstructors)
+    * _static_
+        * [.verify()](#Secp256k1CryptoSuite.verify) ⇒
+        * [.sign(jwsHeaderParameters)](#Secp256k1CryptoSuite.sign) ⇒
+
+<a name="Secp256k1CryptoSuite+getEncrypters"></a>
+
+### secp256k1CryptoSuite.getEncrypters()
+<p>Encryption with Secp256k1 keys not supported</p>
+
+**Kind**: instance method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
+<a name="Secp256k1CryptoSuite+getKeyConstructors"></a>
+
+### secp256k1CryptoSuite.getKeyConstructors()
+<p>Defines constructors for the identifiers proposed in Linked Data Cryptographic Suite Registry
+https://w3c-ccg.github.io/ld-cryptosuite-registry/#eddsasasignaturesecp256k1 plus the additional
+ones spotted in the wild.</p>
+
+**Kind**: instance method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
+<a name="Secp256k1CryptoSuite.verify"></a>
+
+### Secp256k1CryptoSuite.verify() ⇒
+<p>Verifies the given signed content using SHA256 algorithm.</p>
+
+**Kind**: static method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
+**Returns**: <p>true if passed signature verification, false otherwise.</p>  
+<a name="Secp256k1CryptoSuite.sign"></a>
+
+### Secp256k1CryptoSuite.sign(jwsHeaderParameters) ⇒
+<p>Sign the given content using the given private key in JWK format using algorithm SHA256.</p>
+
+**Kind**: static method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
+**Returns**: <p>Signed payload in compact JWS format.</p>  
+
+| Param | Description |
+| --- | --- |
+| jwsHeaderParameters | <p>Header parameters in addition to 'alg' and 'kid' to be included in the JWS.</p> |
+
 <a name="RsaCryptoSuite"></a>
 
 ## RsaCryptoSuite

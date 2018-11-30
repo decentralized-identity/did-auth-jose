@@ -5,6 +5,7 @@ import Constants from './Constants';
 import PublicKey from './security/PublicKey';
 import CryptoFactory from './CryptoFactory';
 import { RsaCryptoSuite } from './crypto/rsa/RsaCryptoSuite';
+import { Secp256k1CryptoSuite } from './crypto/ec/Secp256k1CryptoSuite';
 import JweToken from './security/JweToken';
 import JwsToken from './security/JwsToken';
 import uuid from 'uuid/v4';
@@ -46,7 +47,7 @@ export default class Authentication {
     this.resolver = options.resolver;
     this.tokenValidDurationInMinutes = options.tokenValidDurationInMinutes || Constants.defaultTokenDurationInMinutes;
     this.keys = options.keys;
-    this.factory = new CryptoFactory(options.cryptoSuites || [new RsaCryptoSuite()]);
+    this.factory = new CryptoFactory(options.cryptoSuites || [new RsaCryptoSuite(), new Secp256k1CryptoSuite()]);
   }
 
   /**

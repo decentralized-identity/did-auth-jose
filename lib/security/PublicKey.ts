@@ -38,7 +38,7 @@ export default abstract class PublicKey {
   /** Intended use */
   use?: string; // "sig" "enc"
   /** Valid key operations (key_ops) */
-  keyOps?: KeyOperation[];
+  key_ops?: KeyOperation[];
   /** Algorithm intended for use with this key */
   alg?: string;
   /** A resource for a X.509 public key certificate */

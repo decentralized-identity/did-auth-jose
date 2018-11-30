@@ -13,9 +13,9 @@ describe('Secp256k1CryptoSuite', async () => {
     const cryptoSuite = new Secp256k1CryptoSuite();
     const signers: any = cryptoSuite.getSigners();
     expect(signers).toBeDefined();
-    expect(signers['P256K']).toBeDefined();
-    expect(signers['P256K']['sign']).toEqual(Secp256k1CryptoSuite.sign);
-    expect(signers['P256K']['verify']).toEqual(Secp256k1CryptoSuite.verify);
+    expect(signers['ES256K']).toBeDefined();
+    expect(signers['ES256K']['sign']).toEqual(Secp256k1CryptoSuite.sign);
+    expect(signers['ES256K']['verify']).toEqual(Secp256k1CryptoSuite.verify);
   });
 
   it('it should return expected KeyConstructors and subsequent key for Secp256k1VerificationKey2018', async () => {

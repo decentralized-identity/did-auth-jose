@@ -17,7 +17,7 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
 
   getSigners () {
     return {
-      P256K: {
+      ES256K: {
         sign: Secp256k1CryptoSuite.sign,
         verify: Secp256k1CryptoSuite.verify
       }

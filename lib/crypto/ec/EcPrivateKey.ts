@@ -66,8 +66,8 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
       kid: this.kid,
       crv: this.crv,
       x: this.x,
-      y: this.y
-      defaultEncryptionAlgorithm: 'none';
+      y: this.y,
+      defaultEncryptionAlgorithm: 'none'
     } as EcPublicKey;
   }
 }

@@ -58,7 +58,8 @@
     "variable-name": [
       true, 
       "allow-leading-underscore",
-      "check-format"
+      "check-format",
+      "allow-snake-case"
     ]
   }
 }

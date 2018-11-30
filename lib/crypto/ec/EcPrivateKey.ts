@@ -1,6 +1,6 @@
 import EcPublicKey from './EcPublicKey';
 import PrivateKey from '../../security/PrivateKey';
-import PublicKey from '../../security/PublicKey';
+import PublicKey, { KeyOperation } from '../../security/PublicKey';
 import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
 
 const ecKey = require('ec-key');
@@ -54,7 +54,8 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
     // Add the additional JWK parameters
     const jwk = Object.assign(key.toJSON(), {
       kid: kid,
-      alg: 'ES256K'
+      alg: 'ES256K',
+      key_ops: [KeyOperation.Sign, KeyOperation.Verify]
     });
 
     return EcPrivateKey.wrapJwk(kid, jwk);
@@ -67,6 +68,7 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
       crv: this.crv,
       x: this.x,
       y: this.y,
+      use: 'verify',
       defaultEncryptionAlgorithm: 'none'
     } as EcPublicKey;
   }

@@ -10,8 +10,8 @@ import JwsToken from './security/JwsToken';
 import uuid from 'uuid/v4';
 import VerifiedRequest from './interfaces/VerifiedRequest';
 import VerifiedResponse from './interfaces/VerifiedResponse';
-import Challenge from './interfaces/Challenge';
-import ChallengeResponse from './interfaces/ChallengeResponse';
+import AuthenticationRequest from './interfaces/AuthenticationRequest';
+import AuthenticationResponse from './interfaces/AuthenticationResponse';
 
 /**
  * Named arguments to construct an Authentication object
@@ -52,41 +52,70 @@ export default class Authentication {
     this.factory = new CryptoFactory(options.cryptoSuites || [new RsaCryptoSuite()]);
   }
 
-  /** Serializes challenges */
-  public async formChallenge (challenge: Challenge): Promise<string> {
-    // identity function in place of later signing
-    return JSON.stringify(challenge);
+  /**
+   * Signs the AuthenticationRequest with the private key of the Requester and returns the signed JWT.
+   * @param request well-formed AuthenticationRequest object
+   * @param responseDid DID of the requester.
+   */
+  public async signAuthenticationRequest (request: AuthenticationRequest): Promise<string> {
+    if (request.response_type !== 'id_token' || request.scope !== 'openid') {
+      throw new Error('Authentication Request not formed correctly');
+    }
+    const requesterDid = request.iss;
+    let key: PrivateKey | undefined;
+    key = this.getKey(requesterDid);
+    if (!key) {
+      throw new Error(`Could not find a key for ${requesterDid}`);
+    }
+
+    const token = new JwsToken(request, this.factory);
+    return token.sign(key);
   }
 
-  /** Deserializes challenges */
-  public async getChallenge (challenge: Buffer | string): Promise<Challenge> {
+  /**
+   * Verifies signature on request and returns AuthenticationRequest.
+   * @param request Authentiation Request as a buffer or string.
+   */
+  public async verifyAuthenticationRequest (request: Buffer | string): Promise<AuthenticationRequest> {
     // identity function in place of later signature verification
-    let challengeString: string;
-    if (challenge instanceof Buffer) {
-      challengeString = challenge.toString();
+    let jwsToken: JwsToken;
+    if (request instanceof Buffer) {
+      jwsToken = new JwsToken(request.toString(), this.factory);
     } else {
-      challengeString = challenge;
+      jwsToken = new JwsToken(request, this.factory);
     }
-    return JSON.parse(challengeString);
+    const keyId = jwsToken.getHeader().kid;
+    const keyDid = DidDocument.getDidFromKeyId(keyId);
+    const results = await this.resolver.resolve(keyDid);
+    const didPublicKey = results.didDocument.getPublicKey(keyId);
+    if (!didPublicKey) {
+      throw new Error('Could not find public key');
+    }
+    const publicKey = this.factory.constructPublicKey(didPublicKey);
+    const content = await jwsToken.verifySignature(publicKey);
+
+    const verifiedRequest: AuthenticationRequest = JSON.parse(content);
+    if (verifiedRequest.iss !== keyDid) {
+      throw new Error('Signing DID does not match issuer');
+    }
+    return verifiedRequest;
   }
 
   /**
    * Given a challenge, forms a signed response using a given DID that expires at expiration, or a default expiration.
-   * @param challenge Challenge to respond to
+   * @param authRequest Challenge to respond to
    * @param responseDid The DID to respond with
+   * @param claims Claims that the requester asked for
    * @param expiration optional expiration datetime of the response
    */
-  public async formChallengeResponse (challenge: Challenge, responseDid: string, expiration?: Date): Promise<string> {
+  public async formAuthenticationResponse (authRequest: AuthenticationRequest, responseDid: string, claims: any, expiration?: Date): Promise<string> {
     let key: PrivateKey | undefined;
-    for (const keyId in this.keys) {
-      if (keyId.startsWith(responseDid)) {
-        key = this.keys[keyId];
-        break;
-      }
-    }
+    key = this.getKey(responseDid);
     if (!key) {
       throw new Error(`Could not find a key for ${responseDid}`);
     }
+
+    const publicKey: PublicKey = key.getPublicKey();
 
     // milliseconds to seconds
     const milliseconds = 1000;
@@ -95,16 +124,22 @@ export default class Authentication {
       expiration = new Date(Date.now() + milliseconds * 60 * expirationTimeOffsetInMinutes); // 5 minutes from now
     }
     const iat = Math.floor(Date.now() / milliseconds); // ms to seconds
-    const response: ChallengeResponse = {
-      iat,
-      iss: responseDid,
-      aud: challenge.client_id,
+    const response: AuthenticationResponse = {
+      iss: 'https://self-issued.me',
+      sub: responseDid,
+      aud: authRequest.client_id,
+      nonce: authRequest.nonce,
       exp: Math.floor(expiration.getTime() / milliseconds),
-      nonce: challenge.nonce,
-      state: challenge.state
+      iat,
+      sub_jwk: {},
+      did: responseDid,
+      state: authRequest.state
     };
 
-    const token = new JwsToken(response, this.factory);
+    let authResponse = Object.assign(response, { sub_jwk: publicKey });
+    authResponse = Object.assign(authResponse, claims);
+
+    const token = new JwsToken(authResponse, this.factory);
     return token.sign(key, {
       iat: iat.toString(),
       exp: Math.floor(expiration.getTime() / milliseconds).toString()
@@ -112,17 +147,32 @@ export default class Authentication {
   }
 
   /**
-   * Verifies the signature on a challengeResponse and returns a ChallengeResponse object
-   * @param challengeResponse ChallengeResponse to verify as a string or buffer
-   * @returns the challengeResponse as a ChallengeResponse
+   * Private method that gets the private key of the DID from the key mapping.
+   * @param did the DID whose private key is used to sign JWT.
    */
-  public async verifyChallengeResponse (challengeResponse: Buffer | string): Promise<ChallengeResponse> {
+  private getKey (did: string): PrivateKey | undefined {
+    let key: PrivateKey | undefined;
+    for (const keyId in this.keys) {
+      if (keyId.startsWith(did)) {
+        key = this.keys[keyId];
+        break;
+      }
+    }
+    return key;
+  }
+
+  /**
+   * Verifies the signature on a AuthenticationResponse and returns a AuthenticationResponse object
+   * @param authResponse AuthenticationResponse to verify as a string or buffer
+   * @returns the authenticationResponse as a AuthenticationResponse
+   */
+  public async verifyAuthenticationResponse (authResponse: Buffer | string): Promise<AuthenticationResponse> {
     const clockSkew = 5 * 60 * 1000; // 5 minutes
     let jwsToken: JwsToken;
-    if (challengeResponse instanceof Buffer) {
-      jwsToken = new JwsToken(challengeResponse.toString(), this.factory);
+    if (authResponse instanceof Buffer) {
+      jwsToken = new JwsToken(authResponse.toString(), this.factory);
     } else {
-      jwsToken = new JwsToken(challengeResponse, this.factory);
+      jwsToken = new JwsToken(authResponse, this.factory);
     }
     const exp = jwsToken.getHeader().exp;
     if (exp) {
@@ -139,8 +189,8 @@ export default class Authentication {
     }
     const publicKey = this.factory.constructPublicKey(didPublicKey);
     const content = await jwsToken.verifySignature(publicKey);
-    const response: ChallengeResponse = JSON.parse(content);
-    if (response.iss !== keyDid) {
+    const response: AuthenticationResponse = JSON.parse(content);
+    if (response.sub !== keyDid) {
       throw new Error('Signing DID does not match issuer');
     }
     return response;

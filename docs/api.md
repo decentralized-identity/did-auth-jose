@@ -48,10 +48,11 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [Authentication](#Authentication)
     * [new Authentication(options)](#new_Authentication_new)
-    * [.formChallenge()](#Authentication+formChallenge)
-    * [.getChallenge()](#Authentication+getChallenge)
-    * [.formChallengeResponse(challenge, responseDid, expiration)](#Authentication+formChallengeResponse)
-    * [.verifyChallengeResponse(challengeResponse)](#Authentication+verifyChallengeResponse) ⇒
+    * [.signAuthenticationRequest(request, responseDid)](#Authentication+signAuthenticationRequest)
+    * [.verifyAuthenticationRequest(request)](#Authentication+verifyAuthenticationRequest)
+    * [.formAuthenticationResponse(authRequest, responseDid, claims, expiration)](#Authentication+formAuthenticationResponse)
+    * [.getKey(did)](#Authentication+getKey)
+    * [.verifyAuthenticationResponse(authResponse)](#Authentication+verifyAuthenticationResponse) ⇒
     * [.getVerifiedRequest(request, accessTokenCheck)](#Authentication+getVerifiedRequest) ⇒
     * [.getVerifiedResponse(request)](#Authentication+getVerifiedResponse) ⇒
     * [.getAuthenticatedResponse(request, response)](#Authentication+getAuthenticatedResponse) ⇒
@@ -74,42 +75,65 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- |
 | options | <p>Arguments to a constructor in a named object</p> |
 
-<a name="Authentication+formChallenge"></a>
+<a name="Authentication+signAuthenticationRequest"></a>
 
-### authentication.formChallenge()
-<p>Serializes challenges</p>
-
-**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
-<a name="Authentication+getChallenge"></a>
-
-### authentication.getChallenge()
-<p>Deserializes challenges</p>
+### authentication.signAuthenticationRequest(request, responseDid)
+<p>Signs the AuthenticationRequest with the private key of the Requester and returns the signed JWT.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
-<a name="Authentication+formChallengeResponse"></a>
 
-### authentication.formChallengeResponse(challenge, responseDid, expiration)
+| Param | Description |
+| --- | --- |
+| request | <p>well-formed AuthenticationRequest object</p> |
+| responseDid | <p>DID of the requester.</p> |
+
+<a name="Authentication+verifyAuthenticationRequest"></a>
+
+### authentication.verifyAuthenticationRequest(request)
+<p>Verifies signature on request and returns AuthenticationRequest.</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+
+| Param | Description |
+| --- | --- |
+| request | <p>Authentiation Request as a buffer or string.</p> |
+
+<a name="Authentication+formAuthenticationResponse"></a>
+
+### authentication.formAuthenticationResponse(authRequest, responseDid, claims, expiration)
 <p>Given a challenge, forms a signed response using a given DID that expires at expiration, or a default expiration.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
 
 | Param | Description |
 | --- | --- |
-| challenge | <p>Challenge to respond to</p> |
+| authRequest | <p>Challenge to respond to</p> |
 | responseDid | <p>The DID to respond with</p> |
+| claims | <p>Claims that the requester asked for</p> |
 | expiration | <p>optional expiration datetime of the response</p> |
 
-<a name="Authentication+verifyChallengeResponse"></a>
+<a name="Authentication+getKey"></a>
 
-### authentication.verifyChallengeResponse(challengeResponse) ⇒
-<p>Verifies the signature on a challengeResponse and returns a ChallengeResponse object</p>
+### authentication.getKey(did)
+<p>Private method that gets the private key of the DID from the key mapping.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
-**Returns**: <p>the challengeResponse as a ChallengeResponse</p>  
 
 | Param | Description |
 | --- | --- |
-| challengeResponse | <p>ChallengeResponse to verify as a string or buffer</p> |
+| did | <p>the DID whose private key is used to sign JWT.</p> |
+
+<a name="Authentication+verifyAuthenticationResponse"></a>
+
+### authentication.verifyAuthenticationResponse(authResponse) ⇒
+<p>Verifies the signature on a AuthenticationResponse and returns a AuthenticationResponse object</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+**Returns**: <p>the authenticationResponse as a AuthenticationResponse</p>  
+
+| Param | Description |
+| --- | --- |
+| authResponse | <p>AuthenticationResponse to verify as a string or buffer</p> |
 
 <a name="Authentication+getVerifiedRequest"></a>
 

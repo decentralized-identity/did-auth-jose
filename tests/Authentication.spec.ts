@@ -1,6 +1,7 @@
 import { DidDocument, unitTestExports } from '@decentralized-identity/did-common-typescript';
 import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
+import AuthenticationResponse from '../lib/interfaces/AuthenticationResponse';
 
 describe('Authentication', () => {
   let hubkey: PrivateKey;
@@ -87,6 +88,16 @@ describe('Authentication', () => {
     'kid': `${exampleDID}#keys-1`,
     'did-access-token': ''};
 
+  let authenticationRequest = {
+    iss: hubDID,
+    response_type: 'id_token',
+    client_id: '',
+    scope: 'openid',
+    state: '',
+    nonce: '123456789',
+    claims: { id_token: {} }
+  };
+
   beforeEach(async () => {
     const token = await newAccessToken();
 
@@ -97,13 +108,221 @@ describe('Authentication', () => {
     };
 
     setResolve(exampleDID, exampleResolvedDID);
+
+    authenticationRequest = {
+      iss: hubDID,
+      response_type: 'id_token',
+      client_id: 'https://example.com/endpoint/8377464',
+      scope: 'openid',
+      state: '',
+      nonce: '123456789',
+      claims: { id_token: {} }
+    };
+  });
+
+  describe('signAuthenticationRequest', () => {
+
+    it('should throw error when cannot find key for DID', async () => {
+      authenticationRequest.iss = 'did:test:wrongdid';
+      try {
+        const context = await auth.signAuthenticationRequest(authenticationRequest);
+        fail('Auth did not throw.');
+        console.log(context);
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it('should throw error when scope is not \'openid\'', async () => {
+      authenticationRequest.scope = 'incorrectValue';
+      try {
+        const context = await auth.signAuthenticationRequest(authenticationRequest);
+        fail('Auth did not throw.');
+        console.log(context);
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it('should throw error when reponse_type is not \'id_token\'', async () => {
+      authenticationRequest.response_type = 'incorrectValue';
+      try {
+        const context = await auth.signAuthenticationRequest(authenticationRequest);
+        fail('Auth did not throw.');
+        console.log(context);
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it('should sign the request', async () => {
+      const request = await auth.signAuthenticationRequest(authenticationRequest);
+      const jws = new JwsToken(request, registry);
+      const payload = await jws.verifySignature(hubPublicKey);
+      expect(payload).toEqual(JSON.stringify(authenticationRequest));
+    });
+
+  });
+
+  describe('verifyAuthenticationRequest', () => {
+
+    it('should throw error when public key cannot be found', async () => {
+      setResolve(hubDID, exampleResolvedDID);
+      const request = await auth.signAuthenticationRequest(authenticationRequest);
+      try {
+        const context = await auth.verifyAuthenticationRequest(request);
+        fail('Auth did not throw');
+        console.log(context);
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it('should throw error when signing DID does not match issuer', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      authenticationRequest.iss = 'did:test:wrongdid';
+      const token = new JwsToken(authenticationRequest, registry);
+      const request = await token.sign(hubkey);
+      try {
+        const context = await auth.verifyAuthenticationRequest(request);
+        fail('Auth did not throw');
+        console.log(context);
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it('should verify the signed authentication request with request as string', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      const request = await auth.signAuthenticationRequest(authenticationRequest);
+      const context = await auth.verifyAuthenticationRequest(request);
+      expect(context).toEqual(authenticationRequest);
+    });
+
+    it('should verify the signed authentication request with request as buffer', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      const request = await auth.signAuthenticationRequest(authenticationRequest);
+      const requestBuffer = Buffer.from(request);
+      const context = await auth.verifyAuthenticationRequest(requestBuffer);
+      expect(context).toEqual(authenticationRequest);
+    });
+  });
+
+  describe('formAuthenticationResponse', () => {
+
+    it('should form Authenticaiton Request from Authentication Response', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
+      const jws = new JwsToken(response, registry);
+      const payload = await jws.verifySignature(hubPublicKey);
+      const payloadObj = JSON.parse(payload);
+      expect(payloadObj.iss).toEqual('https://self-issued.me');
+      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
+      expect(payloadObj.nonce).toEqual('123456789');
+      expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
+      expect(payloadObj.did).toEqual(hubDID);
+      expect(payloadObj.iat).toBeDefined();
+      expect(payloadObj.exp).toBeDefined();
+    });
+
+    it('should form Authenticaiton Request from Authentication Response with expiration', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' }, new Date());
+      const jws = new JwsToken(response, registry);
+      const payload = await jws.verifySignature(hubPublicKey);
+      const payloadObj = JSON.parse(payload);
+      expect(payloadObj.iss).toEqual('https://self-issued.me');
+      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
+      expect(payloadObj.nonce).toEqual('123456789');
+      expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
+      expect(payloadObj.did).toEqual(hubDID);
+      expect(payloadObj.iat).toBeDefined();
+      expect(payloadObj.exp).toBeDefined();
+    });
+
+    it('should throw error because could not find a key for responseDid', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      try {
+        const response = await auth.formAuthenticationResponse(authenticationRequest, exampleDID, { key: 'hello' });
+        fail('Auth did not throw');
+        console.log(response);
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+  });
+
+  describe('verifyAuthenticationResponse', async () => {
+
+    it('should verify an authentication response', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
+      const payloadObj = await auth.verifyAuthenticationResponse(response);
+      expect(payloadObj.iss).toEqual('https://self-issued.me');
+      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
+      expect(payloadObj.nonce).toEqual('123456789');
+      expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
+      expect(payloadObj.did).toEqual(hubDID);
+      expect(payloadObj.iat).toBeDefined();
+      expect(payloadObj.exp).toBeDefined();
+    });
+
+    it('should verify an authentication response', async () => {
+      setResolve(hubDID, hubResolvedDID);
+      const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
+      const responseBuffer = Buffer.from(response);
+      const payloadObj = await auth.verifyAuthenticationResponse(responseBuffer);
+      expect(payloadObj.iss).toEqual('https://self-issued.me');
+      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
+      expect(payloadObj.nonce).toEqual('123456789');
+      expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
+      expect(payloadObj.did).toEqual(hubDID);
+      expect(payloadObj.iat).toBeDefined();
+      expect(payloadObj.exp).toBeDefined();
+    });
+
+    it('should throw an error for signer does not match issuer', async () => {
+      setResolve(hubDID, hubResolvedDID);
+
+      const milliseconds = 1000;
+      const expirationTimeOffsetInMinutes = 5;
+      const expiration = new Date(Date.now() + milliseconds * 60 * expirationTimeOffsetInMinutes);
+      const iat = Math.floor(Date.now() / milliseconds); // ms to seconds
+
+      const authenticationResponse: AuthenticationResponse = {
+        iss: 'https://self-issued.me',
+        sub: 'did:test:wrongdid',
+        aud: 'https://example.com/endpoint/8377464',
+        nonce: '123456789',
+        exp: Math.floor(expiration.getTime() / milliseconds),
+        iat: iat,
+        sub_jwk: hubPublicKey,
+        did: 'did:test:wrongdid',
+        state: ''
+      };
+
+      const token = new JwsToken(authenticationResponse, registry);
+      const request = await token.sign(hubkey);
+      try {
+        const context = await auth.verifyAuthenticationResponse(request);
+        fail('Auth did not throw');
+        console.log(context);
+      } catch (err) {
+        console.log(err);
+        expect(err).toBeDefined();
+      }
+    });
   });
 
   describe('getVerifiedRequest', () => {
 
     it('should reject for hub keys it does not contain', async () => {
       const payload = {
-        description: 'Authenticaiton test'
+        description: 'Authentication test'
       };
       const jwsToken = new JwsToken(payload, registry);
       const data = await jwsToken.sign(examplekey, header);

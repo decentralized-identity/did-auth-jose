@@ -62,7 +62,7 @@ export default class Authentication {
       throw new Error('Authentication Request not formed correctly');
     }
     const requesterDid = request.iss;
-    let key: PrivateKey | undefined;
+    const key = this.getKey(requesterDid);
     key = this.getKey(requesterDid);
     if (!key) {
       throw new Error(`Could not find a key for ${requesterDid}`);

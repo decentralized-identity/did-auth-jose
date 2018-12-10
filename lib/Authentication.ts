@@ -109,7 +109,7 @@ export default class Authentication {
    * @param expiration optional expiration datetime of the response
    */
   public async formAuthenticationResponse (authRequest: AuthenticationRequest, responseDid: string, claims: any, expiration?: Date): Promise<string> {
-    let key: PrivateKey | undefined;
+    const key = this.getKey(responseDid);
     key = this.getKey(responseDid);
     if (!key) {
       throw new Error(`Could not find a key for ${responseDid}`);

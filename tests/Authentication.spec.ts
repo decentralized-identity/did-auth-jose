@@ -2,6 +2,7 @@ import { DidDocument, unitTestExports } from '@decentralized-identity/did-common
 import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
 import AuthenticationResponse from '../lib/interfaces/AuthenticationResponse';
+import AuthenticationRequest from '../lib/interfaces/AuthenticationRequest';
 
 describe('Authentication', () => {
   let hubkey: PrivateKey;
@@ -88,7 +89,7 @@ describe('Authentication', () => {
     'kid': `${exampleDID}#keys-1`,
     'did-access-token': ''};
 
-  let authenticationRequest = {
+  let authenticationRequest: AuthenticationRequest = {
     iss: hubDID,
     response_type: 'id_token',
     client_id: '',
@@ -124,28 +125,6 @@ describe('Authentication', () => {
 
     it('should throw error when cannot find key for DID', async () => {
       authenticationRequest.iss = 'did:test:wrongdid';
-      try {
-        const context = await auth.signAuthenticationRequest(authenticationRequest);
-        fail('Auth did not throw.');
-        console.log(context);
-      } catch (err) {
-        expect(err).toBeDefined();
-      }
-    });
-
-    it('should throw error when scope is not \'openid\'', async () => {
-      authenticationRequest.scope = 'incorrectValue';
-      try {
-        const context = await auth.signAuthenticationRequest(authenticationRequest);
-        fail('Auth did not throw.');
-        console.log(context);
-      } catch (err) {
-        expect(err).toBeDefined();
-      }
-    });
-
-    it('should throw error when reponse_type is not \'id_token\'', async () => {
-      authenticationRequest.response_type = 'incorrectValue';
       try {
         const context = await auth.signAuthenticationRequest(authenticationRequest);
         fail('Auth did not throw.');

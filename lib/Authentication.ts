@@ -9,7 +9,6 @@ import JweToken from './security/JweToken';
 import JwsToken from './security/JwsToken';
 import uuid from 'uuid/v4';
 import VerifiedRequest from './interfaces/VerifiedRequest';
-import VerifiedResponse from './interfaces/VerifiedResponse';
 import AuthenticationRequest from './interfaces/AuthenticationRequest';
 import AuthenticationResponse from './interfaces/AuthenticationResponse';
 
@@ -62,8 +61,7 @@ export default class Authentication {
       throw new Error('Authentication Request not formed correctly');
     }
     const requesterDid = request.iss;
-    let key: PrivateKey | undefined;
-    key = this.getKey(requesterDid);
+    const key: PrivateKey | undefined = this.getKey(requesterDid);
     if (!key) {
       throw new Error(`Could not find a key for ${requesterDid}`);
     }
@@ -77,7 +75,6 @@ export default class Authentication {
    * @param request Authentiation Request as a buffer or string.
    */
   public async verifyAuthenticationRequest (request: Buffer | string): Promise<AuthenticationRequest> {
-    // identity function in place of later signature verification
     let jwsToken: JwsToken;
     if (request instanceof Buffer) {
       jwsToken = new JwsToken(request.toString(), this.factory);
@@ -86,13 +83,7 @@ export default class Authentication {
     }
     const keyId = jwsToken.getHeader().kid;
     const keyDid = DidDocument.getDidFromKeyId(keyId);
-    const results = await this.resolver.resolve(keyDid);
-    const didPublicKey = results.didDocument.getPublicKey(keyId);
-    if (!didPublicKey) {
-      throw new Error('Could not find public key');
-    }
-    const publicKey = this.factory.constructPublicKey(didPublicKey);
-    const content = await jwsToken.verifySignature(publicKey);
+    const content = await this.verifySignature(jwsToken);
 
     const verifiedRequest: AuthenticationRequest = JSON.parse(content);
     if (verifiedRequest.iss !== keyDid) {
@@ -124,22 +115,21 @@ export default class Authentication {
       expiration = new Date(Date.now() + milliseconds * 60 * expirationTimeOffsetInMinutes); // 5 minutes from now
     }
     const iat = Math.floor(Date.now() / milliseconds); // ms to seconds
-    const response: AuthenticationResponse = {
+    let response: AuthenticationResponse = {
       iss: 'https://self-issued.me',
       sub: responseDid,
       aud: authRequest.client_id,
       nonce: authRequest.nonce,
       exp: Math.floor(expiration.getTime() / milliseconds),
       iat,
-      sub_jwk: {},
+      sub_jwk: publicKey,
       did: responseDid,
       state: authRequest.state
     };
 
-    let authResponse = Object.assign(response, { sub_jwk: publicKey });
-    authResponse = Object.assign(authResponse, claims);
+    response = Object.assign(response, claims);
 
-    const token = new JwsToken(authResponse, this.factory);
+    const token = new JwsToken(response, this.factory);
     return token.sign(key, {
       iat: iat.toString(),
       exp: Math.floor(expiration.getTime() / milliseconds).toString()
@@ -149,6 +139,7 @@ export default class Authentication {
   /**
    * Private method that gets the private key of the DID from the key mapping.
    * @param did the DID whose private key is used to sign JWT.
+   * @returns private key of the DID.
    */
   private getKey (did: string): PrivateKey | undefined {
     let key: PrivateKey | undefined;
@@ -162,9 +153,26 @@ export default class Authentication {
   }
 
   /**
+   * helper method that verifies the signature on jws and returns the payload if signature is verified.
+   * @param jwsToken signed jws token whose signature will be verified.
+   * @returns the payload if jws signature is verified.
+   */
+  private async verifySignature (jwsToken: JwsToken): Promise<string> {
+    const keyId = jwsToken.getHeader().kid;
+    const keyDid = DidDocument.getDidFromKeyId(keyId);
+    const results = await this.resolver.resolve(keyDid);
+    const didPublicKey = results.didDocument.getPublicKey(keyId);
+    if (!didPublicKey) {
+      throw new Error('Could not find public key');
+    }
+    const publicKey = this.factory.constructPublicKey(didPublicKey);
+    return jwsToken.verifySignature(publicKey);
+  }
+
+  /**
    * Verifies the signature on a AuthenticationResponse and returns a AuthenticationResponse object
    * @param authResponse AuthenticationResponse to verify as a string or buffer
-   * @returns the authenticationResponse as a AuthenticationResponse
+   * @returns the authenticationResponse as a AuthenticationResponse Object
    */
   public async verifyAuthenticationResponse (authResponse: Buffer | string): Promise<AuthenticationResponse> {
     const clockSkew = 5 * 60 * 1000; // 5 minutes
@@ -182,13 +190,7 @@ export default class Authentication {
     }
     const keyId = jwsToken.getHeader().kid;
     const keyDid = DidDocument.getDidFromKeyId(keyId);
-    const results = await this.resolver.resolve(keyDid);
-    const didPublicKey = results.didDocument.getPublicKey(keyId);
-    if (!didPublicKey) {
-      throw new Error('Could not find public key');
-    }
-    const publicKey = this.factory.constructPublicKey(didPublicKey);
-    const content = await jwsToken.verifySignature(publicKey);
+    const content = await this.verifySignature(jwsToken);
     const response: AuthenticationResponse = JSON.parse(content);
     if (response.sub !== keyDid) {
       throw new Error('Signing DID does not match issuer');
@@ -236,25 +238,6 @@ export default class Authentication {
       requesterPublicKey: requesterKey,
       nonce,
       request: plaintext
-    };
-  }
-
-  /**
-   * Given a JOSE Authenticated Response, decrypts and validates the response
-   * @param request THe JOSE Authenticated Response
-   * @returns the content of the response as a VerifiedResponse
-   */
-  public async getVerifiedResponse (request: Buffer): Promise <VerifiedResponse> {
-    const response = await this.getVerifiedRequest(request, false);
-    if (response instanceof Buffer) {
-      // this should never happen
-      throw new Error('Response verification required an authorization token');
-    }
-    return {
-      localKeyId: response.localKeyId,
-      responderPublicKey: response.requesterPublicKey,
-      nonce: response.nonce,
-      response: response.request
     };
   }
 

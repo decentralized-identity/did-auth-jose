@@ -51,10 +51,10 @@ This class hides the JOSE and crypto library dependencies to allow support for a
     * [.signAuthenticationRequest(request, responseDid)](#Authentication+signAuthenticationRequest)
     * [.verifyAuthenticationRequest(request)](#Authentication+verifyAuthenticationRequest)
     * [.formAuthenticationResponse(authRequest, responseDid, claims, expiration)](#Authentication+formAuthenticationResponse)
-    * [.getKey(did)](#Authentication+getKey)
+    * [.getKey(did)](#Authentication+getKey) ⇒
+    * [.verifySignature(jwsToken)](#Authentication+verifySignature) ⇒
     * [.verifyAuthenticationResponse(authResponse)](#Authentication+verifyAuthenticationResponse) ⇒
     * [.getVerifiedRequest(request, accessTokenCheck)](#Authentication+getVerifiedRequest) ⇒
-    * [.getVerifiedResponse(request)](#Authentication+getVerifiedResponse) ⇒
     * [.getAuthenticatedResponse(request, response)](#Authentication+getAuthenticatedResponse) ⇒
     * [.getAuthenticatedRequest(content, privateKey, recipient, accessToken)](#Authentication+getAuthenticatedRequest)
     * [.getPrivateKeyForJwe(jweToken)](#Authentication+getPrivateKeyForJwe) ⇒
@@ -114,14 +114,27 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 <a name="Authentication+getKey"></a>
 
-### authentication.getKey(did)
+### authentication.getKey(did) ⇒
 <p>Private method that gets the private key of the DID from the key mapping.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+**Returns**: <p>private key of the DID.</p>  
 
 | Param | Description |
 | --- | --- |
 | did | <p>the DID whose private key is used to sign JWT.</p> |
+
+<a name="Authentication+verifySignature"></a>
+
+### authentication.verifySignature(jwsToken) ⇒
+<p>helper method that verifies the signature on jws and returns the payload if signature is verified.</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+**Returns**: <p>the payload if jws signature is verified.</p>  
+
+| Param | Description |
+| --- | --- |
+| jwsToken | <p>signed jws token whose signature will be verified.</p> |
 
 <a name="Authentication+verifyAuthenticationResponse"></a>
 
@@ -129,7 +142,7 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 <p>Verifies the signature on a AuthenticationResponse and returns a AuthenticationResponse object</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
-**Returns**: <p>the authenticationResponse as a AuthenticationResponse</p>  
+**Returns**: <p>the authenticationResponse as a AuthenticationResponse Object</p>  
 
 | Param | Description |
 | --- | --- |
@@ -147,18 +160,6 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- | --- |
 | request |  | <p>The JOSE Authenticated Request to decrypt and validate</p> |
 | accessTokenCheck | <code>true</code> | <p>Check the validity of the access token</p> |
-
-<a name="Authentication+getVerifiedResponse"></a>
-
-### authentication.getVerifiedResponse(request) ⇒
-<p>Given a JOSE Authenticated Response, decrypts and validates the response</p>
-
-**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
-**Returns**: <p>the content of the response as a VerifiedResponse</p>  
-
-| Param | Description |
-| --- | --- |
-| request | <p>THe JOSE Authenticated Response</p> |
 
 <a name="Authentication+getAuthenticatedResponse"></a>
 

@@ -3,7 +3,7 @@
  */
 export default interface AuthenticationResponse {
   /** MUST be set to 'https://self-issued.me'. */
-  iss: string;
+  iss: 'https://self-issued.me';
   /** DID used to sign the response */
   sub: string;
   /** The redirect url as specified in the OIDC self-issued protocol */

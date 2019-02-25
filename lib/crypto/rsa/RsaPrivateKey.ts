@@ -1,7 +1,7 @@
 import RsaPublicKey from './RsaPublicKey';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey from '../../security/PublicKey';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 
 const jose = require('node-jose');
 const keystore = jose.JWK.createKeyStore();
@@ -50,10 +50,10 @@ export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
    * information
    * @param key public key object with additional private key information
    */
-  constructor (key: DidPublicKey) {
+  constructor (key: IDidDocumentPublicKey) {
     super(key);
     if (!('publicKeyJwk' in key)) {
-      throw new Error('publicKeyJwk must exist on DidPublicKey');
+      throw new Error('publicKeyJwk must exist on IDidDocumentPublicKey');
     }
     let data = (key as any).publicKeyJwk;
     if (!('d' in data)) {
@@ -78,7 +78,7 @@ export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
       id: kid,
       type: 'RsaVerificationKey2018',
       publicKeyJwk: jwk
-    } as DidPublicKey);
+    } as IDidDocumentPublicKey);
   }
 
   /**

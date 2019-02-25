@@ -32,7 +32,7 @@ describe('Authentication', () => {
       'publicKey': [{
         id: `${exampleDID}#keys-1`,
         type: 'RsaVerificationKey2018',
-        owner: exampleDID,
+        controller: exampleDID,
         publicKeyJwk: examplePublicKey
       }],
       'authentication': [{
@@ -40,6 +40,7 @@ describe('Authentication', () => {
         publicKey: `${exampleDID}#keys-1`
       }],
       'service': [{
+        id: 'example-service',
         type: 'ExampleService',
         serviceEndpoint: 'https://example.com/endpoint/8377464'
       }]
@@ -50,7 +51,7 @@ describe('Authentication', () => {
       'publicKey': [{
         id: `${hubDID}#key1`,
         type: 'RsaVerificationKey2018',
-        owner: hubDID,
+        controller: hubDID,
         publicKeyJwk: hubPublicKey
       }]
     });
@@ -397,7 +398,7 @@ describe('Authentication', () => {
             'publicKey': [{
               id: `${hubDID}#key1`,
               type: 'ExplicitlyUnknownKeyType2018',
-              owner: hubDID,
+              controller: hubDID,
               publicKeyJwk: hubkey
             }]
           }));

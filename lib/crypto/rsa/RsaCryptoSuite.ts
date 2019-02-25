@@ -1,6 +1,6 @@
 import RsaPublicKey from './RsaPublicKey';
 import CryptoSuite from '../../interfaces/CryptoSuite';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 // TODO: Create and reference TypeScript definition file for 'jwk-to-pem'
 const jwkToPem = require('jwk-to-pem');
 import * as crypto from 'crypto';
@@ -36,7 +36,7 @@ export class RsaCryptoSuite implements CryptoSuite {
 
   getKeyConstructors () {
     return {
-      RsaVerificationKey2018: (keyData: DidPublicKey) => { return new RsaPublicKey(keyData); }
+      RsaVerificationKey2018: (keyData: IDidDocumentPublicKey) => { return new RsaPublicKey(keyData); }
     };
   }
 

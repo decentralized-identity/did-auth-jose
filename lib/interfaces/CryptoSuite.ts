@@ -1,9 +1,9 @@
 import PublicKey from '../security/PublicKey';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 import { PrivateKey } from '..';
 
 /** A dictionary with the did document key type mapping to the public key constructor */
-export type PublicKeyConstructors = {[didDocumentKeyType: string]: (keyData: DidPublicKey) => PublicKey};
+export type PublicKeyConstructors = {[didDocumentKeyType: string]: (keyData: IDidDocumentPublicKey) => PublicKey};
 
 /**
  * Interface for the Crypto Algorithms Plugins

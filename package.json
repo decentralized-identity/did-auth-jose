@@ -17,11 +17,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@decentralized-identity/did-common-typescript": "^0.1.2",
-    "jwk-to-pem": "^2.0.0",
-    "ec-key": "^0.0.2",
-    "node-jose": "^1.0.0",
-    "uuid": "^3.3.2"
+    "@decentralized-identity/did-common-typescript": "0.1.4",
+    "jwk-to-pem": "2.0.0",
+    "ec-key": "0.0.2",
+    "node-jose": "1.0.0",
+    "uuid": "3.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",

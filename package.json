@@ -1,6 +1,6 @@
 {
   "name": "@decentralized-identity/did-auth-jose",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Authentication library using JOSE and DIDs to form secure end to end messages",
   "main": "dist/lib/index.js",
   "scripts": {

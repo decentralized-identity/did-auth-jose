@@ -7,6 +7,7 @@ describe('EcPrivateKey', async () => {
     const key = {
       id: 'key-1',
       type: 'EdDsaSAPublicKeySecp256k1',
+      controller: 'did:example:controller.id',
       publicKeyJwk: {
         kid: 'key-1',
         x: 'skdjc4398ru',

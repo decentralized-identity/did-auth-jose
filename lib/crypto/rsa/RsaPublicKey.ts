@@ -1,5 +1,5 @@
 import PublicKey, { RecommendedKeyType } from '../../security/PublicKey';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 
 /**
  * Represents an Rsa public key
@@ -21,7 +21,7 @@ export default class RsaPublicKey extends PublicKey {
    * @param n The Rsa modulus in Base64urlUInt encoding as specified by RFC7518 6.3.1.1
    * @param e The Rsa public exponent in Base64urlUInt encoding as specified by RFC7518 6.3.1.2
    */
-  constructor (keyData: DidPublicKey) {
+  constructor (keyData: IDidDocumentPublicKey) {
     super();
     this.kid = keyData.id;
 
@@ -30,7 +30,7 @@ export default class RsaPublicKey extends PublicKey {
     if ('publicKeyJwk' in data) {
       const jwk = data.publicKeyJwk;
       if (!keyData.id.endsWith(jwk.kid)) {
-        throw new Error('JWK kid does not match Did publickey id');
+        throw new Error(`JWK kid '${jwk.kid}' does not match DID public key id '${keyData.id}'.`);
       }
       if (!jwk.n || !jwk.e) {
         throw new Error('JWK missing required parameters');

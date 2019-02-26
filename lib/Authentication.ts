@@ -1,4 +1,4 @@
-import { DidDocument, DidResolver } from '@decentralized-identity/did-common-typescript';
+import { DidDocument, IDidResolver } from '@decentralized-identity/did-common-typescript';
 import PrivateKey from './security/PrivateKey';
 import CryptoSuite from './interfaces/CryptoSuite';
 import Constants from './Constants';
@@ -20,7 +20,7 @@ export interface AuthenticationOptions {
   /** A dictionary with the did document key id mapping to private keys */
   keys: {[name: string]: PrivateKey};
   /** DID Resolver used to retrieve public keys */
-  resolver: DidResolver;
+  resolver: IDidResolver;
   /** Optional parameter to customize supported CryptoSuites */
   cryptoSuites?: CryptoSuite[];
   /** Optional parameter to change the amount of time a token is valid in minutes */
@@ -33,7 +33,7 @@ export interface AuthenticationOptions {
 export default class Authentication {
 
   /** DID Resolver used to retrieve public keys */
-  private resolver: DidResolver;
+  private resolver: IDidResolver;
   /** The amount of time a token is valid in minutes */
   private tokenValidDurationInMinutes: number;
   /** Private keys of the authentication owner */

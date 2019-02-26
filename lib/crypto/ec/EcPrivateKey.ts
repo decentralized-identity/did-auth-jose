@@ -1,7 +1,7 @@
 import EcPublicKey from './EcPublicKey';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey, { KeyOperation } from '../../security/PublicKey';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 
 const ecKey = require('ec-key');
 
@@ -18,11 +18,14 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
   public d: string;
 
   /**
-   * Constructs a private key given a Did Document public key object containing additional private key
-   * information
+   * Constructs a private key given a DID Document public key descriptor containing additional private key
+   * information.
+   *
+   * TODO: This feels odd, should define a separate type.
+   *
    * @param key public key object with additional private key information
    */
-  constructor (key: DidPublicKey) {
+  constructor (key: IDidDocumentPublicKey) {
     super(key);
     let data = (key as any).publicKeyJwk;
     if (!('d' in data)) {
@@ -41,7 +44,7 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
       id: kid,
       type: 'EdDsaSAPublicKeySecp256k1',
       publicKeyJwk: jwk
-    } as DidPublicKey);
+    } as IDidDocumentPublicKey);
   }
 
   /**

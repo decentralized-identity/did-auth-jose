@@ -2,7 +2,7 @@ import EcPublicKey from './EcPublicKey';
 import CryptoSuite from '../../interfaces/CryptoSuite';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey from '../../security/PublicKey';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 
 const ecKey = require('ec-key');
 
@@ -31,10 +31,10 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
    */
   getKeyConstructors () {
     return {
-      Secp256k1VerificationKey2018: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); },
-      EdDsaSAPublicKeySecp256k1: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); },
-      EdDsaSASignatureSecp256k1: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); },
-      EcdsaPublicKeySecp256k1: (keyData: DidPublicKey) => { return new EcPublicKey(keyData); }
+      Secp256k1VerificationKey2018: (keyData: IDidDocumentPublicKey) => { return new EcPublicKey(keyData); },
+      EdDsaSAPublicKeySecp256k1: (keyData: IDidDocumentPublicKey) => { return new EcPublicKey(keyData); },
+      EdDsaSASignatureSecp256k1: (keyData: IDidDocumentPublicKey) => { return new EcPublicKey(keyData); },
+      EcdsaPublicKeySecp256k1: (keyData: IDidDocumentPublicKey) => { return new EcPublicKey(keyData); }
     };
   }
 

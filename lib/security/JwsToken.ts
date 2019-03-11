@@ -20,19 +20,19 @@ export default class JwsToken extends JoseToken {
   private readonly signature: string | undefined;
   private readonly isFlattenedJSONSerialized: boolean;
 
-  constructor(content: string | object, protected cryptoFactory: CryptoFactory) {
+  constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
     this.isFlattenedJSONSerialized = false;
     // Check for JSON Serialization and reparse content if appropriate
     if (typeof content === 'object') {
       const jsonObject: any = content;
       if ('payload' in jsonObject && typeof jsonObject.payload === 'string') {
-        // TODO: General JWS JSON Serialization. For now check for signature and one of protected or header
-        
+        // TODO: General JWS JSON Serialization. For now check for signature or
+        // signatures and one of protected or header for each
         if ('signature' in jsonObject && typeof jsonObject.signature === 'string') {
           this.signature = jsonObject.signature;
           // Flattened JWS JSON Serialization
-          if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') && 
+          if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') &&
             !('header' in jsonObject && typeof jsonObject.header === 'object')) {
             // invalid JWS JSON Serialization
             return;
@@ -84,21 +84,23 @@ export default class JwsToken extends JoseToken {
    * @param jwk Private key used in the signature
    * @param options Additional protected and header fields to include in the JWS
    */
-  public async flatJsonSign(jwk: PrivateKey, options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}): Promise<{protected?: string, header?: {[name: string]: string}, payload: string, signature: string} {
+  public async flatJsonSign (jwk: PrivateKey,
+    options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}):
+    Promise<{protected?: string, header?: {[name: string]: string}, payload: string, signature: string}> {
     // Steps according to RTC7515 5.1
     // 2. Compute encoded payload vlaue base64URL(JWS Payload)
     const encodedContent = Base64Url.encode(this.content);
     // 3. Compute the headers
     const header = (options || {}).header;
-    const protected = (options || {}).protected || {};
-    protected['alg'] = jwk.defaultSignAlgorithm;
-    protected['kid'] = jwk.kid;
+    const protectedHeaders = (options || {}).protected || {};
+    protectedHeaders['alg'] = jwk.defaultSignAlgorithm;
+    protectedHeaders['kid'] = jwk.kid;
     // 4. Compute BASE64URL(UTF8(JWS Header))
-    const encodedProtected = Base64Url.encode(JSON.stringify(protected));
+    const encodedProtected = Base64Url.encode(JSON.stringify(protectedHeaders));
     // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)
     //    using the "alg" signature algorithm.
     const signatureInput = `${encodedProtected}.${encodedContent}`;
-    const signature = await (this.cryptoFactory.getSigner(headers['alg'])).sign(signatureInput, jwk);
+    const signature = await (this.cryptoFactory.getSigner(protectedHeaders['alg'])).sign(signatureInput, jwk);
     // 6. Compute BASE64URL(JWS Signature)
     const encodedSignature = Base64Url.fromBase64(signature);
     // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
@@ -153,7 +155,6 @@ export default class JwsToken extends JoseToken {
       }
       if (this.protected) {
         const jsonString = Base64Url.decode(this.protected);
-    
         const protect = JSON.parse(jsonString) as {[key: string]: any};
         headers = Object.assign(headers, protect);
       }

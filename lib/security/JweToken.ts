@@ -31,7 +31,6 @@ export default class JweToken extends JoseToken {
     this.isFlattenedJSONSerialized = false;
     if (typeof jsonContent === 'object' &&
     'ciphertext' in jsonContent && typeof jsonContent.ciphertext === 'string' &&
-    'aad' in jsonContent && typeof jsonContent.aad === 'string' &&
     'iv' in jsonContent && typeof jsonContent.iv === 'string' &&
     'tag' in jsonContent && typeof jsonContent.tag === 'string' &&
     (('protected' in jsonContent && typeof jsonContent.protected === 'string') ||
@@ -120,6 +119,85 @@ export default class JweToken extends JoseToken {
   }
 
   /**
+   * Encrypts the given string in JWE JSON serialized format using the given key in JWK JSON object format.
+   * Content encryption algorithm is hardcoded to 'A128GCM'.
+   *
+   * @returns Encrypted Buffer in JWE compact serialized format.
+   */
+  public async flatJsonEncrypt (jwk: PublicKey,
+    options?: {
+      unprotected?: {[key: string]: string},
+      protected?: {[key: string]: string},
+      aad?: string
+    }
+    /* encryptionType?: string */): Promise<{
+      protected?: string,
+      unprotected?: {[key: string]: string},
+      encrypted_key: string,
+      iv: string,
+      ciphertext: string,
+      tag: string,
+      aad?: string
+    }> {
+    /// TODO: extend to include encryptionType to determine symmetric key encryption using register
+
+    // Decide key encryption algorithm based on given JWK.
+    const keyEncryptionAlgorithm = jwk.defaultEncryptionAlgorithm;
+
+    // Construct header.
+    let header: {[header: string]: string} = Object.assign({}, {
+      kid: jwk.kid,
+      alg: keyEncryptionAlgorithm,
+      enc: 'A128GCM'
+    }, (options || {}).protected || {});
+
+    // Base 64 encode header.
+    const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
+
+    // Generate content encryption key.
+    const keyBuffer = crypto.randomBytes(16);
+
+    // Encrypt content encryption key then base64-url encode it.
+    const encryptedKeyBuffer = await this.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk);
+    const encryptedKeyBase64Url = Base64Url.encode(encryptedKeyBuffer);
+
+    // Generate initialization vector then base64-url encode it.
+    const initializationVectorBuffer = crypto.randomBytes(12);
+    const initializationVectorBase64Url = Base64Url.encode(initializationVectorBuffer);
+
+    // Encrypt content.
+    const cipher = crypto.createCipheriv('aes-128-gcm', keyBuffer, initializationVectorBuffer);
+    let aad: Buffer;
+    if (options && options.aad) {
+      aad = Buffer.from(protectedHeaderBase64Url + '.' + Base64Url.encode(options.aad));
+    } else {
+      aad = Buffer.from(protectedHeaderBase64Url);
+    }
+    const aadBase64Url = Base64Url.encode(aad);
+    cipher.setAAD(Buffer.from(aadBase64Url));
+    const ciphertextBuffer = Buffer.concat([
+      cipher.update(Buffer.from(this.content)),
+      cipher.final()
+    ]);
+    const ciphertextBase64Url = Base64Url.encode(ciphertextBuffer);
+
+    // Get the authentication tag.
+    const authenticationTagBuffer = cipher.getAuthTag();
+    const authenticationTagBase64Url = Base64Url.encode(authenticationTagBuffer);
+
+    // Form final compact serialized JWE string.
+    return {
+      protected: protectedHeaderBase64Url,
+      unprotected: (options || {}).unprotected,
+      encrypted_key: encryptedKeyBase64Url,
+      iv: initializationVectorBase64Url,
+      ciphertext: ciphertextBase64Url,
+      tag: authenticationTagBase64Url,
+      aad: (options || {}).aad
+    };
+  }
+
+  /**
    * Encrypts the given content encryption key using the specified algorithm and asymmetric public key.
    *
    * @param keyEncryptionAlgorithm Asymmetric encryption algorithm to be used.
@@ -153,7 +231,7 @@ export default class JweToken extends JoseToken {
     // following steps for JWE Decryption in RFC7516 section 5.2
     if (this.isFlattenedJSONSerialized) {
       // use the pre-parsed contents.
-      base64EncodedValues = [this.protected!,
+      base64EncodedValues = [this.protected || '',
         this.encrypted_key!,
         this.iv!,
         this.content!,
@@ -211,8 +289,8 @@ export default class JweToken extends JoseToken {
     // this would be base64Encodedvalues[0]
     // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
     let aad: string;
-    if (this.isFlattenedJSONSerialized) {
-      aad = this.aad!;
+    if (this.isFlattenedJSONSerialized && this.aad) {
+      aad = base64EncodedValues[0] + '.' + this.aad;
     } else {
       aad = base64EncodedValues[0];
     }

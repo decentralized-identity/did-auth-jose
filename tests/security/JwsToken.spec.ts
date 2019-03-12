@@ -347,9 +347,14 @@ describe('JwsToken', () => {
   });
 
   describe('flatJsonSign', () => {
-    const data = {
-      description: 'JWSToken test'
-    };
+
+    let data: any;
+
+    beforeEach(() => {
+      data = {
+        description: `test: ${Math.random()}`
+      };
+    })
 
     it('should throw an error because the algorithm is not supported', async () => {
       const privateKey = new TestPrivateKey();
@@ -369,6 +374,15 @@ describe('JwsToken', () => {
       crypto.reset();
       await jwsToken.flatJsonSign(new TestPrivateKey());
       expect(crypto.wasSignCalled()).toBeTruthy();
+    });
+
+    it('should return the expected JSON JWS', async () => {
+      const jwsToken = new JwsToken(data, registry);
+      const key = new TestPrivateKey();
+      const jws = await jwsToken.flatJsonSign(key);
+      console.log(jws);
+      expect(jws.signature).toBeDefined();
+      expect(Base64Url.decode(jws.payload)).toEqual(JSON.stringify(data));
     });
   });
 });

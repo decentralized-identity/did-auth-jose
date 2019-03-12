@@ -5,10 +5,30 @@ import TestPrivateKey from '../mocks/TestPrivateKey';
 import Base64Url from '../../lib/utilities/Base64Url';
 
 describe('JweToken', () => {
+  const crypto = new TestCryptoAlgorithms();
+  let registry = new CryptoRegistry([crypto]);
+
+  describe('constructor', () => {
+    it('should construct from a flattened JSON object', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        encrypted_key: 'a key',
+        protected: 'secret properties'
+      };
+      const jwe = new JweToken(jweObject, registry);
+      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['protected']).toEqual('secret properties');
+      expect(jwe['content']).toEqual('secrets');
+      expect(jwe['unprotected']).toBeUndefined();
+      expect(jwe['iv']).toEqual('vector');
+      expect(jwe['tag']).toEqual('tag');
+      expect(jwe['encrypted_key']).toEqual('a key');
+    });
+  });
 
   describe('encrypt', () => {
-    const crypto = new TestCryptoAlgorithms();
-    let registry = new CryptoRegistry([crypto]);
 
     it('should fail for an unsupported encryption algorithm', () => {
       const testJwk = {

@@ -22,6 +22,9 @@ export default class JwsToken extends JoseToken {
 
   constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
+    // this.content is set to content, which may be the plaintext, or a compact JWS.
+    // Behavior on this content is determined by operations performed on it.
+    // if the content matches a JSON Serialized JWS, special attention to parsing is performed
     this.isFlattenedJSONSerialized = false;
     // Check for JSON Serialization and reparse content if appropriate
     if (typeof content === 'object') {
@@ -143,7 +146,6 @@ export default class JwsToken extends JoseToken {
     return verifiedData;
   }
 
-  
   /**
    * Gets the header as a JS object.
    */
@@ -168,7 +170,7 @@ export default class JwsToken extends JoseToken {
    */
   private getSignedContent (): string {
     if (this.isFlattenedJSONSerialized) {
-      return this.protected! + '.' + this.content;
+      return (this.protected || '') + '.' + this.content;
     }
     const signedContentLength = this.content.lastIndexOf('.');
     const signedContent = this.content.substr(0, signedContentLength);
@@ -195,7 +197,7 @@ export default class JwsToken extends JoseToken {
    */
   private getSignature (): string {
     if (this.isFlattenedJSONSerialized) {
-      return this.signature!;
+      return this.signature || '';
     }
     const signatureStartIndex = this.content.lastIndexOf('.') + 1;
     const signature = this.content.substr(signatureStartIndex);

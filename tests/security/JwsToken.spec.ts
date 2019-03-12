@@ -6,13 +6,93 @@ import CryptoFactory from '../../lib/CryptoFactory';
 import TestPrivateKey from '../mocks/TestPrivateKey';
 
 describe('JwsToken', () => {
+  const crypto = new TestCryptoAlgorithms();
+  let registry: CryptoFactory;
+  beforeEach(() => {
+    registry = new CryptoFactory([crypto]);
+  });
+
+  describe('constructor', () => {
+    it('should construct from a flattened JSON object', () => {
+      const correctJWS = {
+        protected: 'foo',
+        payload: 'foobar',
+        signature: 'baz'
+      };
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jws['protected']).toEqual('foo');
+      expect(jws['content']).toEqual('foobar');
+      expect(jws['signature']).toEqual('baz');
+      expect(jws['header']).toBeUndefined();
+    });
+
+    it('should construct from a flattened JSON object using header', () => {
+      const correctJWS = {
+        header: {
+          alg: 'test',
+          kid: 'test'
+        },
+        payload: 'foobar',
+        signature: 'baz'
+      };
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jws['protected']).toBeUndefined();
+      expect(jws['header']).toBeDefined();
+      expect(jws['header']!['kid']).toEqual('test');
+      expect(jws['content']).toEqual('foobar');
+      expect(jws['signature']).toEqual('baz');
+    });
+
+    it('should include nonprotected headers', () => {
+      const correctJWS = {
+        protected: 'foo',
+        header: {
+          foo: 'bar'
+        },
+        payload: 'foobar',
+        signature: 'baz'
+      };
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jws['protected']).toEqual('foo');
+      expect(jws['content']).toEqual('foobar');
+      expect(jws['signature']).toEqual('baz');
+      expect(jws['header']).toBeDefined();
+      expect(jws['header']!['foo']).toEqual('bar');
+    });
+
+    it('should ignore objects with invalid header formats', () => {
+      const correctJWS = {
+        header: 'wrong',
+        payload: 'foobar',
+        signature: 'baz'
+      };
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeFalsy();
+    });
+
+    it('should ignore objects missing protected and header', () => {
+      const correctJWS = {
+        payload: 'foobar',
+        signature: 'baz'
+      };
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeFalsy();
+    });
+
+    it('should ignore objects missing signature', () => {
+      const correctJWS = {
+        protected: 'foo',
+        payload: 'foobar'
+      };
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeFalsy();
+    });
+  });
 
   describe('verifySignature', () => {
-    const crypto = new TestCryptoAlgorithms();
-    let registry: CryptoFactory;
-    beforeEach(() => {
-      registry = new CryptoFactory([crypto]);
-    });
 
     const header = {
       alg: 'test',
@@ -75,9 +155,6 @@ describe('JwsToken', () => {
   });
 
   describe('sign', () => {
-    const crypto = new TestCryptoAlgorithms();
-    let registry = new CryptoFactory([crypto]);
-
     const data = {
       description: 'JWSToken test'
     };

@@ -154,6 +154,68 @@ describe('JwsToken', () => {
     });
   });
 
+  describe('getHeader', () => {
+    it('should return headers from Compact JWS', () => {
+      const test = Math.random().toString(16);
+      const protectedHeaders = Base64Url.encode(JSON.stringify({
+        test
+      }));
+      const jws = new JwsToken(protectedHeaders + '..', registry);
+      const headers = jws.getHeader();
+      expect(headers).toBeDefined();
+      expect(headers['test']).toEqual(test);
+    });
+
+    it('should return headers from Flattened JSON Serialization', () => {
+      const test = Math.random().toString(16);
+      const headertest = Math.random().toString(16);
+      const protectedHeaders = Base64Url.encode(JSON.stringify({
+        test
+      }));
+      const jws = new JwsToken({
+        protected: protectedHeaders,
+        header: {
+          headertest
+        },
+        payload: '',
+        signature: ''
+      }, registry);
+      const headers = jws.getHeader();
+      expect(headers).toBeDefined();
+      expect(headers['test']).toEqual(test);
+      expect(headers['headertest']).toEqual(headertest);
+    });
+
+    it('should return headers from Flattened JSON Serialization with only header', () => {
+      const headertest = Math.random().toString(16);
+      const jws = new JwsToken({
+        header: {
+          headertest
+        },
+        payload: '',
+        signature: ''
+      }, registry);
+      const headers = jws.getHeader();
+      expect(headers).toBeDefined();
+      expect(headers['headertest']).toEqual(headertest);
+    });
+
+    it('should return headers from Flattened JSON Serialization with only protected', () => {
+      const test = Math.random().toString(16);
+      const protectedHeaders = Base64Url.encode(JSON.stringify({
+        test
+      }));
+      const jws = new JwsToken({
+        protected: protectedHeaders,
+        payload: '',
+        signature: ''
+      }, registry);
+      const headers = jws.getHeader();
+      expect(headers).toBeDefined();
+      expect(headers['test']).toEqual(test);
+    });
+  });
+
   describe('sign', () => {
     const data = {
       description: 'JWSToken test'

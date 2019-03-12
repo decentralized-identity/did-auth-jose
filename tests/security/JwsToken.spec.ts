@@ -180,6 +180,7 @@ describe('JwsToken', () => {
         payload: '',
         signature: ''
       }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       const headers = jws.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);
@@ -195,6 +196,7 @@ describe('JwsToken', () => {
         payload: '',
         signature: ''
       }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       const headers = jws.getHeader();
       expect(headers).toBeDefined();
       expect(headers['headertest']).toEqual(headertest);
@@ -210,9 +212,111 @@ describe('JwsToken', () => {
         payload: '',
         signature: ''
       }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       const headers = jws.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);
+    });
+  });
+
+  describe('getSignedContent', () => {
+
+    function signedContent(jws: JwsToken): string {
+      return jws['getSignedContent']();
+    }
+    let protectedHeaders: string;
+    let payload: string;
+
+    beforeEach(() => {
+      protectedHeaders = Base64Url.encode(JSON.stringify({
+        test: Math.random()
+      }));
+      payload = Base64Url.encode(JSON.stringify({
+        test: Math.random()
+      }));
+    });
+
+    it('should return the signed content for a compact JWS', () => {
+      const jws = new JwsToken(`${protectedHeaders}.${payload}.`, registry);
+      expect(signedContent(jws)).toEqual(`${protectedHeaders}.${payload}`);
+    });
+
+    it('should return the signed content for a Flattened JSON JWS', () => {
+      const jws = new JwsToken({
+        payload,
+        header: {
+          unprotected: 'true'
+        },
+        protected: protectedHeaders,
+        signature: ''
+      }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(signedContent(jws)).toEqual(`${protectedHeaders}.${payload}`);
+    });
+
+    it('should return the signed content for a Flattened JSON JWS', () => {
+      const jws = new JwsToken({
+        payload,
+        header: {
+          unprotected: 'true'
+        },
+        signature: ''
+      }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(signedContent(jws)).toEqual(`.${payload}`);
+    });
+  });
+
+  describe('getPayload', () => {
+    let data: string;
+    let payload: string;
+
+    beforeEach(() => {
+      data = JSON.stringify({
+        test: Math.random()
+      });
+      payload = Base64Url.encode(data);
+    });
+
+    it('should return the payload from a compact JWS', () => {
+      const jws = new JwsToken(`.${payload}.`, registry);
+      expect(jws.getPayload()).toEqual(data);
+    });
+
+    it('should return the payload from a Flattened JSON JWS', () => {
+      const jws = new JwsToken({
+        header: {
+          alg: 'none'
+        },
+        payload,
+        signature: ''
+      }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jws.getPayload()).toEqual(data);
+    });
+  });
+
+  describe('getSignature', () => {
+
+    function getSignature(jws: JwsToken): string {
+      return jws['getSignature']();
+    }
+
+    it('should return the signature from a compact JWS', () => {
+      const signature = 'test';
+      const jws = new JwsToken(`..${signature}`, registry);
+      expect(getSignature(jws)).toEqual(signature);
+    });
+
+    it('should return the signature from a Flattened JSON JWS', () => {
+      const signature = 'test';
+      const jws = new JwsToken({
+        signature,
+        payload: 'foo',
+        protected: 'bar'
+      }, registry);
+      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(getSignature(jws)).toEqual(signature);
     });
   });
 
@@ -238,6 +342,32 @@ describe('JwsToken', () => {
       const jwsToken = new JwsToken(data, registry);
       crypto.reset();
       await jwsToken.sign(new TestPrivateKey());
+      expect(crypto.wasSignCalled()).toBeTruthy();
+    });
+  });
+
+  describe('flatJsonSign', () => {
+    const data = {
+      description: 'JWSToken test'
+    };
+
+    it('should throw an error because the algorithm is not supported', async () => {
+      const privateKey = new TestPrivateKey();
+      privateKey.defaultSignAlgorithm = 'unsupported';
+      const jwsToken = new JwsToken(data, registry);
+      try {
+        await jwsToken.flatJsonSign(privateKey);
+      } catch (err) {
+        expect(err).toBeDefined();
+        return;
+      }
+      fail('Sign did not throw');
+    });
+
+    it('should call the crypto Algorithms\'s sign', async () => {
+      const jwsToken = new JwsToken(data, registry);
+      crypto.reset();
+      await jwsToken.flatJsonSign(new TestPrivateKey());
       expect(crypto.wasSignCalled()).toBeTruthy();
     });
   });

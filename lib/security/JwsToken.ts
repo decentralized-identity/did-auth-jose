@@ -183,7 +183,7 @@ export default class JwsToken extends JoseToken {
    */
   public getPayload (): any {
     if (this.isFlattenedJSONSerialized) {
-      return this.content;
+      return Base64Url.decode(this.content);
     }
     const payloadStartIndex = this.content.indexOf('.') + 1;
     const payloadExclusiveEndIndex = this.content.lastIndexOf('.');

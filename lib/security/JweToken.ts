@@ -128,7 +128,7 @@ export default class JweToken extends JoseToken {
     options?: {
       unprotected?: {[key: string]: string},
       protected?: {[key: string]: string},
-      aad?: string
+      aad?: string | Buffer
     }
     /* encryptionType?: string */): Promise<{
       protected?: string,
@@ -173,8 +173,7 @@ export default class JweToken extends JoseToken {
     } else {
       aad = Buffer.from(protectedHeaderBase64Url);
     }
-    const aadBase64Url = Base64Url.encode(aad);
-    cipher.setAAD(Buffer.from(aadBase64Url));
+    cipher.setAAD(aad);
     const ciphertextBuffer = Buffer.concat([
       cipher.update(Buffer.from(this.content)),
       cipher.final()
@@ -193,7 +192,7 @@ export default class JweToken extends JoseToken {
       iv: initializationVectorBase64Url,
       ciphertext: ciphertextBase64Url,
       tag: authenticationTagBase64Url,
-      aad: (options || {}).aad
+      aad: (options && options.aad ? Base64Url.encode(options.aad) : undefined)
     };
   }
 
@@ -260,7 +259,7 @@ export default class JweToken extends JoseToken {
       iv = Buffer.from(Base64Url.toBase64(this.iv!), 'base64');
       ciphertext = Buffer.from(Base64Url.toBase64(this.content), 'base64');
       authTag = Buffer.from(Base64Url.toBase64(this.tag!), 'base64');
-      aad = headerString + '.' + this.aad;
+      aad = this.aad ? headerString + '.' + this.aad : headerString;
     } else {
       // 1. Parse JWE for components: BASE64URL(UTF8(JWE Header)) || '.' || BASE64URL(JWE Encrypted Key) || '.' ||
       //    BASE64URL(JWE Initialization Vector) || '.' || BASE64URL(JWE Ciphertext) || '.' ||

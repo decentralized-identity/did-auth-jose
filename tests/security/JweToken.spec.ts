@@ -1,9 +1,8 @@
 import TestCryptoAlgorithms from '../mocks/TestCryptoProvider';
-import { PublicKey, JweToken, PrivateKey, RsaCryptoSuite } from '../../lib';
+import { PublicKey, JweToken, PrivateKey } from '../../lib';
 import CryptoRegistry from '../../lib/CryptoFactory';
 import TestPrivateKey from '../mocks/TestPrivateKey';
 import Base64Url from '../../lib/utilities/Base64Url';
-import RsaPrivateKey from '../../lib/crypto/rsa/RsaPrivateKey';
 
 describe('JweToken', () => {
   const crypto = new TestCryptoAlgorithms();
@@ -195,7 +194,7 @@ describe('JweToken', () => {
       });
       expect(crypto.wasEncryptCalled()).toBeTruthy();
       expect(encrypted).toBeDefined();
-      expect(encrypted.aad).toEqual(aad);
+      expect(encrypted.aad).toEqual(Base64Url.encode(aad));
       expect(encrypted.unprotected!['test']).toEqual(unprotectedValue);
       expect(JSON.parse(Base64Url.decode(encrypted.protected!))['test']).toEqual(protectedValue);
       expect(encrypted.ciphertext).not.toEqual(plaintext);
@@ -329,15 +328,13 @@ describe('JweToken', () => {
     });
 
     it('should decrypt flattened JSON JWEs using aad', async () => {
-      const privateKey = await RsaPrivateKey.generatePrivateKey('test');
-      const registry = new CryptoRegistry([new RsaCryptoSuite()]);
       const pub = privateKey.getPublicKey();
       const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
       const jweToEncrypt = new JweToken(plaintext, registry);
       const encrypted = await jweToEncrypt.flatJsonEncrypt(pub, {
         aad
       });
-      expect(encrypted.aad).toEqual(aad);
+      expect(encrypted.aad).toEqual(Base64Url.encode(aad));
       const jwe = new JweToken(encrypted, registry);
       const payload = await jwe.decrypt(privateKey);
       expect(payload).toEqual(plaintext);

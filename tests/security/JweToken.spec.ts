@@ -1,8 +1,9 @@
 import TestCryptoAlgorithms from '../mocks/TestCryptoProvider';
-import { PublicKey, JweToken, PrivateKey } from '../../lib';
+import { PublicKey, JweToken, PrivateKey, RsaCryptoSuite } from '../../lib';
 import CryptoRegistry from '../../lib/CryptoFactory';
 import TestPrivateKey from '../mocks/TestPrivateKey';
 import Base64Url from '../../lib/utilities/Base64Url';
+import RsaPrivateKey from '../../lib/crypto/rsa/RsaPrivateKey';
 
 describe('JweToken', () => {
   const crypto = new TestCryptoAlgorithms();
@@ -140,9 +141,68 @@ describe('JweToken', () => {
     });
   });
 
+  describe('flatJsonEncrypt', () => {
+    it('should fail for an unsupported encryption algorithm', () => {
+      const testJwk = {
+        kty: 'RSA',
+        kid: 'did:example:123456789abcdefghi#keys-1',
+        defaultEncryptionAlgorithm: 'unknown',
+        defaultSignAlgorithm: 'test'
+      };
+      const jwe = new JweToken('', registry);
+      jwe.flatJsonEncrypt(testJwk).then(() => {
+        fail('Error was not thrown.');
+      }).catch(
+        (error) => {
+          expect(error).toMatch(/Unsupported encryption algorithm/i);
+        });
+    });
+
+    it('should call the crypto Algorithms\'s encrypt', async () => {
+      crypto.reset();
+      const jwk = {
+        kty: 'RSA',
+        kid: 'test',
+        defaultEncryptionAlgorithm: 'test',
+        defaultSignAlgorithm: 'test'
+      } as PublicKey;
+      const jwe = new JweToken('', registry);
+      await jwe.flatJsonEncrypt(jwk);
+      expect(crypto.wasEncryptCalled()).toBeTruthy();
+    });
+
+    it('should accept additional options', async () => {
+      const jwk = {
+        kty: 'RSA',
+        kid: 'test',
+        defaultEncryptionAlgorithm: 'test',
+        defaultSignAlgorithm: 'test'
+      } as PublicKey;
+      const protectedValue = Math.round(Math.random()).toString(16);
+      const unprotectedValue = Math.round(Math.random()).toString(16);
+      const aad = Math.round(Math.random()).toString(16);
+      const plaintext = Math.round(Math.random()).toString(16);
+      const jwe = new JweToken(plaintext, registry);
+      crypto.reset();
+      const encrypted = await jwe.flatJsonEncrypt(jwk, {
+        aad,
+        protected: {
+          test: protectedValue
+        },
+        unprotected: {
+          test: unprotectedValue
+        }
+      });
+      expect(crypto.wasEncryptCalled()).toBeTruthy();
+      expect(encrypted).toBeDefined();
+      expect(encrypted.aad).toEqual(aad);
+      expect(encrypted.unprotected!['test']).toEqual(unprotectedValue);
+      expect(JSON.parse(Base64Url.decode(encrypted.protected!))['test']).toEqual(protectedValue);
+      expect(encrypted.ciphertext).not.toEqual(plaintext);
+    });
+  });
+
   describe('decrypt', () => {
-    const crypto = new TestCryptoAlgorithms();
-    let registry = new CryptoRegistry([crypto]);
     let privateKey: PrivateKey;
     let plaintext: string;
     let encryptedMessage: string;
@@ -249,8 +309,36 @@ describe('JweToken', () => {
       await expectToThrow(jwe, 'decrypt succeeded when the private key does not match the headers key');
     });
 
-    it('should decrypt encrypted JWEs', async () => {
+    it('should decrypt compact JWEs', async () => {
       const jwe = new JweToken(encryptedMessage, registry);
+      const payload = await jwe.decrypt(privateKey);
+      expect(payload).toEqual(plaintext);
+    });
+
+    it('should decrypt flattened JSON JWEs', async () => {
+      const compactComponents = encryptedMessage.split('.');
+      const jwe = new JweToken({
+        protected: compactComponents[0],
+        encrypted_key: compactComponents[1],
+        iv: compactComponents[2],
+        ciphertext: compactComponents[3],
+        tag: compactComponents[4]
+      }, registry);
+      const payload = await jwe.decrypt(privateKey);
+      expect(payload).toEqual(plaintext);
+    });
+
+    it('should decrypt flattened JSON JWEs using aad', async () => {
+      const privateKey = await RsaPrivateKey.generatePrivateKey('test');
+      const registry = new CryptoRegistry([new RsaCryptoSuite()]);
+      const pub = privateKey.getPublicKey();
+      const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
+      const jweToEncrypt = new JweToken(plaintext, registry);
+      const encrypted = await jweToEncrypt.flatJsonEncrypt(pub, {
+        aad
+      });
+      expect(encrypted.aad).toEqual(aad);
+      const jwe = new JweToken(encrypted, registry);
       const payload = await jwe.decrypt(privateKey);
       expect(payload).toEqual(plaintext);
     });

@@ -221,36 +221,61 @@ export default class JweToken extends JoseToken {
   }
 
   /**
+   * Gets the header as a JS object.
+   */
+  public getHeader (): any {
+    if (this.isFlattenedJSONSerialized) {
+      let headers = this.unprotected;
+      if (!headers) {
+        headers = {};
+      }
+      if (this.protected) {
+        const jsonString = Base64Url.decode(this.protected);
+        const protect = JSON.parse(jsonString) as {[key: string]: any};
+        headers = Object.assign(headers, protect);
+      }
+      return headers;
+    }
+    return super.getHeader();
+  }
+
+  /**
    * Decrypts the given JWE compact serialized string using the given key in JWK JSON object format.
    * TODO: implement decryption without node-jose dependency so we can use decryption algorithms from plugins.
    *
    * @returns Decrypted plaintext.
    */
   public async decrypt (jwk: PrivateKey): Promise<string> {
-    let base64EncodedValues: string[];
     // following steps for JWE Decryption in RFC7516 section 5.2
+    let encryptedKey: Buffer;
+    let iv: Buffer;
+    let ciphertext: Buffer;
+    let authTag: Buffer;
+    let aad: string;
+
     if (this.isFlattenedJSONSerialized) {
       // use the pre-parsed contents.
-      base64EncodedValues = [this.protected || '',
-        this.encrypted_key!,
-        this.iv!,
-        this.content!,
-        this.tag!];
+      const headerString = this.protected || '';
+      encryptedKey = Buffer.from(Base64Url.toBase64(this.encrypted_key!), 'base64');
+      iv = Buffer.from(Base64Url.toBase64(this.iv!), 'base64');
+      ciphertext = Buffer.from(Base64Url.toBase64(this.content), 'base64');
+      authTag = Buffer.from(Base64Url.toBase64(this.tag!), 'base64');
+      aad = headerString + '.' + this.aad;
     } else {
       // 1. Parse JWE for components: BASE64URL(UTF8(JWE Header)) || '.' || BASE64URL(JWE Encrypted Key) || '.' ||
       //    BASE64URL(JWE Initialization Vector) || '.' || BASE64URL(JWE Ciphertext) || '.' ||
       //    BASE64URL(JWE Authentication Tag)
-      base64EncodedValues = this.content.split('.');
-    }
+      const base64EncodedValues = this.content.split('.');
 
-    // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
-    const headerString = Base64Url.decode(base64EncodedValues[0]);
-    const encryptedKey = Buffer.from(Base64Url.toBase64(base64EncodedValues[1]), 'base64');
-    const iv = Buffer.from(Base64Url.toBase64(base64EncodedValues[2]), 'base64');
-    const ciphertext = Buffer.from(Base64Url.toBase64(base64EncodedValues[3]), 'base64');
-    const authTag = Buffer.from(Base64Url.toBase64(base64EncodedValues[4]), 'base64');
-    // 3. let the JWE Header be a JSON object
-    const headers = JSON.parse(headerString);
+      // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
+      encryptedKey = Buffer.from(Base64Url.toBase64(base64EncodedValues[1]), 'base64');
+      iv = Buffer.from(Base64Url.toBase64(base64EncodedValues[2]), 'base64');
+      ciphertext = Buffer.from(Base64Url.toBase64(base64EncodedValues[3]), 'base64');
+      authTag = Buffer.from(Base64Url.toBase64(base64EncodedValues[4]), 'base64');
+      // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
+      aad = base64EncodedValues[0];
+    }
+    const headers = this.getHeader();
     // 4. only applies to JWE JSON Serializaiton
     // 5. verify header fields
     ['alg', 'enc', 'kid'].forEach((header: string) => {
@@ -287,13 +312,6 @@ export default class JweToken extends JoseToken {
     // 13. Skip due to JWE JSON Serialization format specific
     // 14. Compute the protected header: BASE64URL(UTF8(JWE Header))
     // this would be base64Encodedvalues[0]
-    // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
-    let aad: string;
-    if (this.isFlattenedJSONSerialized && this.aad) {
-      aad = base64EncodedValues[0] + '.' + this.aad;
-    } else {
-      aad = base64EncodedValues[0];
-    }
     // 16. Decrypt JWE Ciphertext using CEK, IV, AAD, and authTag, using "enc" algorithm.
 
     // TODO: complex work involving symmetric key encryption here

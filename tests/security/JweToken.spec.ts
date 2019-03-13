@@ -9,7 +9,7 @@ describe('JweToken', () => {
   let registry = new CryptoRegistry([crypto]);
 
   describe('constructor', () => {
-    it('should construct from a flattened JSON object', () => {
+    it('should construct from a flattened JSON object with a protected', () => {
       const jweObject = {
         ciphertext: 'secrets',
         iv: 'vector',
@@ -25,6 +25,65 @@ describe('JweToken', () => {
       expect(jwe['iv']).toEqual('vector');
       expect(jwe['tag']).toEqual('tag');
       expect(jwe['encrypted_key']).toEqual('a key');
+    });
+    it('should construct from a flattened JSON object with an unprotected', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        encrypted_key: 'a key',
+        unprotected: {
+          test: 'secret property'
+        }
+      };
+      const jwe = new JweToken(jweObject, registry);
+      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['unprotected']).toBeDefined();
+      expect(jwe['unprotected']!['test']).toEqual('secret property');
+      expect(jwe['content']).toEqual('secrets');
+      expect(jwe['iv']).toEqual('vector');
+      expect(jwe['tag']).toEqual('tag');
+      expect(jwe['encrypted_key']).toEqual('a key');
+    });
+    it('should combine flattened JSON object headers unprotected and header', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        encrypted_key: 'a key',
+        unprotected: {
+          test: 'secret property'
+        },
+        header: {
+          test2: 'secret boogaloo'
+        }
+      };
+      const jwe = new JweToken(jweObject, registry);
+      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['unprotected']).toBeDefined();
+      expect(jwe['unprotected']!['test']).toEqual('secret property');
+      expect(jwe['unprotected']!['test2']).toEqual('secret boogaloo');
+    });
+    it('should require encrypted_key as a flattened JSON object', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        protected: 'secret properties'
+      };
+      const jwe = new JweToken(jweObject, registry);
+      expect(jwe['isFlattenedJSONSerialized']).toBeFalsy();
+    });
+    it('should handle ignore general JSON serialization for now', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        protected: 'secret properties',
+        recipients: []
+      };
+      const jwe = new JweToken(jweObject, registry);
+      expect(jwe['isFlattenedJSONSerialized']).toBeFalsy();
     });
   });
 

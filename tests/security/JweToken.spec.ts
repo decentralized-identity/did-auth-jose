@@ -18,13 +18,13 @@ describe('JweToken', () => {
         protected: 'secret properties'
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       expect(jwe['protected']).toEqual('secret properties');
       expect(jwe['content']).toEqual('secrets');
       expect(jwe['unprotected']).toBeUndefined();
       expect(jwe['iv']).toEqual('vector');
       expect(jwe['tag']).toEqual('tag');
-      expect(jwe['encrypted_key']).toEqual('a key');
+      expect(jwe['encryptedKey']).toEqual('a key');
     });
     it('should construct from a flattened JSON object with an unprotected', () => {
       const jweObject = {
@@ -37,13 +37,13 @@ describe('JweToken', () => {
         }
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       expect(jwe['unprotected']).toBeDefined();
       expect(jwe['unprotected']!['test']).toEqual('secret property');
       expect(jwe['content']).toEqual('secrets');
       expect(jwe['iv']).toEqual('vector');
       expect(jwe['tag']).toEqual('tag');
-      expect(jwe['encrypted_key']).toEqual('a key');
+      expect(jwe['encryptedKey']).toEqual('a key');
     });
     it('should combine flattened JSON object headers unprotected and header', () => {
       const jweObject = {
@@ -59,7 +59,7 @@ describe('JweToken', () => {
         }
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       expect(jwe['unprotected']).toBeDefined();
       expect(jwe['unprotected']!['test']).toEqual('secret property');
       expect(jwe['unprotected']!['test2']).toEqual('secret boogaloo');
@@ -72,7 +72,7 @@ describe('JweToken', () => {
         protected: 'secret properties'
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeFalsy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeFalsy();
     });
     it('should handle ignore general JSON serialization for now', () => {
       const jweObject = {
@@ -83,7 +83,7 @@ describe('JweToken', () => {
         recipients: []
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeFalsy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeFalsy();
     });
   });
 
@@ -373,7 +373,7 @@ describe('JweToken', () => {
         tag: '',
         encrypted_key: ''
       }, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);
@@ -396,7 +396,7 @@ describe('JweToken', () => {
         tag: '',
         encrypted_key: ''
       }, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['headertest']).toEqual(headertest);
@@ -415,7 +415,7 @@ describe('JweToken', () => {
         tag: '',
         encrypted_key: ''
       }, registry);
-      expect(jwe['isFlattenedJSONSerialized']).toBeTruthy();
+      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);

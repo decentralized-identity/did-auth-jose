@@ -19,26 +19,26 @@ export default class JweToken extends JoseToken {
   // used for verification if a JSON Serialized JWS was given
   private readonly protected: string | undefined;
   private unprotected: {[key: string]: any} | undefined;
-  private readonly encrypted_key: string | undefined;
+  private readonly encryptedKey: string | undefined;
   private readonly iv: string | undefined;
   private readonly tag: string | undefined;
   private readonly aad: string | undefined;
-  private readonly isFlattenedJSONSerialized: boolean;
+  private readonly isFlattenedJsonSerialized: boolean;
 
   public constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
     const jsonContent: any = content;
-    this.isFlattenedJSONSerialized = false;
+    this.isFlattenedJsonSerialized = false;
     if (typeof jsonContent === 'object' &&
     'ciphertext' in jsonContent && typeof jsonContent.ciphertext === 'string' &&
     'iv' in jsonContent && typeof jsonContent.iv === 'string' &&
     'tag' in jsonContent && typeof jsonContent.tag === 'string' &&
     (('protected' in jsonContent && typeof jsonContent.protected === 'string') ||
     ('unprotected' in jsonContent && typeof jsonContent.unprotected === 'object'))) {
-      if ('protected' in jsonContent) {
+      if ('protected' in jsonContent && typeof jsonContent.protected === 'string') {
         this.protected = jsonContent.protected;
       }
-      if ('unprotected' in jsonContent) {
+      if ('unprotected' in jsonContent && typeof jsonContent.unprotected === 'object')) {
         this.unprotected = jsonContent.unprotected;
       }
       this.iv = jsonContent.iv;
@@ -48,11 +48,11 @@ export default class JweToken extends JoseToken {
         // TODO: General JWE JSON Serialization
       } else if ('encrypted_key' in jsonContent && typeof jsonContent.encrypted_key === 'string') {
         // Flattened JWE JSON Serialization
-        this.encrypted_key = jsonContent.encrypted_key;
+        this.encryptedKey = jsonContent.encrypted_key;
         if ('header' in jsonContent && typeof jsonContent.header === 'object') {
           this.unprotected = Object.assign(this.unprotected, jsonContent.header);
         }
-        this.isFlattenedJSONSerialized = true;
+        this.isFlattenedJsonSerialized = true;
       }
       this.content = jsonContent.ciphertext;
     }
@@ -223,7 +223,7 @@ export default class JweToken extends JoseToken {
    * Gets the header as a JS object.
    */
   public getHeader (): any {
-    if (this.isFlattenedJSONSerialized) {
+    if (this.isFlattenedJsonSerialized) {
       let headers = this.unprotected;
       if (!headers) {
         headers = {};
@@ -252,10 +252,10 @@ export default class JweToken extends JoseToken {
     let authTag: Buffer;
     let aad: string;
 
-    if (this.isFlattenedJSONSerialized) {
+    if (this.isFlattenedJsonSerialized) {
       // use the pre-parsed contents.
       const headerString = this.protected || '';
-      encryptedKey = Buffer.from(Base64Url.toBase64(this.encrypted_key!), 'base64');
+      encryptedKey = Buffer.from(Base64Url.toBase64(this.encryptedKey!), 'base64');
       iv = Buffer.from(Base64Url.toBase64(this.iv!), 'base64');
       ciphertext = Buffer.from(Base64Url.toBase64(this.content), 'base64');
       authTag = Buffer.from(Base64Url.toBase64(this.tag!), 'base64');

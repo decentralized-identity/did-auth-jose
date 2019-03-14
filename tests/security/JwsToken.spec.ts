@@ -221,7 +221,7 @@ describe('JwsToken', () => {
 
   describe('getSignedContent', () => {
 
-    function signedContent(jws: JwsToken): string {
+    function signedContent (jws: JwsToken): string {
       return jws['getSignedContent']();
     }
     let protectedHeaders: string;
@@ -298,7 +298,7 @@ describe('JwsToken', () => {
 
   describe('getSignature', () => {
 
-    function getSignature(jws: JwsToken): string {
+    function getSignature (jws: JwsToken): string {
       return jws['getSignature']();
     }
 
@@ -354,7 +354,7 @@ describe('JwsToken', () => {
       data = {
         description: `test: ${Math.random()}`
       };
-    })
+    });
 
     it('should throw an error because the algorithm is not supported', async () => {
       const privateKey = new TestPrivateKey();

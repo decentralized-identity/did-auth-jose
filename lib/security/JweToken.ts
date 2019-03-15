@@ -303,27 +303,14 @@ export default class JweToken extends JoseToken {
     // this would be base64Encodedvalues[0]
     // 16. Decrypt JWE Ciphertext using CEK, IV, AAD, and authTag, using "enc" algorithm.
 
-    // TODO: complex work involving symmetric key encryption here
-    const cryptoMap: {[enc: string]: string} = {
-      A128GCM: 'aes-128-gcm',
-      A192GCM: 'aes-192-gcm',
-      A256GCM: 'aes-256-gcm'
-    };
-    const enc = cryptoMap[headers.enc];
-
-    const decipher = crypto.createDecipheriv(enc, cek, iv) as crypto.DecipherGCM;
-    decipher.setAAD(Buffer.from(aad, 'utf8'));
-    decipher.setAuthTag(authTag);
-    const plaintext = decipher.update(ciphertext, 'base64', 'utf8');
-    if (decipher.final().length !== 0) {
-      throw new Error('crypto cipher final returned additional data');
-    }
+    const symDecrypter = this.cryptoFactory.getSymmetricEncrypter(headers.enc);
+    const plaintext = await symDecrypter.decrypt(ciphertext, Buffer.from(aad), iv, cek, authTag);
 
     // 17. if a "zip" parameter was included, uncompress the plaintext using the specified algorithm
     if ('zip' in headers) {
       throw new Error('"zip" is not currently supported');
     }
     // 18. If there was no recipient, the JWE is invalid. Otherwise output the plaintext.
-    return plaintext;
+    return plaintext.toString('utf8');
   }
 }

@@ -12,6 +12,7 @@ import uuid from 'uuid/v4';
 import VerifiedRequest from './interfaces/VerifiedRequest';
 import AuthenticationRequest from './interfaces/AuthenticationRequest';
 import AuthenticationResponse from './interfaces/AuthenticationResponse';
+import AesCryptoSuite from './crypto/aes/AesCryptoSuite';
 
 /**
  * Named arguments to construct an Authentication object
@@ -49,7 +50,7 @@ export default class Authentication {
     this.resolver = options.resolver;
     this.tokenValidDurationInMinutes = options.tokenValidDurationInMinutes || Constants.defaultTokenDurationInMinutes;
     this.keys = options.keys;
-    this.factory = new CryptoFactory(options.cryptoSuites || [new RsaCryptoSuite(), new Secp256k1CryptoSuite()]);
+    this.factory = new CryptoFactory(options.cryptoSuites || [new AesCryptoSuite(), new RsaCryptoSuite(), new Secp256k1CryptoSuite()]);
   }
 
   /**

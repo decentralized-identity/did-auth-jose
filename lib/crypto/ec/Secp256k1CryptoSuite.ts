@@ -1,5 +1,5 @@
 import EcPublicKey from './EcPublicKey';
-import CryptoSuite from '../../interfaces/CryptoSuite';
+import CryptoSuite, { SymmetricEncrypter } from '../../interfaces/CryptoSuite';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey from '../../security/PublicKey';
 import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
@@ -10,6 +10,11 @@ const ecKey = require('ec-key');
  * Encrypter plugin for Elliptic Curve P-256K1
  */
 export class Secp256k1CryptoSuite implements CryptoSuite {
+
+  getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
+    return {};
+  }
+
   /** Encryption with Secp256k1 keys not supported */
   getEncrypters () {
     return {};

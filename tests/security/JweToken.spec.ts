@@ -18,13 +18,12 @@ describe('JweToken', () => {
         protected: 'secret properties'
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
-      expect(jwe['protected']).toEqual('secret properties');
+      expect(jwe['protectedHeaders']).toEqual('secret properties');
       expect(jwe['content']).toEqual('secrets');
-      expect(jwe['unprotected']).toBeUndefined();
-      expect(jwe['iv']).toEqual('vector');
-      expect(jwe['tag']).toEqual('tag');
-      expect(jwe['encryptedKey']).toEqual('a key');
+      expect(jwe['unprotectedHeaders']).toBeUndefined();
+      expect(jwe['iv']).toEqual(Buffer.from('vector'));
+      expect(jwe['tag']).toEqual(Buffer.from('tag'));
+      expect(jwe['encryptedKey']).toEqual(Buffer.from('a key'));
     });
     it('should construct from a flattened JSON object with an unprotected', () => {
       const jweObject = {
@@ -37,13 +36,12 @@ describe('JweToken', () => {
         }
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
-      expect(jwe['unprotected']).toBeDefined();
-      expect(jwe['unprotected']!['test']).toEqual('secret property');
+      expect(jwe['unprotectedHeaders']).toBeDefined();
+      expect(jwe['unprotectedHeaders']!['test']).toEqual('secret property');
       expect(jwe['content']).toEqual('secrets');
-      expect(jwe['iv']).toEqual('vector');
-      expect(jwe['tag']).toEqual('tag');
-      expect(jwe['encryptedKey']).toEqual('a key');
+      expect(jwe['iv']).toEqual(Buffer.from('vector'));
+      expect(jwe['tag']).toEqual(Buffer.from('tag'));
+      expect(jwe['encryptedKey']).toEqual(Buffer.from('a key'));
     });
     it('should combine flattened JSON object headers unprotected and header', () => {
       const jweObject = {
@@ -59,10 +57,9 @@ describe('JweToken', () => {
         }
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
-      expect(jwe['unprotected']).toBeDefined();
-      expect(jwe['unprotected']!['test']).toEqual('secret property');
-      expect(jwe['unprotected']!['test2']).toEqual('secret boogaloo');
+      expect(jwe['unprotectedHeaders']).toBeDefined();
+      expect(jwe['unprotectedHeaders']!['test']).toEqual('secret property');
+      expect(jwe['unprotectedHeaders']!['test2']).toEqual('secret boogaloo');
     });
     it('should require encrypted_key as a flattened JSON object', () => {
       const jweObject = {
@@ -72,7 +69,7 @@ describe('JweToken', () => {
         protected: 'secret properties'
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeFalsy();
+      expect(jwe['protectedHeaders']).toBeUndefined();
     });
     it('should handle ignore general JSON serialization for now', () => {
       const jweObject = {
@@ -83,7 +80,7 @@ describe('JweToken', () => {
         recipients: []
       };
       const jwe = new JweToken(jweObject, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeFalsy();
+      expect(jwe['protectedHeaders']).toBeUndefined();
     });
   });
 
@@ -362,7 +359,6 @@ describe('JweToken', () => {
         tag: '',
         encrypted_key: ''
       }, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);
@@ -385,7 +381,6 @@ describe('JweToken', () => {
         tag: '',
         encrypted_key: ''
       }, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['headertest']).toEqual(headertest);
@@ -404,7 +399,6 @@ describe('JweToken', () => {
         tag: '',
         encrypted_key: ''
       }, registry);
-      expect(jwe['isFlattenedJsonSerialized']).toBeTruthy();
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);

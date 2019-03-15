@@ -66,7 +66,8 @@ describe('JwsToken', () => {
         payload: 'foobar',
         signature: 'baz'
       };
-      expect(() => { new JwsToken(correctJWS, registry); }).not.toThrow();
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['protectedHeaders']).toBeUndefined();
     });
 
     it('should ignore objects missing protected and header', () => {
@@ -74,7 +75,8 @@ describe('JwsToken', () => {
         payload: 'foobar',
         signature: 'baz'
       };
-      expect(() => { new JwsToken(correctJWS, registry); }).not.toThrow();
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['protectedHeaders']).toBeUndefined();
     });
 
     it('should ignore objects missing signature', () => {
@@ -82,7 +84,8 @@ describe('JwsToken', () => {
         protected: 'foo',
         payload: 'foobar'
       };
-      expect(() => { new JwsToken(correctJWS, registry); }).not.toThrow();
+      const jws = new JwsToken(correctJWS, registry);
+      expect(jws['protectedHeaders']).toBeUndefined();
     });
   });
 

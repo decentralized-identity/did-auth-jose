@@ -1,16 +1,23 @@
 import CryptoSuite, {Encrypter, Signer, SymmetricEncrypter, PublicKeyConstructors} from '../../interfaces/CryptoSuite';
 import crypto from 'crypto';
 
+/**
+ * Encrypter plugin for Advanced Encryption Standard symmetric keys
+ */
 export default class AesCryptoSuite implements CryptoSuite {
+
   getEncrypters(): { [algorithm: string]: Encrypter } {
     return {};
   }
+
   getSigners(): { [algorithm: string]: Signer; } {
     return {};
   }
+
   getKeyConstructors(): PublicKeyConstructors {
     return {};
   }
+
   getSymmetricEncrypters(): { [algorithm: string]: SymmetricEncrypter } {
     return {
       'A128CBC-HS256': {
@@ -37,7 +44,7 @@ export default class AesCryptoSuite implements CryptoSuite {
         encrypt: this.encryptAesGcm(256),
         decrypt: this.decryptAesGcm(256)
       }
-    }
+    };
   }
 
   /**

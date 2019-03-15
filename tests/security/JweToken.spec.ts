@@ -284,17 +284,6 @@ describe('JweToken', () => {
       });
       jwe = new JweToken(message, registry);
       await expectToThrow(jwe, 'decrypt succeeded when a "crit" header was malformed', 'malformed');
-
-      message = usingheaders({
-        kty: 'test',
-        kid: privateKey.kid,
-        enc: 'test',
-        alg: 'test',
-        test: 'A "required" field',
-        crit: []
-      });
-      jwe = new JweToken(message, registry);
-      await expectToThrow(jwe, 'decrypt decrypted data with mis-matched headers', 'authenticat'); // e or ion
     });
 
     it('should require the key ids to match', async () => {

@@ -140,7 +140,7 @@ describe('JweToken', () => {
     });
   });
 
-  describe('flatJsonEncrypt', () => {
+  describe('encryptFlatJson', () => {
     it('should fail for an unsupported encryption algorithm', () => {
       const testJwk = {
         kty: 'RSA',
@@ -149,7 +149,7 @@ describe('JweToken', () => {
         defaultSignAlgorithm: 'test'
       };
       const jwe = new JweToken('', registry);
-      jwe.flatJsonEncrypt(testJwk).then(() => {
+      jwe.encryptFlatJson(testJwk).then(() => {
         fail('Error was not thrown.');
       }).catch(
         (error) => {
@@ -166,7 +166,7 @@ describe('JweToken', () => {
         defaultSignAlgorithm: 'test'
       } as PublicKey;
       const jwe = new JweToken('', registry);
-      await jwe.flatJsonEncrypt(jwk);
+      await jwe.encryptFlatJson(jwk);
       expect(crypto.wasEncryptCalled()).toBeTruthy();
     });
 
@@ -183,7 +183,7 @@ describe('JweToken', () => {
       const plaintext = Math.round(Math.random()).toString(16);
       const jwe = new JweToken(plaintext, registry);
       crypto.reset();
-      const encrypted = await jwe.flatJsonEncrypt(jwk, {
+      const encrypted = await jwe.encryptFlatJson(jwk, {
         aad,
         protected: {
           test: protectedValue
@@ -331,7 +331,7 @@ describe('JweToken', () => {
       const pub = privateKey.getPublicKey();
       const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
       const jweToEncrypt = new JweToken(plaintext, registry);
-      const encrypted = await jweToEncrypt.flatJsonEncrypt(pub, {
+      const encrypted = await jweToEncrypt.encryptFlatJson(pub, {
         aad
       });
       expect(encrypted.aad).toEqual(Base64Url.encode(aad));

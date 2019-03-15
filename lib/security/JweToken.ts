@@ -1,4 +1,3 @@
-import * as crypto from 'crypto';
 import Base64Url from '../utilities/Base64Url';
 import JoseToken from './JoseToken';
 import PublicKey from '../security/PublicKey';
@@ -65,9 +64,7 @@ export default class JweToken extends JoseToken {
    * @returns Encrypted Buffer in JWE compact serialized format.
    */
   public async encrypt (jwk: PublicKey,
-                        additionalHeaders?: {[header: string]: string}
-                        /* encryptionType?: string */): Promise<Buffer> {
-    /// TODO: extend to include encryptionType to determine symmetric key encryption using register
+                        additionalHeaders?: {[header: string]: string}): Promise<Buffer> {
 
     // Decide key encryption algorithm based on given JWK.
     const keyEncryptionAlgorithm = jwk.defaultEncryptionAlgorithm;
@@ -114,7 +111,7 @@ export default class JweToken extends JoseToken {
    *
    * @returns Encrypted Buffer in JWE compact serialized format.
    */
-  public async flatJsonEncrypt (jwk: PublicKey,
+  public async encryptFlatJson (jwk: PublicKey,
     options?: {
       unprotected?: {[key: string]: string},
       protected?: {[key: string]: string},
@@ -129,7 +126,6 @@ export default class JweToken extends JoseToken {
       tag: string,
       aad?: string
     }> {
-    /// TODO: extend to include encryptionType to determine symmetric key encryption using register
 
     // Decide key encryption algorithm based on given JWK.
     const keyEncryptionAlgorithm = jwk.defaultEncryptionAlgorithm;
@@ -138,41 +134,30 @@ export default class JweToken extends JoseToken {
     let header: {[header: string]: string} = Object.assign({}, {
       kid: jwk.kid,
       alg: keyEncryptionAlgorithm,
-      enc: 'A128GCM'
+      enc: this.cryptoFactory.getDefaultSymmetricEncryptionAlgorithm()
     }, (options || {}).protected || {});
 
     // Base 64 encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
-    // Generate content encryption key.
-    const keyBuffer = crypto.randomBytes(16);
-
-    // Encrypt content encryption key then base64-url encode it.
-    const encryptedKeyBuffer = await this.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk);
-    const encryptedKeyBase64Url = Base64Url.encode(encryptedKeyBuffer);
-
-    // Generate initialization vector then base64-url encode it.
-    const initializationVectorBuffer = crypto.randomBytes(12);
-    const initializationVectorBase64Url = Base64Url.encode(initializationVectorBuffer);
-
-    // Encrypt content.
-    const cipher = crypto.createCipheriv('aes-128-gcm', keyBuffer, initializationVectorBuffer);
+    // form the AAD from the protected headers and anything else added
     let aad: Buffer;
     if (options && options.aad) {
       aad = Buffer.from(protectedHeaderBase64Url + '.' + Base64Url.encode(options.aad));
     } else {
       aad = Buffer.from(protectedHeaderBase64Url);
     }
-    cipher.setAAD(aad);
-    const ciphertextBuffer = Buffer.concat([
-      cipher.update(Buffer.from(this.content)),
-      cipher.final()
-    ]);
-    const ciphertextBase64Url = Base64Url.encode(ciphertextBuffer);
 
-    // Get the authentication tag.
-    const authenticationTagBuffer = cipher.getAuthTag();
-    const authenticationTagBase64Url = Base64Url.encode(authenticationTagBuffer);
+    // Symmetrically encrypt the content
+    const symEncrypter = this.cryptoFactory.getSymmetricEncrypter(header.enc);
+    const symEncParams = await symEncrypter.encrypt(Buffer.from(this.content), aad)
+
+    // Encrypt content encryption key and base64 all the parameters
+    const encryptedKeyBuffer = await this.encryptContentEncryptionKey(keyEncryptionAlgorithm, symEncParams.key, jwk);
+    const encryptedKeyBase64Url = Base64Url.encode(encryptedKeyBuffer);
+    const initializationVectorBase64Url = Base64Url.encode(symEncParams.initializationVector);
+    const ciphertextBase64Url = Base64Url.encode(symEncParams.ciphertext);
+    const authenticationTagBase64Url = Base64Url.encode(symEncParams.tag);
 
     // Form final compact serialized JWE string.
     return {

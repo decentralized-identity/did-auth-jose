@@ -6,15 +6,15 @@ import crypto from 'crypto';
  */
 export default class AesCryptoSuite implements CryptoSuite {
 
-  getEncrypters(): { [algorithm: string]: Encrypter } {
+  getEncrypters (): { [algorithm: string]: Encrypter } {
     return {};
   }
 
-  getSigners(): { [algorithm: string]: Signer; } {
+  getSigners (): { [algorithm: string]: Signer; } {
     return {};
   }
 
-  getKeyConstructors(): PublicKeyConstructors {
+  getKeyConstructors (): PublicKeyConstructors {
     return {};
   }
 
@@ -84,7 +84,7 @@ export default class AesCryptoSuite implements CryptoSuite {
   private decryptAesCbcHmacSha2 (keySize: number, hashSize: number):
   (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) =>
   Promise<Buffer> {
-    return async (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) {
+    return async (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) => {
       const mackey = key.slice(0, 4);
       const enckey = key.slice(4, 8);
       const computedTag = this.generateHmacTag(hashSize, keySize, mackey, additionalAuthenticatedData, initializationVector, ciphertext);
@@ -135,7 +135,7 @@ export default class AesCryptoSuite implements CryptoSuite {
   private decryptAesGcm (keySize: number):
   (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) =>
   Promise<Buffer> {
-    return async (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) {
+    return async (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) => {
       const algorithm = `aes-${keySize}-gcm`;
       const decipher = crypto.createDecipheriv(algorithm, key, initializationVector) as crypto.DecipherGCM;
       decipher.setAAD(additionalAuthenticatedData);

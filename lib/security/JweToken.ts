@@ -38,7 +38,7 @@ export default class JweToken extends JoseToken {
       if ('protected' in jsonContent && typeof jsonContent.protected === 'string') {
         this.protected = jsonContent.protected;
       }
-      if ('unprotected' in jsonContent && typeof jsonContent.unprotected === 'object')) {
+      if ('unprotected' in jsonContent && typeof jsonContent.unprotected === 'object') {
         this.unprotected = jsonContent.unprotected;
       }
       this.iv = jsonContent.iv;
@@ -82,29 +82,18 @@ export default class JweToken extends JoseToken {
     // Base 64 encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
-    // Generate content encryption key.
-    const keyBuffer = crypto.randomBytes(16);
+    // Get the symmetric encrypter and encrypt
+    const symEncrypter = this.cryptoFactory.getSymmetricEncrypter(header.enc);
+    const symEnc = await symEncrypter.encrypt(Buffer.from(this.content), Buffer.from(protectedHeaderBase64Url))
 
     // Encrypt content encryption key then base64-url encode it.
-    const encryptedKeyBuffer = await this.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk);
+    const encryptedKeyBuffer = await this.encryptContentEncryptionKey(header.alg, symEnc.key, jwk);
     const encryptedKeyBase64Url = Base64Url.encode(encryptedKeyBuffer);
 
-    // Generate initialization vector then base64-url encode it.
-    const initializationVectorBuffer = crypto.randomBytes(12);
-    const initializationVectorBase64Url = Base64Url.encode(initializationVectorBuffer);
-
-    // Encrypt content.
-    const cipher = crypto.createCipheriv('aes-128-gcm', keyBuffer, initializationVectorBuffer);
-    cipher.setAAD(Buffer.from(protectedHeaderBase64Url));
-    const ciphertextBuffer = Buffer.concat([
-      cipher.update(Buffer.from(this.content)),
-      cipher.final()
-    ]);
-    const ciphertextBase64Url = Base64Url.encode(ciphertextBuffer);
-
-    // Get the authentication tag.
-    const authenticationTagBuffer = cipher.getAuthTag();
-    const authenticationTagBase64Url = Base64Url.encode(authenticationTagBuffer);
+    // Get the base64s of the symmetric encryptions
+    const initializationVectorBase64Url = Base64Url.encode(symEnc.initializationVector);
+    const ciphertextBase64Url = Base64Url.encode(symEnc.ciphertext);
+    const authenticationTagBase64Url = Base64Url.encode(symEnc.tag);
 
     // Form final compact serialized JWE string.
     const jweString = [

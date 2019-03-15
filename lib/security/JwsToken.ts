@@ -15,40 +15,41 @@ type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: P
 export default class JwsToken extends JoseToken {
 
   // used for verification if a JSON Serialized JWS was given
-  private readonly protected: string | undefined;
-  private header: {[key: string]: any} | undefined;
   private readonly signature: string | undefined;
-  private readonly isFlattenedJSONSerialized: boolean;
 
   constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
-    // this.content is set to content, which may be the plaintext, or a compact JWS.
-    // Behavior on this content is determined by operations performed on it.
-    // if the content matches a JSON Serialized JWS, special attention to parsing is performed
-    this.isFlattenedJSONSerialized = false;
+    // check for compact JWS
+    if (typeof content === 'string') {
+      const parts = content.split('.');
+      if (parts.length === 3) {
+        this.protectedHeaders = parts[0];
+        this.payload = parts[1];
+        this.signature = parts[2];
+        return;
+      }
+    }
     // Check for JSON Serialization and reparse content if appropriate
     if (typeof content === 'object') {
       const jsonObject: any = content;
       if ('payload' in jsonObject && typeof jsonObject.payload === 'string') {
-        // TODO: General JWS JSON Serialization. For now check for signature or
-        // signatures and one of protected or header for each
+        // TODO: General JWS JSON Serialization signatures and one of protected or header for each
         if ('signature' in jsonObject && typeof jsonObject.signature === 'string') {
           this.signature = jsonObject.signature;
           // Flattened JWS JSON Serialization
-          if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') &&
+          if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') ||
             !('header' in jsonObject && typeof jsonObject.header === 'object')) {
             // invalid JWS JSON Serialization
             return;
           }
           if ('protected' in jsonObject && typeof jsonObject.protected === 'string') {
-            this.protected = jsonObject.protected;
+            this.protectedHeaders = jsonObject.protected;
           }
           if ('header' in jsonObject && typeof jsonObject.header === 'object') {
-            this.header = jsonObject.header;
+            this.unprotectedHeaders = jsonObject.header;
           }
           // if we've gotten this far, we succeeded can can safely reset the content
-          this.content = jsonObject.payload;
-          this.isFlattenedJSONSerialized = true;
+          this.payload = jsonObject.payload;
           return;
         }
       }
@@ -87,7 +88,7 @@ export default class JwsToken extends JoseToken {
    * @param jwk Private key used in the signature
    * @param options Additional protected and header fields to include in the JWS
    */
-  public async flatJsonSign (jwk: PrivateKey,
+  public async signFlatJson (jwk: PrivateKey,
     options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}):
     Promise<{protected?: string, header?: {[name: string]: string}, payload: string, signature: string}> {
     // Steps according to RTC7515 5.1
@@ -133,76 +134,39 @@ export default class JwsToken extends JoseToken {
       throw err;
     }
 
-    const signedContent = this.getSignedContent();
-    const signature = this.getSignature();
-    const passedSignatureValidation = await verify(signedContent, signature, jwk);
+    const signedContent = `${this.protectedHeaders || ''}.${this.payload || ''}`;
+    const passedSignatureValidation = await verify(signedContent, this.signature || '', jwk);
 
     if (!passedSignatureValidation) {
       const err = new Error('Failed signature validation');
       throw err;
     }
 
-    const verifiedData = this.getPayload();
+    const verifiedData = Base64Url.decode(this.payload || '');
     return verifiedData;
-  }
-
-  /**
-   * Gets the header as a JS object.
-   */
-  public getHeader (): any {
-    if (this.isFlattenedJSONSerialized) {
-      let headers = this.header;
-      if (!headers) {
-        headers = {};
-      }
-      if (this.protected) {
-        const jsonString = Base64Url.decode(this.protected);
-        const protect = JSON.parse(jsonString) as {[key: string]: any};
-        headers = Object.assign(headers, protect);
-      }
-      return headers;
-    }
-    return super.getHeader();
-  }
-
-  /**
-   * Gets the signed content (i.e. '<header>.<payload>').
-   */
-  private getSignedContent (): string {
-    if (this.isFlattenedJSONSerialized) {
-      return (this.protected || '') + '.' + this.content;
-    }
-    const signedContentLength = this.content.lastIndexOf('.');
-    const signedContent = this.content.substr(0, signedContentLength);
-
-    return signedContent;
   }
 
   /**
    * Gets the base64 URL decrypted payload.
    */
   public getPayload (): any {
-    if (this.isFlattenedJSONSerialized) {
-      return Base64Url.decode(this.content);
-    }
-    const payloadStartIndex = this.content.indexOf('.') + 1;
-    const payloadExclusiveEndIndex = this.content.lastIndexOf('.');
-    const payload = this.content.substring(payloadStartIndex, payloadExclusiveEndIndex);
-
-    return Base64Url.decode(payload);
+    return Base64Url.decode(this.payload || '');
   }
 
   /**
-   * Gets the signature string.
+   * Gets the header as a JS object.
    */
-  private getSignature (): string {
-    if (this.isFlattenedJSONSerialized) {
-      return this.signature || '';
+  public getHeader (): any {
+    let headers = this.unprotectedHeaders;
+    if (!headers) {
+      headers = {};
     }
-    const signatureStartIndex = this.content.lastIndexOf('.') + 1;
-    const signature = this.content.substr(signatureStartIndex);
-
-    return signature;
+    if (this.protectedHeaders) {
+      const jsonString = Base64Url.decode(this.protectedHeaders);
+      const protect = JSON.parse(jsonString) as {[key: string]: any};
+      headers = Object.assign(headers, protect);
+    }
+    return headers;
   }
 
 }

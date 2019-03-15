@@ -20,11 +20,10 @@ describe('JwsToken', () => {
         signature: 'baz'
       };
       const jws = new JwsToken(correctJWS, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
-      expect(jws['protected']).toEqual('foo');
+      expect(jws['protectedHeaders']).toEqual('foo');
       expect(jws['content']).toEqual('foobar');
       expect(jws['signature']).toEqual('baz');
-      expect(jws['header']).toBeUndefined();
+      expect(jws['unprotectedHeaders']).toBeUndefined();
     });
 
     it('should construct from a flattened JSON object using header', () => {
@@ -37,10 +36,9 @@ describe('JwsToken', () => {
         signature: 'baz'
       };
       const jws = new JwsToken(correctJWS, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
-      expect(jws['protected']).toBeUndefined();
-      expect(jws['header']).toBeDefined();
-      expect(jws['header']!['kid']).toEqual('test');
+      expect(jws['protectedHeaders']).toBeUndefined();
+      expect(jws['unprotectedHeaders']).toBeDefined();
+      expect(jws['unprotectedHeaders']!['kid']).toEqual('test');
       expect(jws['content']).toEqual('foobar');
       expect(jws['signature']).toEqual('baz');
     });
@@ -55,12 +53,11 @@ describe('JwsToken', () => {
         signature: 'baz'
       };
       const jws = new JwsToken(correctJWS, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
-      expect(jws['protected']).toEqual('foo');
+      expect(jws['protectedHeaders']).toEqual('foo');
       expect(jws['content']).toEqual('foobar');
       expect(jws['signature']).toEqual('baz');
-      expect(jws['header']).toBeDefined();
-      expect(jws['header']!['foo']).toEqual('bar');
+      expect(jws['unprotectedHeaders']).toBeDefined();
+      expect(jws['unprotectedHeaders']!['foo']).toEqual('bar');
     });
 
     it('should ignore objects with invalid header formats', () => {
@@ -69,8 +66,7 @@ describe('JwsToken', () => {
         payload: 'foobar',
         signature: 'baz'
       };
-      const jws = new JwsToken(correctJWS, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeFalsy();
+      expect(new JwsToken(correctJWS, registry)).not.toThrow();
     });
 
     it('should ignore objects missing protected and header', () => {
@@ -78,8 +74,7 @@ describe('JwsToken', () => {
         payload: 'foobar',
         signature: 'baz'
       };
-      const jws = new JwsToken(correctJWS, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeFalsy();
+      expect(new JwsToken(correctJWS, registry)).not.toThrow();
     });
 
     it('should ignore objects missing signature', () => {
@@ -87,8 +82,7 @@ describe('JwsToken', () => {
         protected: 'foo',
         payload: 'foobar'
       };
-      const jws = new JwsToken(correctJWS, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeFalsy();
+      expect(new JwsToken(correctJWS, registry)).not.toThrow();
     });
   });
 
@@ -180,7 +174,6 @@ describe('JwsToken', () => {
         payload: '',
         signature: ''
       }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       const headers = jws.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);
@@ -196,7 +189,6 @@ describe('JwsToken', () => {
         payload: '',
         signature: ''
       }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       const headers = jws.getHeader();
       expect(headers).toBeDefined();
       expect(headers['headertest']).toEqual(headertest);
@@ -212,58 +204,9 @@ describe('JwsToken', () => {
         payload: '',
         signature: ''
       }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       const headers = jws.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);
-    });
-  });
-
-  describe('getSignedContent', () => {
-
-    function signedContent (jws: JwsToken): string {
-      return jws['getSignedContent']();
-    }
-    let protectedHeaders: string;
-    let payload: string;
-
-    beforeEach(() => {
-      protectedHeaders = Base64Url.encode(JSON.stringify({
-        test: Math.random()
-      }));
-      payload = Base64Url.encode(JSON.stringify({
-        test: Math.random()
-      }));
-    });
-
-    it('should return the signed content for a compact JWS', () => {
-      const jws = new JwsToken(`${protectedHeaders}.${payload}.`, registry);
-      expect(signedContent(jws)).toEqual(`${protectedHeaders}.${payload}`);
-    });
-
-    it('should return the signed content for a Flattened JSON JWS', () => {
-      const jws = new JwsToken({
-        payload,
-        header: {
-          unprotected: 'true'
-        },
-        protected: protectedHeaders,
-        signature: ''
-      }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
-      expect(signedContent(jws)).toEqual(`${protectedHeaders}.${payload}`);
-    });
-
-    it('should return the signed content for a Flattened JSON JWS', () => {
-      const jws = new JwsToken({
-        payload,
-        header: {
-          unprotected: 'true'
-        },
-        signature: ''
-      }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
-      expect(signedContent(jws)).toEqual(`.${payload}`);
     });
   });
 
@@ -291,32 +234,7 @@ describe('JwsToken', () => {
         payload,
         signature: ''
       }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
       expect(jws.getPayload()).toEqual(data);
-    });
-  });
-
-  describe('getSignature', () => {
-
-    function getSignature (jws: JwsToken): string {
-      return jws['getSignature']();
-    }
-
-    it('should return the signature from a compact JWS', () => {
-      const signature = 'test';
-      const jws = new JwsToken(`..${signature}`, registry);
-      expect(getSignature(jws)).toEqual(signature);
-    });
-
-    it('should return the signature from a Flattened JSON JWS', () => {
-      const signature = 'test';
-      const jws = new JwsToken({
-        signature,
-        payload: 'foo',
-        protected: 'bar'
-      }, registry);
-      expect(jws['isFlattenedJSONSerialized']).toBeTruthy();
-      expect(getSignature(jws)).toEqual(signature);
     });
   });
 
@@ -346,7 +264,7 @@ describe('JwsToken', () => {
     });
   });
 
-  describe('flatJsonSign', () => {
+  describe('signFlatJson', () => {
 
     let data: any;
 
@@ -361,7 +279,7 @@ describe('JwsToken', () => {
       privateKey.defaultSignAlgorithm = 'unsupported';
       const jwsToken = new JwsToken(data, registry);
       try {
-        await jwsToken.flatJsonSign(privateKey);
+        await jwsToken.signFlatJson(privateKey);
       } catch (err) {
         expect(err).toBeDefined();
         return;
@@ -372,14 +290,14 @@ describe('JwsToken', () => {
     it('should call the crypto Algorithms\'s sign', async () => {
       const jwsToken = new JwsToken(data, registry);
       crypto.reset();
-      await jwsToken.flatJsonSign(new TestPrivateKey());
+      await jwsToken.signFlatJson(new TestPrivateKey());
       expect(crypto.wasSignCalled()).toBeTruthy();
     });
 
     it('should return the expected JSON JWS', async () => {
       const jwsToken = new JwsToken(data, registry);
       const key = new TestPrivateKey();
-      const jws = await jwsToken.flatJsonSign(key);
+      const jws = await jwsToken.signFlatJson(key);
       console.log(jws);
       expect(jws.signature).toBeDefined();
       expect(Base64Url.decode(jws.payload)).toEqual(JSON.stringify(data));

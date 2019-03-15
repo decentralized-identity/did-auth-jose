@@ -10,6 +10,19 @@ export default abstract class JoseToken {
    * Content of the token
    */
   protected content: string;
+
+  /**
+   * Protected headers (base64url encoded)
+   */
+  protected protectedHeaders: string | undefined;
+  /**
+   * Unprotected headers
+   */
+  protected unprotectedHeaders: {[member: string]: any} | undefined;
+  /**
+   * Payload (base64url encoded)
+   */
+  protected payload: string | undefined;
   /**
    * Constructor for JoseToken that takes in a compact-serialized token string.
    */

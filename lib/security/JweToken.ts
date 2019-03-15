@@ -73,10 +73,11 @@ export default class JweToken extends JoseToken {
     const keyEncryptionAlgorithm = jwk.defaultEncryptionAlgorithm;
 
     // Construct header.
+    const enc = this.cryptoFactory.getDefaultSymmetricEncryptionAlgorithm();
     let header: {[header: string]: string} = Object.assign({}, {
       kid: jwk.kid,
       alg: keyEncryptionAlgorithm,
-      enc: 'A128GCM'
+      enc
     }, additionalHeaders);
 
     // Base 64 encode header.

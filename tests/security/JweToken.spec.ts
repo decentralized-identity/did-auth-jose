@@ -237,7 +237,7 @@ describe('JweToken', () => {
         kty: 'test',
         kid: privateKey.kid,
         alg: 'unknown',
-        enc: 'A128GCM'
+        enc: 'test'
       });
       const jwe = new JweToken(newMessage, registry);
       await expectToThrow(jwe, 'decrypt suceeded with unknown encryption algorithm used');
@@ -254,7 +254,7 @@ describe('JweToken', () => {
       const newMessage = usingheaders({
         kty: 'test',
         kid: privateKey.kid,
-        enc: 'A128GCM'
+        enc: 'test'
       });
       const jwe = new JweToken(newMessage, registry);
       await expectToThrow(jwe, 'decrypt succeeded when a necessary header was omitted');
@@ -264,7 +264,7 @@ describe('JweToken', () => {
       let message = usingheaders({
         kty: 'test',
         kid: privateKey.kid,
-        enc: 'A128GCM',
+        enc: 'test',
         alg: 'test',
         test: 'A "required" field',
         crit: [
@@ -277,7 +277,7 @@ describe('JweToken', () => {
       message = usingheaders({
         kty: 'test',
         kid: privateKey.kid,
-        enc: 'A128GCM',
+        enc: 'test',
         alg: 'test',
         test: 'A "required" field',
         crit: 1
@@ -288,7 +288,7 @@ describe('JweToken', () => {
       message = usingheaders({
         kty: 'test',
         kid: privateKey.kid,
-        enc: 'A128GCM',
+        enc: 'test',
         alg: 'test',
         test: 'A "required" field',
         crit: []
@@ -301,7 +301,7 @@ describe('JweToken', () => {
       const newMessage = usingheaders({
         kty: 'test',
         kid: privateKey.kid + '1',
-        enc: 'A128GCM',
+        enc: 'test',
         alg: 'test'
       });
       const jwe = new JweToken(newMessage, registry);

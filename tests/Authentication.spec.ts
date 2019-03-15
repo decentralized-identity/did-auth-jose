@@ -1,5 +1,5 @@
 import { DidDocument, unitTestExports } from '@decentralized-identity/did-common-typescript';
-import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite } from '../lib';
+import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite, AesCryptoSuite } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
 import AuthenticationResponse from '../lib/interfaces/AuthenticationResponse';
 import AuthenticationRequest from '../lib/interfaces/AuthenticationRequest';
@@ -13,7 +13,7 @@ describe('Authentication', () => {
   let examplePublicKey: PublicKey;
   let exampleResolvedDID: DidDocument;
   let auth: Authentication;
-  let registry = new CryptoFactory([new RsaCryptoSuite()]);
+  let registry = new CryptoFactory([new RsaCryptoSuite(), new AesCryptoSuite()]);
   let resolver = new unitTestExports.TestResolver();
   const hubDID = 'did:example:did';
   const exampleDID = 'did:example:123456789abcdefghi';

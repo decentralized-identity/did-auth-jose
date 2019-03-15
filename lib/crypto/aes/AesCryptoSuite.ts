@@ -20,18 +20,6 @@ export default class AesCryptoSuite implements CryptoSuite {
 
   getSymmetricEncrypters(): { [algorithm: string]: SymmetricEncrypter } {
     return {
-      'A128CBC-HS256': {
-        encrypt: this.encryptAesCbcHmacSha2(128, 256),
-        decrypt: this.decryptAesCbcHmacSha2(128, 256)
-      },
-      'A192CBC-HS384': {
-        encrypt: this.encryptAesCbcHmacSha2(192, 384),
-        decrypt: this.decryptAesCbcHmacSha2(192, 384)
-      },
-      'A256CBC-HS512': {
-        encrypt: this.encryptAesCbcHmacSha2(256, 512),
-        decrypt: this.decryptAesCbcHmacSha2(256, 512)
-      },
       'A128GCM': {
         encrypt: this.encryptAesGcm(128),
         decrypt: this.decryptAesGcm(128)
@@ -43,6 +31,18 @@ export default class AesCryptoSuite implements CryptoSuite {
       'A256GCM': {
         encrypt: this.encryptAesGcm(256),
         decrypt: this.decryptAesGcm(256)
+      },
+      'A128CBC-HS256': {
+        encrypt: this.encryptAesCbcHmacSha2(128, 256),
+        decrypt: this.decryptAesCbcHmacSha2(128, 256)
+      },
+      'A192CBC-HS384': {
+        encrypt: this.encryptAesCbcHmacSha2(192, 384),
+        decrypt: this.decryptAesCbcHmacSha2(192, 384)
+      },
+      'A256CBC-HS512': {
+        encrypt: this.encryptAesCbcHmacSha2(256, 512),
+        decrypt: this.decryptAesCbcHmacSha2(256, 512)
       }
     };
   }

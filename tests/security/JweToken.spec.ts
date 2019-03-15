@@ -19,11 +19,11 @@ describe('JweToken', () => {
       };
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['protectedHeaders']).toEqual('secret properties');
-      expect(jwe['content']).toEqual('secrets');
+      expect(jwe['payload']).toEqual('secrets');
       expect(jwe['unprotectedHeaders']).toBeUndefined();
-      expect(jwe['iv']).toEqual(Buffer.from('vector'));
-      expect(jwe['tag']).toEqual(Buffer.from('tag'));
-      expect(jwe['encryptedKey']).toEqual(Buffer.from('a key'));
+      expect(jwe['iv']).toEqual(Buffer.from(Base64Url.toBase64('vector'), 'base64'));
+      expect(jwe['tag']).toEqual(Buffer.from(Base64Url.toBase64('tag'), 'base64'));
+      expect(jwe['encryptedKey']).toEqual(Buffer.from(Base64Url.toBase64('a key'), 'base64'));
     });
     it('should construct from a flattened JSON object with an unprotected', () => {
       const jweObject = {
@@ -38,10 +38,10 @@ describe('JweToken', () => {
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['unprotectedHeaders']).toBeDefined();
       expect(jwe['unprotectedHeaders']!['test']).toEqual('secret property');
-      expect(jwe['content']).toEqual('secrets');
-      expect(jwe['iv']).toEqual(Buffer.from('vector'));
-      expect(jwe['tag']).toEqual(Buffer.from('tag'));
-      expect(jwe['encryptedKey']).toEqual(Buffer.from('a key'));
+      expect(jwe['payload']).toEqual('secrets');
+      expect(jwe['iv']).toEqual(Buffer.from(Base64Url.toBase64('vector'), 'base64'));
+      expect(jwe['tag']).toEqual(Buffer.from(Base64Url.toBase64('tag'), 'base64'));
+      expect(jwe['encryptedKey']).toEqual(Buffer.from(Base64Url.toBase64('a key'), 'base64'));
     });
     it('should combine flattened JSON object headers unprotected and header', () => {
       const jweObject = {

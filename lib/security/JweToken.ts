@@ -61,19 +61,25 @@ export default class JweToken extends JoseToken {
       } else if ('encrypted_key' in jsonContent && typeof jsonContent.encrypted_key === 'string') {
         // Flattened JWE JSON Serialization
         if ('header' in jsonContent) {
-          this.unprotectedHeaders = Object.assign(this.unprotectedHeaders, jsonContent.header);
+          this.unprotectedHeaders = jsonContent.header;
         }
-        this.encryptedKey = jsonContent.encrypted_key;
+        this.encryptedKey = Buffer.from(Base64Url.toBase64(jsonContent.encrypted_key), 'base64');
+      } else {
+        // This isn't a JWE
+        return;
       }
       if ('protected' in jsonContent) {
         this.protectedHeaders = jsonContent.protected;
       }
-      this.unprotectedHeaders = {};
       if ('unprotected' in jsonContent) {
-        this.unprotectedHeaders = Object.assign(this.unprotectedHeaders, jsonContent.unprotected);
+        if (this.unprotectedHeaders) {
+          this.unprotectedHeaders = Object.assign(this.unprotectedHeaders, jsonContent.unprotected);
+        } else {
+          this.unprotectedHeaders = jsonContent.unprotected;
+        }
       }
-      this.iv = jsonContent.iv;
-      this.tag = jsonContent.tag;
+      this.iv = Buffer.from(Base64Url.toBase64(jsonContent.iv), 'base64');
+      this.tag = Buffer.from(Base64Url.toBase64(jsonContent.tag), 'base64');
       this.payload = jsonContent.ciphertext;
       if (jsonContent.aad) {
         this.aad = Buffer.from(this.protectedHeaders + '.' + Base64Url.encode(jsonContent.aad));

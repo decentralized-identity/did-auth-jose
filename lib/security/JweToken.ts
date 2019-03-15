@@ -2,7 +2,7 @@ import Base64Url from '../utilities/Base64Url';
 import JoseToken from './JoseToken';
 import PublicKey from '../security/PublicKey';
 import PrivateKey from '../security/PrivateKey';
-import { CryptoFactory } from '..';
+import CryptoFactory from '../CryptoFactory';
 
 /**
  * Definition for a delegate that can encrypt data.
@@ -29,16 +29,17 @@ export default class JweToken extends JoseToken {
       //    BASE64URL(JWE Initialization Vector) || '.' || BASE64URL(JWE Ciphertext) || '.' ||
       //    BASE64URL(JWE Authentication Tag)
       const base64EncodedValues = content.split('.');
-
-      // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
-      this.protectedHeaders = base64EncodedValues[0];
-      this.encryptedKey = Buffer.from(Base64Url.toBase64(base64EncodedValues[1]), 'base64');
-      this.iv = Buffer.from(Base64Url.toBase64(base64EncodedValues[2]), 'base64');
-      this.payload = base64EncodedValues[3];
-      this.tag = Buffer.from(Base64Url.toBase64(base64EncodedValues[4]), 'base64');
-      // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
-      this.aad = Buffer.from(base64EncodedValues[0]);
-      return;
+      if (base64EncodedValues.length === 5) {
+        // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
+        this.protectedHeaders = base64EncodedValues[0];
+        this.encryptedKey = Buffer.from(Base64Url.toBase64(base64EncodedValues[1]), 'base64');
+        this.iv = Buffer.from(Base64Url.toBase64(base64EncodedValues[2]), 'base64');
+        this.payload = base64EncodedValues[3];
+        this.tag = Buffer.from(Base64Url.toBase64(base64EncodedValues[4]), 'base64');
+        // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
+        this.aad = Buffer.from(base64EncodedValues[0]);
+        return;
+      }
     }
 
     const jsonContent: any = content;
@@ -46,35 +47,38 @@ export default class JweToken extends JoseToken {
     'ciphertext' in jsonContent && typeof jsonContent.ciphertext === 'string' &&
     'iv' in jsonContent && typeof jsonContent.iv === 'string' &&
     'tag' in jsonContent && typeof jsonContent.tag === 'string' &&
-    (('protected' in jsonContent && typeof jsonContent.protected === 'string') ||
-    ('unprotected' in jsonContent && typeof jsonContent.unprotected === 'object'))) {
-      if ('protected' in jsonContent && typeof jsonContent.protected === 'string') {
-        this.protectedHeaders = jsonContent.protected;
+    ('protected' in jsonContent || 'unprotected' in jsonContent || 'header' in jsonContent)) {
+      if (
+        ('protected' in jsonContent && typeof jsonContent.protected !== 'string') ||
+        ('unprotected' in jsonContent && typeof jsonContent.unprotected !== 'object') ||
+        ('header' in jsonContent && typeof jsonContent.header !== 'object')
+        ) {
+        // One of the properties is of the wrong type
+        return;
       }
-      if ('unprotected' in jsonContent && typeof jsonContent.unprotected === 'object') {
-        this.unprotectedHeaders = jsonContent.unprotected;
-      }
-      this.iv = jsonContent.iv;
-      this.tag = jsonContent.tag;
-      this.aad = jsonContent.aad;
       if ('recipients' in jsonContent) {
         // TODO: General JWE JSON Serialization
       } else if ('encrypted_key' in jsonContent && typeof jsonContent.encrypted_key === 'string') {
         // Flattened JWE JSON Serialization
-        this.encryptedKey = jsonContent.encrypted_key;
-        if ('header' in jsonContent && typeof jsonContent.header === 'object') {
-          this.unprotected = Object.assign(this.unprotected, jsonContent.header);
+        if ('header' in jsonContent) {
+          this.unprotectedHeaders = Object.assign(this.unprotectedHeaders, jsonContent.header);
         }
-        this.isFlattenedJsonSerialized = true;
+        this.encryptedKey = jsonContent.encrypted_key;
       }
-      this.content = jsonContent.ciphertext;
-
-      // form the AAD from the protected headers and anything else added
-      let aad: Buffer;
-      if (options && options.aad) {
-        aad = Buffer.from(protectedHeaderBase64Url + '.' + Base64Url.encode(options.aad));
+      if ('protected' in jsonContent) {
+        this.protectedHeaders = jsonContent.protected;
+      }
+      this.unprotectedHeaders = {};
+      if ('unprotected' in jsonContent) {
+        this.unprotectedHeaders = Object.assign(this.unprotectedHeaders, jsonContent.unprotected);
+      }
+      this.iv = jsonContent.iv;
+      this.tag = jsonContent.tag;
+      this.payload = jsonContent.ciphertext;
+      if (jsonContent.aad) {
+        this.aad = Buffer.from(this.protectedHeaders + '.' + Base64Url.encode(jsonContent.aad));
       } else {
-        aad = Buffer.from(protectedHeaderBase64Url);
+        this.aad = Buffer.from(this.protectedHeaders || '');
       }
     }
   }
@@ -104,7 +108,7 @@ export default class JweToken extends JoseToken {
 
     // Get the symmetric encrypter and encrypt
     const symEncrypter = this.cryptoFactory.getSymmetricEncrypter(header.enc);
-    const symEnc = await symEncrypter.encrypt(Buffer.from(this.content), Buffer.from(protectedHeaderBase64Url))
+    const symEnc = await symEncrypter.encrypt(Buffer.from(this.content), Buffer.from(protectedHeaderBase64Url));
 
     // Encrypt content encryption key then base64-url encode it.
     const encryptedKeyBuffer = await this.encryptContentEncryptionKey(header.alg, symEnc.key, jwk);
@@ -162,9 +166,11 @@ export default class JweToken extends JoseToken {
     // Base 64 encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
+    const aad = Buffer.from(options && options.aad ? `${protectedHeaderBase64Url}.${Base64Url.encode(options.aad)}` : protectedHeaderBase64Url);
+
     // Symmetrically encrypt the content
     const symEncrypter = this.cryptoFactory.getSymmetricEncrypter(header.enc);
-    const symEncParams = await symEncrypter.encrypt(Buffer.from(this.content), aad)
+    const symEncParams = await symEncrypter.encrypt(Buffer.from(this.content), aad);
 
     // Encrypt content encryption key and base64 all the parameters
     const encryptedKeyBuffer = await this.encryptContentEncryptionKey(keyEncryptionAlgorithm, symEncParams.key, jwk);

@@ -35,21 +35,21 @@ export default class JwsToken extends JoseToken {
       if ('payload' in jsonObject && typeof jsonObject.payload === 'string') {
         // TODO: General JWS JSON Serialization signatures and one of protected or header for each
         if ('signature' in jsonObject && typeof jsonObject.signature === 'string') {
-          this.signature = jsonObject.signature;
           // Flattened JWS JSON Serialization
-          if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') ||
+          if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') &&
             !('header' in jsonObject && typeof jsonObject.header === 'object')) {
             // invalid JWS JSON Serialization
             return;
           }
+          // if we've gotten this far, we succeeded can can safely set parameters
           if ('protected' in jsonObject && typeof jsonObject.protected === 'string') {
             this.protectedHeaders = jsonObject.protected;
           }
           if ('header' in jsonObject && typeof jsonObject.header === 'object') {
             this.unprotectedHeaders = jsonObject.header;
           }
-          // if we've gotten this far, we succeeded can can safely reset the content
           this.payload = jsonObject.payload;
+          this.signature = jsonObject.signature;
           return;
         }
       }
@@ -122,6 +122,10 @@ export default class JwsToken extends JoseToken {
    * @returns The payload if signature is verified. Throws exception otherwise.
    */
   public async verifySignature (jwk: PublicKey): Promise<string> {
+    // ensure we have everything we need
+    if (this.payload === undefined || this.signature === undefined) {
+      throw new Error('Unable to parse content as a JWS');
+    }
     const algorithm = this.getHeader().alg;
     const signer = this.cryptoFactory.getSigner(algorithm);
 
@@ -134,15 +138,15 @@ export default class JwsToken extends JoseToken {
       throw err;
     }
 
-    const signedContent = `${this.protectedHeaders || ''}.${this.payload || ''}`;
-    const passedSignatureValidation = await verify(signedContent, this.signature || '', jwk);
+    const signedContent = `${this.protectedHeaders || ''}.${this.payload!}`;
+    const passedSignatureValidation = await verify(signedContent, this.signature!, jwk);
 
     if (!passedSignatureValidation) {
       const err = new Error('Failed signature validation');
       throw err;
     }
 
-    const verifiedData = Base64Url.decode(this.payload || '');
+    const verifiedData = Base64Url.decode(this.payload!);
     return verifiedData;
   }
 
@@ -150,7 +154,10 @@ export default class JwsToken extends JoseToken {
    * Gets the base64 URL decrypted payload.
    */
   public getPayload (): any {
-    return Base64Url.decode(this.payload || '');
+    if (this.payload) {
+      return Base64Url.decode(this.payload);
+    }
+    return this.content;
   }
 
   /**

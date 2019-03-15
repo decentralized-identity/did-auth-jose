@@ -21,7 +21,7 @@ describe('JwsToken', () => {
       };
       const jws = new JwsToken(correctJWS, registry);
       expect(jws['protectedHeaders']).toEqual('foo');
-      expect(jws['content']).toEqual('foobar');
+      expect(jws['payload']).toEqual('foobar');
       expect(jws['signature']).toEqual('baz');
       expect(jws['unprotectedHeaders']).toBeUndefined();
     });
@@ -39,7 +39,7 @@ describe('JwsToken', () => {
       expect(jws['protectedHeaders']).toBeUndefined();
       expect(jws['unprotectedHeaders']).toBeDefined();
       expect(jws['unprotectedHeaders']!['kid']).toEqual('test');
-      expect(jws['content']).toEqual('foobar');
+      expect(jws['payload']).toEqual('foobar');
       expect(jws['signature']).toEqual('baz');
     });
 
@@ -54,7 +54,7 @@ describe('JwsToken', () => {
       };
       const jws = new JwsToken(correctJWS, registry);
       expect(jws['protectedHeaders']).toEqual('foo');
-      expect(jws['content']).toEqual('foobar');
+      expect(jws['payload']).toEqual('foobar');
       expect(jws['signature']).toEqual('baz');
       expect(jws['unprotectedHeaders']).toBeDefined();
       expect(jws['unprotectedHeaders']!['foo']).toEqual('bar');
@@ -66,7 +66,7 @@ describe('JwsToken', () => {
         payload: 'foobar',
         signature: 'baz'
       };
-      expect(new JwsToken(correctJWS, registry)).not.toThrow();
+      expect(() => { new JwsToken(correctJWS, registry); }).not.toThrow();
     });
 
     it('should ignore objects missing protected and header', () => {
@@ -74,7 +74,7 @@ describe('JwsToken', () => {
         payload: 'foobar',
         signature: 'baz'
       };
-      expect(new JwsToken(correctJWS, registry)).not.toThrow();
+      expect(() => { new JwsToken(correctJWS, registry); }).not.toThrow();
     });
 
     it('should ignore objects missing signature', () => {
@@ -82,7 +82,7 @@ describe('JwsToken', () => {
         protected: 'foo',
         payload: 'foobar'
       };
-      expect(new JwsToken(correctJWS, registry)).not.toThrow();
+      expect(() => { new JwsToken(correctJWS, registry); }).not.toThrow();
     });
   });
 

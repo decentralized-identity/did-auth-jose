@@ -49,15 +49,16 @@ export default class JweToken extends JoseToken {
     'tag' in jsonContent && typeof jsonContent.tag === 'string' &&
     ('protected' in jsonContent || 'unprotected' in jsonContent || 'header' in jsonContent)) {
       if (
-        ('protected' in jsonContent && typeof jsonContent.protected !== 'string') ||
-        ('unprotected' in jsonContent && typeof jsonContent.unprotected !== 'object') ||
-        ('header' in jsonContent && typeof jsonContent.header !== 'object')
+        ('protected' in jsonContent && jsonContent.protected !== undefined && typeof jsonContent.protected !== 'string') ||
+        ('unprotected' in jsonContent && jsonContent.unprotected !== undefined && typeof jsonContent.unprotected !== 'object') ||
+        ('header' in jsonContent && jsonContent.header !== undefined && typeof jsonContent.header !== 'object')
         ) {
         // One of the properties is of the wrong type
         return;
       }
       if ('recipients' in jsonContent) {
         // TODO: General JWE JSON Serialization
+        return;
       } else if ('encrypted_key' in jsonContent && typeof jsonContent.encrypted_key === 'string') {
         // Flattened JWE JSON Serialization
         if ('header' in jsonContent) {
@@ -82,7 +83,7 @@ export default class JweToken extends JoseToken {
       this.tag = Buffer.from(Base64Url.toBase64(jsonContent.tag), 'base64');
       this.payload = jsonContent.ciphertext;
       if (jsonContent.aad) {
-        this.aad = Buffer.from(this.protectedHeaders + '.' + Base64Url.encode(jsonContent.aad));
+        this.aad = Buffer.from(this.protectedHeaders + '.' + jsonContent.aad);
       } else {
         this.aad = Buffer.from(this.protectedHeaders || '');
       }
@@ -145,11 +146,10 @@ export default class JweToken extends JoseToken {
    */
   public async encryptFlatJson (jwk: PublicKey,
     options?: {
-      unprotected?: {[key: string]: string},
-      protected?: {[key: string]: string},
+      unprotected?: {[key: string]: any},
+      protected?: {[key: string]: any},
       aad?: string | Buffer
-    }
-    /* encryptionType?: string */): Promise<{
+    }): Promise<{
       protected?: string,
       unprotected?: {[key: string]: string},
       encrypted_key: string,
@@ -186,15 +186,26 @@ export default class JweToken extends JoseToken {
     const authenticationTagBase64Url = Base64Url.encode(symEncParams.tag);
 
     // Form final compact serialized JWE string.
-    return {
+    let returnJwe: {
+      protected?: string,
+      unprotected?: {[key: string]: string},
+      encrypted_key: string,
+      iv: string,
+      ciphertext: string,
+      tag: string,
+      aad?: string
+    } = {
       protected: protectedHeaderBase64Url,
       unprotected: (options || {}).unprotected,
       encrypted_key: encryptedKeyBase64Url,
       iv: initializationVectorBase64Url,
       ciphertext: ciphertextBase64Url,
       tag: authenticationTagBase64Url,
-      aad: (options && options.aad ? Base64Url.encode(options.aad) : undefined)
     };
+    if (options && options.aad) {
+      returnJwe.aad = Base64Url.encode(options.aad);
+    }
+    return returnJwe;
   }
 
   /**
@@ -244,7 +255,8 @@ export default class JweToken extends JoseToken {
    */
   public async decrypt (jwk: PrivateKey): Promise<string> {
     // following steps for JWE Decryption in RFC7516 section 5.2
-    if (!this.encryptedKey || !this.payload || !this.iv || !this.aad || !this.tag) {
+    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
+      console.log(this);
       throw new Error('Could not parse contents into a JWE');
     }
     const ciphertext = Buffer.from(Base64Url.toBase64(this.payload), 'base64');

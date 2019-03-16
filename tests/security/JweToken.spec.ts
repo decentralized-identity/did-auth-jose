@@ -333,7 +333,7 @@ describe('JweToken', () => {
       const protectedHeaders = Base64Url.encode(JSON.stringify({
         test
       }));
-      const jwe = new JweToken(protectedHeaders + '..', registry);
+      const jwe = new JweToken(protectedHeaders + '....', registry);
       const headers = jwe.getHeader();
       expect(headers).toBeDefined();
       expect(headers['test']).toEqual(test);

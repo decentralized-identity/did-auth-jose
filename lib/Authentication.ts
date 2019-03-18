@@ -107,6 +107,7 @@ export default class Authentication {
     }
 
     const publicKey: PublicKey = key.getPublicKey();
+    const base64UrlThumbprint = await key.getThumbprint();
 
     // milliseconds to seconds
     const milliseconds = 1000;
@@ -117,7 +118,7 @@ export default class Authentication {
     const iat = Math.floor(Date.now() / milliseconds); // ms to seconds
     let response: AuthenticationResponse = {
       iss: 'https://self-issued.me',
-      sub: responseDid,
+      sub: base64UrlThumbprint,
       aud: authRequest.client_id,
       nonce: authRequest.nonce,
       exp: Math.floor(expiration.getTime() / milliseconds),

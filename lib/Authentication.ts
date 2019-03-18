@@ -193,7 +193,7 @@ export default class Authentication {
     const keyDid = DidDocument.getDidFromKeyId(keyId);
     const content = await this.verifySignature(jwsToken);
     const response: AuthenticationResponse = JSON.parse(content);
-    if (response.sub !== keyDid) {
+    if (response.did !== keyDid) {
       throw new Error('Signing DID does not match issuer');
     }
     return response;

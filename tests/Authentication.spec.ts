@@ -196,7 +196,7 @@ describe('Authentication', () => {
       const payload = await jws.verifySignature(hubPublicKey);
       const payloadObj = JSON.parse(payload);
       expect(payloadObj.iss).toEqual('https://self-issued.me');
-      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
@@ -212,7 +212,7 @@ describe('Authentication', () => {
       const payload = await jws.verifySignature(hubPublicKey);
       const payloadObj = JSON.parse(payload);
       expect(payloadObj.iss).toEqual('https://self-issued.me');
-      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
@@ -240,7 +240,7 @@ describe('Authentication', () => {
       const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
       const payloadObj = await auth.verifyAuthenticationResponse(response);
       expect(payloadObj.iss).toEqual('https://self-issued.me');
-      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
@@ -255,7 +255,7 @@ describe('Authentication', () => {
       const responseBuffer = Buffer.from(response);
       const payloadObj = await auth.verifyAuthenticationResponse(responseBuffer);
       expect(payloadObj.iss).toEqual('https://self-issued.me');
-      expect(payloadObj.sub).toEqual(hubDID);
+      expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);

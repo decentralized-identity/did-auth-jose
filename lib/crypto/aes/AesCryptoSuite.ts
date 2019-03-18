@@ -85,10 +85,11 @@ export default class AesCryptoSuite implements CryptoSuite {
   (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) =>
   Promise<Buffer> {
     return async (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) => {
-      const mackey = key.slice(0, 4);
-      const enckey = key.slice(4, 8);
+      const splitLength = key.length / 2;
+      const mackey = key.slice(0, splitLength);
+      const enckey = key.slice(splitLength, key.length);
       const computedTag = this.generateHmacTag(hashSize, keySize, mackey, additionalAuthenticatedData, initializationVector, ciphertext);
-      if (computedTag !== tag) {
+      if (computedTag.compare(tag) !== 0) {
         throw new Error('Invalid tag');
       }
       const algorithm = `aes-${keySize}-cbc`;

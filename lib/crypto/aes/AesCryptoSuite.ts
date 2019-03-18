@@ -159,19 +159,44 @@ export default class AesCryptoSuite implements CryptoSuite {
    */
   private generateHmacTag (hashSize: number, keySize: number, mackey: Buffer,
     additionalAuthenticatedData: Buffer, initializationVector: Buffer, ciphertext: Buffer): Buffer {
-    const aadLength = additionalAuthenticatedData.length * 8;
-    const alMsb = (aadLength >> 32) & 0xFFFFFFFF;
-    const alLsb = aadLength & 0xFFFFFFFF;
-    const al = Buffer.alloc(8);
-    al.writeUInt32BE(alMsb, 0);
-    al.writeUInt32BE(alLsb, 4);
+    const mac = this.generateHmac(hashSize, mackey, additionalAuthenticatedData, initializationVector, ciphertext);
+    return mac.slice(0, Math.ceil(keySize / 8));
+  }
+
+  /**
+   * Generates the full HMac
+   * @param hashSize HMAC hash size
+   * @param mackey MAC key
+   * @param additionalAuthenticatedData Additional authenticated data
+   * @param initializationVector initialization vector
+   * @param ciphertext encrypted data
+   * @returns HMAC in full
+   */
+  private generateHmac (hashSize: number, mackey: Buffer,
+    additionalAuthenticatedData: Buffer, initializationVector: Buffer, ciphertext: Buffer): Buffer {
+    const al = this.getAdditionalAuthenticatedDataLength(additionalAuthenticatedData);
     const hmac = crypto.createHmac(`sha${hashSize}`, mackey);
     hmac.update(additionalAuthenticatedData);
     hmac.update(initializationVector);
     hmac.update(ciphertext);
     hmac.update(al);
     const mac = hmac.digest();
-    return mac.slice(0, Math.ceil(keySize / 8));
+    return mac;
+  }
+
+  /**
+   * Gets the Additional Authenticated Data length in Big Endian notation
+   * @param additionalAuthenticatedData Additional authenticated data
+   * @return Additional Authenticated Data returned as a base64 big endian unsigned integer
+   */
+  private getAdditionalAuthenticatedDataLength (additionalAuthenticatedData: Buffer): Buffer {
+    const aadLength = additionalAuthenticatedData.length * 8;
+    const alMsb = aadLength & 0xFFFFFFFF00000000;
+    const alLsb = (aadLength >> 32) & 0x00000000FFFFFFFF;
+    const al = Buffer.alloc(8);
+    al.writeUInt32BE(alMsb, 0);
+    al.writeUInt32BE(alLsb, 4);
+    return al;
   }
 
   // these are two different functions to allow validation against RFC specs

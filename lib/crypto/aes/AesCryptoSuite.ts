@@ -1,4 +1,4 @@
-import CryptoSuite, {Encrypter, Signer, SymmetricEncrypter, PublicKeyConstructors} from '../../interfaces/CryptoSuite';
+import CryptoSuite, { Encrypter, Signer, SymmetricEncrypter, PublicKeyConstructors } from '../../interfaces/CryptoSuite';
 import crypto from 'crypto';
 
 /**
@@ -18,7 +18,7 @@ export default class AesCryptoSuite implements CryptoSuite {
     return {};
   }
 
-  getSymmetricEncrypters(): { [algorithm: string]: SymmetricEncrypter } {
+  getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
     return {
       'A128GCM': {
         encrypt: this.encryptAesGcm(128),

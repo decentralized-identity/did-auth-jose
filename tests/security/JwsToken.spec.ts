@@ -253,7 +253,7 @@ describe('JwsToken', () => {
     it('should return the original content if it was unable to parse a JWS', () => {
       const jws = new JwsToken('some test value', registry);
       expect(jws.getPayload()).toEqual('some test value');
-    })
+    });
   });
 
   describe('sign', () => {

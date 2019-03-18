@@ -138,15 +138,15 @@ export default class JwsToken extends JoseToken {
       throw err;
     }
 
-    const signedContent = `${this.protectedHeaders || ''}.${this.payload!}`;
-    const passedSignatureValidation = await verify(signedContent, this.signature!, jwk);
+    const signedContent = `${this.protectedHeaders || ''}.${this.payload}`;
+    const passedSignatureValidation = await verify(signedContent, this.signature, jwk);
 
     if (!passedSignatureValidation) {
       const err = new Error('Failed signature validation');
       throw err;
     }
 
-    const verifiedData = Base64Url.decode(this.payload!);
+    const verifiedData = Base64Url.decode(this.payload);
     return verifiedData;
   }
 

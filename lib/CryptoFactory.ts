@@ -124,7 +124,7 @@ export default class CryptoFactory {
   /**
    * Gets the default symmetric encryption algorithm to use
    */
-  getDefaultSymmetricEncryptionAlgorithm(): string {
+  getDefaultSymmetricEncryptionAlgorithm (): string {
     return this.defaultSymmetricAlgorithm;
   }
 }

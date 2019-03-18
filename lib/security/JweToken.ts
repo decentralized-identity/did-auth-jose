@@ -200,7 +200,7 @@ export default class JweToken extends JoseToken {
       encrypted_key: encryptedKeyBase64Url,
       iv: initializationVectorBase64Url,
       ciphertext: ciphertextBase64Url,
-      tag: authenticationTagBase64Url,
+      tag: authenticationTagBase64Url
     };
     if (options && options.aad) {
       returnJwe.aad = Base64Url.encode(options.aad);

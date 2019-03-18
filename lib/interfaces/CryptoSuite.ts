@@ -65,7 +65,7 @@ export interface Signer {
 export interface SymmetricEncrypter {
   /**
    * Given plaintext to encrypt, and additional authenticated data, creates corresponding ciphertext and
-   * provides the corresponding initialization vector, key, and tag. Note, not all 
+   * provides the corresponding initialization vector, key, and tag. Note, not all
    * @param plaintext Data to be symmetrically encrypted
    * @param additionalAuthenticatedData Data that will be integrity checked but not encrypted
    * @returns An object containing the corresponding ciphertext, initializationVector, key, and tag

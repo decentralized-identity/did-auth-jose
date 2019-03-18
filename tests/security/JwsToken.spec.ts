@@ -149,6 +149,16 @@ describe('JwsToken', () => {
       }
       expect(crypto.wasVerifyCalled()).toBeTruthy();
     });
+
+    it('should require the JWS to have been parsed correctly', async () => {
+      const jws = new JwsToken('I am not decryptable', registry);
+      try {
+        await jws.verifySignature(new TestPublicKey());
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('Could not parse contents into a JWS');
+      }
+    });
   });
 
   describe('getHeader', () => {
@@ -239,6 +249,11 @@ describe('JwsToken', () => {
       }, registry);
       expect(jws.getPayload()).toEqual(data);
     });
+
+    it('should return the original content if it was unable to parse a JWS', () => {
+      const jws = new JwsToken('some test value', registry);
+      expect(jws.getPayload()).toEqual('some test value');
+    })
   });
 
   describe('sign', () => {

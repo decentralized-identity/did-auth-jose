@@ -61,6 +61,20 @@ describe('JweToken', () => {
       expect(jwe['unprotectedHeaders']!['test']).toEqual('secret property');
       expect(jwe['unprotectedHeaders']!['test2']).toEqual('secret boogaloo');
     });
+    it('should accept flattened JSON object with only header', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        encrypted_key: 'a key',
+        header: {
+          test: 'secret boogaloo'
+        }
+      };
+      const jwe = new JweToken(jweObject, registry);
+      expect(jwe['unprotectedHeaders']).toBeDefined();
+      expect(jwe['unprotectedHeaders']!['test']).toEqual('secret boogaloo');
+    });
     it('should require encrypted_key as a flattened JSON object', () => {
       const jweObject = {
         ciphertext: 'secrets',
@@ -82,6 +96,34 @@ describe('JweToken', () => {
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['protectedHeaders']).toBeUndefined();
     });
+
+    // test that it throws for incorrect types
+    ['protected', 'unprotected', 'header', 'encrypted_key', 'iv', 'tag', 'ciphertext'].forEach(
+      (property) => {
+        it(`should throw if ${property} is not the right type`, () => {
+          const jwe: any = {
+            ciphertext: 'secrets',
+            iv: 'vector',
+            tag: 'tag',
+            protected: 'secret properties',
+            unprotected: {
+              secrets: 'are everywhere'
+            },
+            header: {
+              aliens: 'do you believe?'
+            }
+          };
+          jwe[property] = true;
+          const token = new JweToken(jwe, registry);
+          expect(token['aad']).toBeUndefined();
+          expect(token['encryptedKey']).toBeUndefined();
+          expect(token['iv']).toBeUndefined();
+          expect(token['payload']).toBeUndefined();
+          expect(token['protectedHeaders']).toBeUndefined();
+          expect(token['tag']).toBeUndefined();
+          expect(token['unprotectedHeaders']).toBeUndefined();
+        });
+      });
   });
 
   describe('encrypt', () => {
@@ -324,6 +366,16 @@ describe('JweToken', () => {
       const jwe = new JweToken(encrypted, registry);
       const payload = await jwe.decrypt(privateKey);
       expect(payload).toEqual(plaintext);
+    });
+
+    it('should require the JWE to have been parsed correctly', async () => {
+      const jwe = new JweToken('I am not decryptable', registry);
+      try {
+        await jwe.decrypt(privateKey);
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('Could not parse contents into a JWE');
+      }
     });
   });
 

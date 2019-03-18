@@ -124,7 +124,7 @@ export default class JwsToken extends JoseToken {
   public async verifySignature (jwk: PublicKey): Promise<string> {
     // ensure we have everything we need
     if (this.payload === undefined || this.signature === undefined) {
-      throw new Error('Unable to parse content as a JWS');
+      throw new Error('Could not parse contents into a JWS');
     }
     const algorithm = this.getHeader().alg;
     const signer = this.cryptoFactory.getSigner(algorithm);

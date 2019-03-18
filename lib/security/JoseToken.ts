@@ -1,4 +1,3 @@
-import Base64Url from '../utilities/Base64Url';
 import CryptoFactory from '../CryptoFactory';
 
 /**
@@ -37,13 +36,5 @@ export default abstract class JoseToken {
   /**
    * Gets the header as a JS object.
    */
-  public getHeader (): any {
-    let [headerBase64Url] = this.content.split('.');
-    if (!headerBase64Url) {
-      return;
-    }
-    const jsonString = Base64Url.decode(headerBase64Url);
-
-    return JSON.parse(jsonString);
-  }
+  public abstract getHeader (): any;
 }

@@ -26,28 +26,19 @@ We've intentionally omitted the following goals from this document for the time 
 - integrating our APIs with front end frameworks like AngularJS or React.
 - enabling use on cross platform.
 
-## Protocol Flows
+## Protocol Flow
+![Image](./assets/authFlow.png)
 
-#### Desktop Browser-Browser Extension User Agent Flow
-![Image](./assets/desktopToExtension.png)
+A. Application Request.  
+The user goes to the application in their preferred browser on their preferred device (desktop or mobile).
 
-#### Desktop Browser-Mobile User Agent Flow
-![Image](./assets/desktopToMobile.png)
+B. Generate Authentication Request.  
+The OpenID Connect Self-Issued Authentication Request with DID signatures is formed and signed.
 
-#### Mobile Browser-Mobile User Agent Flow
-![Image](./assets/mobileToMobile.png)
+C. Application Response with Authentication Request.  
+The webpage loads with a user action available (such as a button) that allows the user to sign into the application using their DID. The Authentication Request that the webpage will send to the User Agent is formed serverside and is included in this response back to the browser (See [OpenID Connect Claim Parameters](https://openid.net/specs/openid-connect-core-1_0.html#Claims) for more information about what types of claims are allowed).
 
-A. Application Request.
-:  The user goes to the application in their preferred browser on their preferred device (desktop or mobile).
-
-B. Generate Authentication Request.
-: The OpenID Connect Self-Issued Authentication Request with DID signatures is formed and signed.
-
-C. Application Response with Authentication Request.
-
-:  The webpage loads with a user action available (such as a button) that allows the user to sign into the application using their DID. The Authentication Request that the webpage will send to the User Agent is formed serverside and is included in this response back to the browser (See [OpenID Connect Claim Parameters](https://openid.net/specs/openid-connect-core-1_0.html#Claims) for more information about what types of claims are allowed).
-
-: *An Authentication Request Object.*
+*An Authentication Request Object.*  
 This object will be put in a JWS signed by the Application.
 ```=JSON
 /**
@@ -79,31 +70,30 @@ This object will be put in a JWS signed by the Application.
 }
 ```
 
-D. DID Authentication Request.
-
-:  The Authentication Request is sent to the User Agent in various ways:
+D. DID Authentication Request.  
+The Authentication Request is sent to the User Agent in various ways:
    - In the desktop browser-browser extension flow, the Authentication Request is sent by a customized navigator.did.requestAuthentication function.
    - In the desktop browser-mobile device flow, the Authentication Request is sent by creating a QR code and scanning the QR code using the camera on a mobile device.
    - In the mobile browser-mobile device flow, the Authentication Request is sent by deep linking to the UA from the mobile browser.
 
-E. DID Query for Application's DID.
-:  The User Agent queries for the application's DID document using a Universal Resolver.
+E. DID Query for Application's DID.  
+The User Agent queries for the application's DID document using a Universal Resolver.
 
-F. DID Resolver Result for Application's DID.
-:  The Universal Resolver sends back the DID Document of the queried DID. This DID Document contains information about the DID including it's public key.
+F. DID Resolver Result for Application's DID.  
+The Universal Resolver sends back the DID Document of the queried DID. This DID Document contains information about the DID including it's public key.
 
-G. Application's DID Signature Verification.
-:  The User Agent uses the applicationn's public key obtained by Step E to verify the signature on the JWT.
+G. Application's DID Signature Verification.  
+The User Agent uses the applicationn's public key obtained by Step E to verify the signature on the JWT.
 
-    > A note about Steps E-G: These steps make up a security measure to protect against malicious applications posing as real businesses. The Authentication Request will be signed using the application's DID in the form of a JWT, and the User Agent will verify this signature in order to confirm that this application is not pretending to be another.
+  > A note about Steps E-G: These steps make up a security measure to protect against malicious applications posing as real businesses. The Authentication Request will be signed using the application's DID in the form of a JWT, and the User Agent will verify this signature in order to confirm that this application is not pretending to be another.
 
-H. DID Sign-In Request Approval.
-:  The user approves the sign-in request in their User Agent. If the user has multiple DIDs registered in their UA, they pick which one they want to use to sign in.
+H. DID Sign-In Request Approval.  
+The user approves the sign-in request in their User Agent. If the user has multiple DIDs registered in their UA, they pick which one they want to use to sign in.
 
-I. Authentication Response.
-:  The User Agent sends the Authentication Response signed by the chosen DID to the server endpoint that was specified in the Authentication Request.
+I. Authentication Response.  
+The User Agent sends the Authentication Response signed by the chosen DID to the server endpoint that was specified in the Authentication Request.
 
-:  *An Authentication Response object.* 
+*An Authentication Response object.*  
 This object will be a put into a JWS signed by the user.
 ```=JSON
 /** 
@@ -144,17 +134,17 @@ This object will be a put into a JWS signed by the user.
 }
 ```
 
-J. DID Query for User DID.
-:  The server queries for the user's DID document using a Universal Resolver.
+J. DID Query for User DID.  
+The server queries for the user's DID document using a Universal Resolver.
 
-K. DID Resolver Result for User DID.
-:  The Universal Resolver sends back the DID Document of the queried DID.
+K. DID Resolver Result for User DID.  
+The Universal Resolver sends back the DID Document of the queried DID.
 
-L. Challenge Response Signature Verification.
-:  The server uses the user's public key obtained by Step K to verify the signature on the Authentication Response.
+L. Challenge Response Signature Verification.  
+The server uses the user's public key obtained by Step K to verify the signature on the Authentication Response.
 
-M. Authorized Session Cookie.
-:  The server sends the browser an authorized session cookie that signs the user into the website.
+M. Authorized Session Cookie.  
+The server sends the browser an authorized session cookie that signs the user into the website.
 
 ## Future work
 - Include use of OpenID Connect registration object in request for conveying application details.

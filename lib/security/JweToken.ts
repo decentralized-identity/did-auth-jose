@@ -32,10 +32,10 @@ export default class JweToken extends JoseToken {
       if (base64EncodedValues.length === 5) {
         // 2. Base64url decode the encoded header, encryption key, iv, ciphertext, and auth tag
         this.protectedHeaders = base64EncodedValues[0];
-        this.encryptedKey = Buffer.from(Base64Url.toBase64(base64EncodedValues[1]), 'base64');
-        this.iv = Buffer.from(Base64Url.toBase64(base64EncodedValues[2]), 'base64');
+        this.encryptedKey = Base64Url.decodeToBuffer(base64EncodedValues[1]);
+        this.iv = Base64Url.decodeToBuffer(base64EncodedValues[2]);
         this.payload = base64EncodedValues[3];
-        this.tag = Buffer.from(Base64Url.toBase64(base64EncodedValues[4]), 'base64');
+        this.tag = Base64Url.decodeToBuffer(base64EncodedValues[4]);
         // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
         this.aad = Buffer.from(base64EncodedValues[0]);
         return;
@@ -57,14 +57,14 @@ export default class JweToken extends JoseToken {
         return;
       }
       if ('recipients' in jsonContent) {
-        // TODO: General JWE JSON Serialization
+        // TODO: General JWE JSON Serialization (Issue #22)
         return;
       } else if ('encrypted_key' in jsonContent && typeof jsonContent.encrypted_key === 'string') {
         // Flattened JWE JSON Serialization
         if ('header' in jsonContent) {
           this.unprotectedHeaders = jsonContent.header;
         }
-        this.encryptedKey = Buffer.from(Base64Url.toBase64(jsonContent.encrypted_key), 'base64');
+        this.encryptedKey = Base64Url.decodeToBuffer(jsonContent.encrypted_key);
       } else {
         // This isn't a JWE
         return;
@@ -79,8 +79,8 @@ export default class JweToken extends JoseToken {
           this.unprotectedHeaders = jsonContent.unprotected;
         }
       }
-      this.iv = Buffer.from(Base64Url.toBase64(jsonContent.iv), 'base64');
-      this.tag = Buffer.from(Base64Url.toBase64(jsonContent.tag), 'base64');
+      this.iv = Base64Url.decodeToBuffer(jsonContent.iv);
+      this.tag = Base64Url.decodeToBuffer(jsonContent.tag);
       this.payload = jsonContent.ciphertext;
       if (jsonContent.aad) {
         this.aad = Buffer.from(this.protectedHeaders + '.' + jsonContent.aad);
@@ -91,10 +91,10 @@ export default class JweToken extends JoseToken {
   }
 
   /**
-   * Encrypts the given string in JWE compact serialized format using the given key in JWK JSON object format.
-   * Content encryption algorithm is hardcoded to 'A128GCM'.
+   * Encrypts the original content from construction into a JWE compact serialized format
+   * using the given key in JWK JSON object format.Content encryption algorithm is hardcoded to 'A128GCM'.
    *
-   * @returns Encrypted Buffer in JWE compact serialized format.
+   * @returns Buffer of the original content encrypted in JWE compact serialized format.
    */
   public async encrypt (jwk: PublicKey,
                         additionalHeaders?: {[header: string]: string}): Promise<Buffer> {
@@ -110,7 +110,7 @@ export default class JweToken extends JoseToken {
       enc
     }, additionalHeaders);
 
-    // Base 64 encode header.
+    // Base64url encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
     // Get the symmetric encrypter and encrypt
@@ -139,10 +139,10 @@ export default class JweToken extends JoseToken {
   }
 
   /**
-   * Encrypts the given string in JWE JSON serialized format using the given key in JWK JSON object format.
-   * Content encryption algorithm is hardcoded to 'A128GCM'.
+   * Encrypts the original content from construction into a JWE JSON serialized format using
+   * the given key in JWK JSON object format. Content encryption algorithm is hardcoded to 'A128GCM'.
    *
-   * @returns Encrypted Buffer in JWE compact serialized format.
+   * @returns Buffer of the original content encrytped in JWE flattened JSON serialized format.
    */
   public async encryptFlatJson (jwk: PublicKey,
     options?: {
@@ -169,7 +169,7 @@ export default class JweToken extends JoseToken {
       enc: this.cryptoFactory.getDefaultSymmetricEncryptionAlgorithm()
     }, (options || {}).protected || {});
 
-    // Base 64 encode header.
+    // Base64url encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
     const aad = Buffer.from(options && options.aad ? `${protectedHeaderBase64Url}.${Base64Url.encode(options.aad)}` : protectedHeaderBase64Url);
@@ -248,17 +248,16 @@ export default class JweToken extends JoseToken {
   }
 
   /**
-   * Decrypts the given JWE compact serialized string using the given key in JWK JSON object format.
-   * TODO: implement decryption without node-jose dependency so we can use decryption algorithms from plugins.
+   * Decrypts the original JWE using the given key in JWK JSON object format.
    *
-   * @returns Decrypted plaintext.
+   * @returns Decrypted plaintext of the JWE
    */
   public async decrypt (jwk: PrivateKey): Promise<string> {
     // following steps for JWE Decryption in RFC7516 section 5.2
     if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
       throw new Error('Could not parse contents into a JWE');
     }
-    const ciphertext = Buffer.from(Base64Url.toBase64(this.payload), 'base64');
+    const ciphertext = Base64Url.decodeToBuffer(this.payload);
 
     const headers = this.getHeader();
     // 4. only applies to JWE JSON Serializaiton

@@ -33,7 +33,7 @@ export default class JwsToken extends JoseToken {
     if (typeof content === 'object') {
       const jsonObject: any = content;
       if ('payload' in jsonObject && typeof jsonObject.payload === 'string') {
-        // TODO: General JWS JSON Serialization signatures and one of protected or header for each
+        // TODO: General JWS JSON Serialization signatures and one of protected or header for each (Issue #22)
         if ('signature' in jsonObject && typeof jsonObject.signature === 'string') {
           // Flattened JWS JSON Serialization
           if (!('protected' in jsonObject && typeof jsonObject.protected === 'string') &&
@@ -57,7 +57,7 @@ export default class JwsToken extends JoseToken {
   }
 
   /**
-   * Sign the given content using the given private key in JWK format.
+   * Signs contents given at construction using the given private key in JWK format.
    *
    * @param jwsHeaderParameters Header parameters in addition to 'alg' and 'kid' to be included in the JWS.
    * @returns Signed payload in compact JWS format.
@@ -77,16 +77,16 @@ export default class JwsToken extends JoseToken {
     // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)
     //    using the "alg" signature algorithm.
     const signatureInput = `${encodedHeaders}.${encodedContent}`;
-    const signature = await (this.cryptoFactory.getSigner(headers['alg'])).sign(signatureInput, jwk);
+    const signatureBase64 = await (this.cryptoFactory.getSigner(headers['alg'])).sign(signatureInput, jwk);
     // 6. Compute BASE64URL(JWS Signature)
-    const encodedSignature = Base64Url.fromBase64(signature);
+    const encodedSignature = Base64Url.fromBase64(signatureBase64);
     // 7. Only applies to JWS JSON Serializaiton
     // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
     return `${signatureInput}.${encodedSignature}`;
   }
 
   /**
-   * Sign the JWS content using the given private key in JWK format with additional optional header fields
+   * Signs contents given at construction using the given private key in JWK format with additional optional header fields
    * @param jwk Private key used in the signature
    * @param options Additional protected and header fields to include in the JWS
    */
@@ -119,7 +119,7 @@ export default class JwsToken extends JoseToken {
   }
 
   /**
-   * Verifies the given JWS compact serialized string using the given key in JWK object format.
+   * Verifies the JWS using the given key in JWK object format.
    *
    * @returns The payload if signature is verified. Throws exception otherwise.
    */

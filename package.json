@@ -1,6 +1,6 @@
 {
   "name": "@decentralized-identity/did-auth-jose",
-  "version": "0.1.6",
+  "version": "0.1.9",
   "description": "Authentication library using JOSE and DIDs to form secure end to end messages",
   "main": "dist/lib/index.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "build": "tsc",
     "test": "nyc jasmine-ts --config=./tests/jasmine.json",
     "lint": "tslint --fix --project .",
+    "check-lint": "tslint --project .",
     "build:docs": "jsdoc2md --files lib/**/*.ts --configure jsdoc2md.json > docs/api.md"
   },
   "repository": {
@@ -17,11 +18,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@decentralized-identity/did-common-typescript": "^0.1.2",
-    "jwk-to-pem": "^2.0.0",
-    "ec-key": "^0.0.2",
-    "node-jose": "^1.0.0",
-    "uuid": "^3.3.2"
+    "@decentralized-identity/did-common-typescript": "0.1.4",
+    "jwk-to-pem": "2.0.0",
+    "ec-key": "0.0.2",
+    "node-jose": "1.0.0",
+    "uuid": "3.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",

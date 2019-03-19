@@ -315,8 +315,9 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 <a name="new_EcPrivateKey_new"></a>
 
 ### new EcPrivateKey(key)
-<p>Constructs a private key given a Did Document public key object containing additional private key
-information</p>
+<p>Constructs a private key given a DID Document public key descriptor containing additional private key
+information.</p>
+<p>TODO: This feels odd, should define a separate type.</p>
 
 
 | Param | Description |
@@ -361,7 +362,7 @@ information</p>
 
 | Param | Description |
 | --- | --- |
-| keyData | <p>The DidPublicKey containing the elliptic curve public key parameters.</p> |
+| keyData | <p>The IDidDocumentPublicKey containing the elliptic curve public key parameters.</p> |
 
 <a name="Secp256k1CryptoSuite"></a>
 
@@ -594,8 +595,8 @@ information</p>
 <a name="CryptoFactory+constructPublicKey"></a>
 
 ### cryptoFactory.constructPublicKey(key) ⇒
-<p>given a public key object found on a Did Document, constructs a JWK public key
-Converts Did Document public keys to [PublicKey](PublicKey) implementations, or throws</p>
+<p>Given a public key definition from a DID Document, constructs a JWK public key. Throws an error
+if the key definition cannot be converted.</p>
 
 **Kind**: instance method of [<code>CryptoFactory</code>](#CryptoFactory)  
 **Returns**: <p>The same key as a [PublicKey](PublicKey)</p>  

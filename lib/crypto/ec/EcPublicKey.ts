@@ -1,5 +1,5 @@
 import PublicKey, { RecommendedKeyType } from '../../security/PublicKey';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 
 /**
  * Represents an Elliptic Curve public key
@@ -18,9 +18,9 @@ export default class EcPublicKey extends PublicKey {
 
   /**
    * An Elliptic Curve JWK
-   * @param keyData The DidPublicKey containing the elliptic curve public key parameters.
+   * @param keyData The IDidDocumentPublicKey containing the elliptic curve public key parameters.
    */
-  constructor (keyData: DidPublicKey) {
+  constructor (keyData: IDidDocumentPublicKey) {
     super();
     this.kid = keyData.id;
 

@@ -1,5 +1,5 @@
 import CryptoSuite, { Encrypter, Signer, PublicKeyConstructors } from './interfaces/CryptoSuite';
-import { DidPublicKey } from '@decentralized-identity/did-common-typescript';
+import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 import JweToken from './security/JweToken';
 import JwsToken from './security/JwsToken';
 
@@ -64,12 +64,13 @@ export default class CryptoFactory {
   }
 
   /**
-   * given a public key object found on a Did Document, constructs a JWK public key
-   * Converts Did Document public keys to {@link PublicKey} implementations, or throws
+   * Given a public key definition from a DID Document, constructs a JWK public key. Throws an error
+   * if the key definition cannot be converted.
+   *
    * @param key publicKey object from a {@link DidDocument}
    * @returns The same key as a {@link PublicKey}
    */
-  constructPublicKey (publicKey: DidPublicKey) {
+  constructPublicKey (publicKey: IDidDocumentPublicKey) {
     return this.keyConstructors[publicKey.type](publicKey);
   }
 

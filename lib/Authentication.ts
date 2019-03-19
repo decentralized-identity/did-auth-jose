@@ -107,7 +107,7 @@ export default class Authentication {
     }
 
     const publicKey: PublicKey = key.getPublicKey();
-    const base64UrlThumbprint = await key.getThumbprint();
+    const base64UrlThumbprint = await PublicKey.getThumbprint(publicKey);
 
     // milliseconds to seconds
     const milliseconds = 1000;

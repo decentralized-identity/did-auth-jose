@@ -59,8 +59,8 @@ export default abstract class PublicKey {
    * Obtains the thumbprint for the jwk parameter
    * @param jwk JSON object representation of a JWK
    */
-  async getThumbprint (): Promise<string> {
-    const key = await jose.JWK.asKey(this);
+  static async getThumbprint (publicKey: PublicKey): Promise<string> {
+    const key = await jose.JWK.asKey(publicKey);
     const thumbprint = await key.thumbprint('SHA-512');
     return Base64Url.encode(thumbprint);
   }

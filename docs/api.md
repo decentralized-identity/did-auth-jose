@@ -353,11 +353,6 @@ information</p>
 
 **Kind**: global class  
 **Extends**: <code>PublicKey</code>  
-
-* [EcPublicKey](#EcPublicKey) ⇐ <code>PublicKey</code>
-    * [new EcPublicKey(keyData)](#new_EcPublicKey_new)
-    * [.getThumbprint(jwk)](#PublicKey+getThumbprint)
-
 <a name="new_EcPublicKey_new"></a>
 
 ### new EcPublicKey(keyData)
@@ -367,17 +362,6 @@ information</p>
 | Param | Description |
 | --- | --- |
 | keyData | <p>The DidPublicKey containing the elliptic curve public key parameters.</p> |
-
-<a name="PublicKey+getThumbprint"></a>
-
-### ecPublicKey.getThumbprint(jwk)
-<p>Obtains the thumbprint for the jwk parameter</p>
-
-**Kind**: instance method of [<code>EcPublicKey</code>](#EcPublicKey)  
-
-| Param | Description |
-| --- | --- |
-| jwk | <p>JSON object representation of a JWK</p> |
 
 <a name="Secp256k1CryptoSuite"></a>
 
@@ -549,11 +533,6 @@ information</p>
 
 **Kind**: global class  
 **Extends**: <code>PublicKey</code>  
-
-* [RsaPublicKey](#RsaPublicKey) ⇐ <code>PublicKey</code>
-    * [new RsaPublicKey(n, e)](#new_RsaPublicKey_new)
-    * [.getThumbprint(jwk)](#PublicKey+getThumbprint)
-
 <a name="new_RsaPublicKey_new"></a>
 
 ### new RsaPublicKey(n, e)
@@ -564,17 +543,6 @@ information</p>
 | --- | --- |
 | n | <p>The Rsa modulus in Base64urlUInt encoding as specified by RFC7518 6.3.1.1</p> |
 | e | <p>The Rsa public exponent in Base64urlUInt encoding as specified by RFC7518 6.3.1.2</p> |
-
-<a name="PublicKey+getThumbprint"></a>
-
-### rsaPublicKey.getThumbprint(jwk)
-<p>Obtains the thumbprint for the jwk parameter</p>
-
-**Kind**: instance method of [<code>RsaPublicKey</code>](#RsaPublicKey)  
-
-| Param | Description |
-| --- | --- |
-| jwk | <p>JSON object representation of a JWK</p> |
 
 <a name="CryptoFactory"></a>
 

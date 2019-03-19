@@ -564,7 +564,7 @@ describe('JweToken', () => {
         // set AES to return the expected IV and CEK
         spyOn(aes, 'generateInitializationVector' as any).and.returnValue(Buffer.from(iv));
         aes['generateSymmetricKey'] = (_: number) => { return Buffer.from(cek); };
-        await setTimeout(async () => {
+        setTimeout(async () => {
           const plaintextString = plaintext.toString();
           const jwe = new JweToken(plaintextString, registry);
 
@@ -577,7 +577,7 @@ describe('JweToken', () => {
           expect(encrypted.toString()).toEqual(JWE);
           done();
         }, 100);
-      })
+      });
     });
   });
 

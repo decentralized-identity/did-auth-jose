@@ -128,10 +128,16 @@ export default class TestCryptoSuite implements CryptoSuite {
     return (TestCryptoSuite.called[this.id] & TestCryptoSuite.VERIFY) > 0;
   }
 
+  /**
+   * Returns true when Symmetric Encrypt was called since last reset()
+   */
   wasSymEncryptCalled (): boolean {
     return (TestCryptoSuite.called[this.id] & TestCryptoSuite.SYMENCRYPT) > 0;
   }
 
+  /**
+   * Returns true when Symmetric Decrypt was called since last reset()
+   */
   wasSymDecryptCalled (): boolean {
     return (TestCryptoSuite.called[this.id] & TestCryptoSuite.SYMDECRYPT) > 0;
   }

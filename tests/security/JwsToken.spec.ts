@@ -329,7 +329,7 @@ describe('JwsToken', () => {
     });
 
     describe('RSASSA-PKCS1-v1_5 SHA-256', () => {
-      const headers = {alg: 'RS256'};
+      const headers = { alg: 'RS256' };
       const encodedHeaders = 'eyJhbGciOiJSUzI1NiJ9';
       const payload = Buffer.from([123, 34, 105, 115, 115, 34, 58, 34, 106, 111, 101, 34, 44, 13, 10,
         32, 34, 101, 120, 112, 34, 58, 49, 51, 48, 48, 56, 49, 57, 51, 56,
@@ -399,7 +399,7 @@ describe('JwsToken', () => {
           kty: 'RSA',
           n: rsaKey.n,
           e: rsaKey.e
-        }
+        };
         const actualPayload = await jws.verifySignature(publicKey);
         expect(actualPayload).toEqual(payload.toString());
       });

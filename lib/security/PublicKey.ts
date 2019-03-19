@@ -1,4 +1,6 @@
 import { Url } from 'url';
+import Base64Url from '../utilities/Base64Url';
+const jose = require('node-jose');
 
 /**
  * JWA recommended KeyTypes to be implemented
@@ -52,4 +54,14 @@ export default abstract class PublicKey {
 
   /** Default Encryption Algorithm for JWE 'alg' field */
   readonly defaultEncryptionAlgorithm: string = 'none';
+
+  /**
+   * Obtains the thumbprint for the jwk parameter
+   * @param jwk JSON object representation of a JWK
+   */
+  static async getThumbprint (publicKey: PublicKey): Promise<string> {
+    const key = await jose.JWK.asKey(publicKey);
+    const thumbprint = await key.thumbprint('SHA-512');
+    return Base64Url.encode(thumbprint);
+  }
 }

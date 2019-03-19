@@ -5,7 +5,8 @@ describe('EcPublicKey', async () => {
 
     const key = {
       id: 'key-1',
-      type: 'Secp256k1VerificationKey2018'
+      type: 'Secp256k1VerificationKey2018',
+      controller: 'did:example:controller.id'
     };
 
     expect(() => new EcPublicKey(key)).toThrowError(
@@ -18,6 +19,7 @@ describe('EcPublicKey', async () => {
     const key = {
       id: 'key-1',
       type: 'Secp256k1VerificationKey2018',
+      controller: 'did:example:controller.id',
       publicKeyJwk: {
         kid: 'key-2',
         x: 'skdjc4398ru',
@@ -36,6 +38,7 @@ describe('EcPublicKey', async () => {
     const key = {
       id: 'key-1',
       type: 'Secp256k1VerificationKey2018',
+      controller: 'did:example:controller.id',
       publicKeyJwk: {
         kid: 'key-1',
         y: 'skdjc4398ru',
@@ -53,6 +56,7 @@ describe('EcPublicKey', async () => {
     const key = {
       id: 'key-1',
       type: 'Secp256k1VerificationKey2018',
+      controller: 'did:example:controller.id',
       publicKeyJwk: {
         kid: 'key-1',
         x: 'skdjc4398ru',
@@ -70,6 +74,7 @@ describe('EcPublicKey', async () => {
     const key = {
       id: 'key-1',
       type: 'Secp256k1VerificationKey2018',
+      controller: 'did:example:controller.id',
       publicKeyJwk: {
         kid: 'key-1',
         x: 'skdjc4398ru',

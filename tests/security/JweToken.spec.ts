@@ -1,12 +1,16 @@
 import TestCryptoAlgorithms from '../mocks/TestCryptoProvider';
-import { PublicKey, JweToken, PrivateKey } from '../../lib';
+import { PublicKey, JweToken, PrivateKey, RsaCryptoSuite, AesCryptoSuite } from '../../lib';
 import CryptoRegistry from '../../lib/CryptoFactory';
 import TestPrivateKey from '../mocks/TestPrivateKey';
 import Base64Url from '../../lib/utilities/Base64Url';
 
 describe('JweToken', () => {
   const crypto = new TestCryptoAlgorithms();
-  let registry = new CryptoRegistry([crypto]);
+  let registry: CryptoRegistry;
+
+  beforeEach(() => {
+    registry = new CryptoRegistry([crypto]);
+  });
 
   describe('constructor', () => {
     it('should construct from a flattened JSON object with a protected', () => {
@@ -459,6 +463,13 @@ describe('JweToken', () => {
 
   describe('validations', () => {
     describe('RSAES-OAEP with AES GCM', () => {
+      let aes: AesCryptoSuite;
+      // needs the actual RSA and AES implementations
+      beforeEach(() => {
+        aes = new AesCryptoSuite();
+        registry = new CryptoRegistry([new RsaCryptoSuite(), aes]);
+      });
+
       const plaintext = Buffer.from([84, 104, 101, 32, 116, 114, 117, 101, 32, 115, 105, 103, 110, 32,
         111, 102, 32, 105, 110, 116, 101, 108, 108, 105, 103, 101, 110, 99,
         101, 32, 105, 115, 32, 110, 111, 116, 32, 107, 110, 111, 119, 108,
@@ -530,6 +541,36 @@ describe('JweToken', () => {
       '5eym8TW_c8SuK0ltJ3rpYIzOeDQz7TALvtu6UG9oMo4vpzs9tX_EFShS8iB7j6ji' +
       'SdiwkIr3ajwQzaBtQD_A.' +
       'XFBoMYUZodetZdvTiFvSkQ';
+      it('should parse the compact JWE correctly', () => {
+        const parsedJwe = new JweToken(JWE, registry);
+        expect(parsedJwe['aad']).toEqual(Buffer.from(aad));
+        expect(parsedJwe['encryptedKey']).toEqual(Buffer.from(cekEncrypted));
+        expect(parsedJwe['iv']).toEqual(Buffer.from(iv));
+        expect(parsedJwe['payload']).toEqual(Base64Url.encode(Buffer.from(ciphertext)));
+        expect(parsedJwe['protectedHeaders']).toEqual(encodedProtectedHeader);
+        expect(parsedJwe['tag']).toEqual(Buffer.from(tag));
+        expect(parsedJwe['unprotectedHeaders']).toBeUndefined();
+      });
+
+      it('should decrypt correctly', async () => {
+        const parsedJwe = new JweToken(JWE, registry);
+        const actualPlaintext = await parsedJwe.decrypt(rsaKey as any);
+        expect(actualPlaintext).toEqual(plaintext.toString());
+      });
+
+      it('should encrypt correctly', async (done) => {
+        // set AES to return the expected IV and CEK
+        spyOn(aes, 'generateInitializationVector' as any).and.returnValue(Buffer.from(iv));
+        aes['generateSymmetricKey'] = (_: number) => { return Buffer.from(cek); };
+        await setTimeout(async () => {
+          const plaintextString = plaintext.toString();
+          const jwe = new JweToken(plaintextString, registry);
+  
+          const encrypted = await jwe.encrypt(rsaKey as any, expectedProtectedHeader);
+          expect(encrypted.toString()).toEqual(JWE);
+          done();
+        }, 100);
+      })
     });
   });
 

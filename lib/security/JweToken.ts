@@ -256,7 +256,6 @@ export default class JweToken extends JoseToken {
   public async decrypt (jwk: PrivateKey): Promise<string> {
     // following steps for JWE Decryption in RFC7516 section 5.2
     if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
-      console.log(this);
       throw new Error('Could not parse contents into a JWE');
     }
     const ciphertext = Buffer.from(Base64Url.toBase64(this.payload), 'base64');

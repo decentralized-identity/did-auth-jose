@@ -558,15 +558,22 @@ describe('JweToken', () => {
         expect(actualPlaintext).toEqual(plaintext.toString());
       });
 
-      it('should encrypt correctly', async (done) => {
+      // disabled as the node crypto.publicEncrypt is introducing randomness.
+
+      xit('should encrypt correctly', async (done) => {
         // set AES to return the expected IV and CEK
         spyOn(aes, 'generateInitializationVector' as any).and.returnValue(Buffer.from(iv));
         aes['generateSymmetricKey'] = (_: number) => { return Buffer.from(cek); };
         await setTimeout(async () => {
           const plaintextString = plaintext.toString();
           const jwe = new JweToken(plaintextString, registry);
-  
-          const encrypted = await jwe.encrypt(rsaKey as any, expectedProtectedHeader);
+
+          const publicKey = {
+            kty: 'RSA',
+            n: rsaKey.n,
+            e: rsaKey.e
+          };
+          const encrypted = await jwe.encrypt(publicKey as any, expectedProtectedHeader);
           expect(encrypted.toString()).toEqual(JWE);
           done();
         }, 100);

@@ -69,7 +69,9 @@ export default class JwsToken extends JoseToken {
     // 3. Compute the headers
     const headers = jwsHeaderParameters || {};
     headers['alg'] = jwk.defaultSignAlgorithm;
-    headers['kid'] = jwk.kid;
+    if (jwk.kid) {
+      headers['kid'] = jwk.kid;
+    }
     // 4. Compute BASE64URL(UTF8(JWS Header))
     const encodedHeaders = Base64Url.encode(JSON.stringify(headers));
     // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)

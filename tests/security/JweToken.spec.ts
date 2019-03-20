@@ -470,16 +470,21 @@ describe('JweToken', () => {
         registry = new CryptoRegistry([new RsaCryptoSuite(), aes]);
       });
 
+      // rfc-7516 A.1
       const plaintext = Buffer.from([84, 104, 101, 32, 116, 114, 117, 101, 32, 115, 105, 103, 110, 32,
         111, 102, 32, 105, 110, 116, 101, 108, 108, 105, 103, 101, 110, 99,
         101, 32, 105, 115, 32, 110, 111, 116, 32, 107, 110, 111, 119, 108,
         101, 100, 103, 101, 32, 98, 117, 116, 32, 105, 109, 97, 103, 105,
         110, 97, 116, 105, 111, 110, 46]);
+        // rfc-7516 A.1.1
       const expectedProtectedHeader = { alg: 'RSA-OAEP',enc: 'A256GCM' };
+      // rfc-7516 A.1.1
       const encodedProtectedHeader = 'eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00ifQ';
+      // rfc-7516 A.1.2
       const cek = [177, 161, 244, 128, 84, 143, 225, 115, 63, 180, 3, 255, 107, 154,
         212, 246, 138, 7, 110, 91, 112, 46, 34, 105, 47, 130, 203, 46, 122,
         234, 64, 252];
+        // rfc-7516 A.1.3
       const rsaKey = {kty: 'RSA',
         n: 'oahUIoWw0K0usKNuOR6H4wkf4oBUXHTxRvgb48E-BVvxkeDNjbC4he8rUWcJoZmds2h7M70imEVhRU5djINXtqllXI4D' +
         'FqcI1DgjT9LewND8MW2Krf3Spsk_ZkoFnilakGygTwpZ3uesH-PFABNIUYpOiN15dsQRkgr0vEhxN92i2asbOenSZeyaxzi' +
@@ -501,6 +506,7 @@ describe('JweToken', () => {
         qi: 'VIMpMYbPf47dT1w_zDUXfPimsSegnMOA1zTaX7aGk_8urY6R8-ZW1FxU7AlWAyLWybqq6t16VFd7hQd0y6flUK4SlOy' +
         'dB61gwanOsXGOAOv82cHq0E3eL4HrtZkUuKvnPrMnsUUFlfUdybVzxyjz9JF_XyaY14ardLSjf4L_FNY'
       };
+      // rfc-7516 A.1.3
       const cekEncrypted = [56, 163, 154, 192, 58, 53, 222, 4, 105, 218, 136, 218, 29, 94, 203,
         22, 150, 92, 129, 94, 211, 232, 53, 89, 41, 60, 138, 56, 196, 216,
         82, 98, 168, 76, 37, 73, 70, 7, 36, 8, 191, 100, 136, 196, 244, 220,
@@ -519,17 +525,22 @@ describe('JweToken', () => {
         89, 116, 92, 103, 246, 83, 216, 182, 176, 84, 37, 147, 35, 45, 219,
         172, 99, 226, 233, 73, 37, 124, 42, 72, 49, 242, 35, 127, 184, 134,
         117, 114, 135, 206];
+      // rfc-7516 A.1.4
       const iv = [227, 197, 117, 252, 2, 219, 233, 68, 180, 225, 77, 219];
+      // rfc-7516 A.1.5
       const aad = [101, 121, 74, 104, 98, 71, 99, 105, 79, 105, 74, 83, 85, 48, 69,
         116, 84, 48, 70, 70, 85, 67, 73, 115, 73, 109, 86, 117, 89, 121, 73,
         54, 73, 107, 69, 121, 78, 84, 90, 72, 81, 48, 48, 105, 102, 81];
+      // rfc-7516 A.1.6
       const ciphertext = [229, 236, 166, 241, 53, 191, 115, 196, 174, 43, 73, 109, 39, 122,
         233, 96, 140, 206, 120, 52, 51, 237, 48, 11, 190, 219, 186, 80, 111,
         104, 50, 142, 47, 167, 59, 61, 181, 127, 196, 21, 40, 82, 242, 32,
         123, 143, 168, 226, 73, 216, 176, 144, 138, 247, 106, 60, 16, 205,
         160, 109, 64, 63, 192];
+      // rfc-7516 A.1.6
       const tag = [92, 80, 104, 49, 133, 25, 161, 215, 173, 101, 219, 211, 136, 91,
         210, 145];
+      // rfc-7516 A.1.7
       const JWE = 'eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00ifQ.' +
       'OKOawDo13gRp2ojaHV7LFpZcgV7T6DVZKTyKOMTYUmKoTCVJRgckCL9kiMT03JGe' +
       'ipsEdY3mx_etLbbWSrFr05kLzcSr4qKAq7YN7e9jwQRb23nfa6c9d-StnImGyFDb' +
@@ -558,9 +569,7 @@ describe('JweToken', () => {
         expect(actualPlaintext).toEqual(plaintext.toString());
       });
 
-      // disabled as the node crypto.publicEncrypt is introducing randomness.
-
-      xit('should encrypt correctly', async (done) => {
+      it('should encrypt correctly', async (done) => {
         // set AES to return the expected IV and CEK
         spyOn(aes, 'generateInitializationVector' as any).and.returnValue(Buffer.from(iv));
         aes['generateSymmetricKey'] = (_: number) => { return Buffer.from(cek); };
@@ -574,7 +583,13 @@ describe('JweToken', () => {
             e: rsaKey.e
           };
           const encrypted = await jwe.encrypt(publicKey as any, expectedProtectedHeader);
-          expect(encrypted.toString()).toEqual(JWE);
+          // rfc-7516 A.1.8 CEK cannot be validated however other parameters should match.
+          const actual = encrypted.toString().split('.');
+          const expected = JWE.split('.');
+          expect(actual[0]).toEqual(expected[0]);
+          expect(actual[2]).toEqual(expected[2]);
+          expect(actual[3]).toEqual(expected[3]);
+          expect(actual[4]).toEqual(expected[4]);
           done();
         }, 100);
       });

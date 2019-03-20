@@ -329,15 +329,20 @@ describe('JwsToken', () => {
     });
 
     describe('RSASSA-PKCS1-v1_5 SHA-256', () => {
+      // rfc-7515 A.2.1
       const headers = { alg: 'RS256' };
+      // rfc-7515 A.2.1
       const encodedHeaders = 'eyJhbGciOiJSUzI1NiJ9';
+      // rfc-7515 A.2.1
       const payload = Buffer.from([123, 34, 105, 115, 115, 34, 58, 34, 106, 111, 101, 34, 44, 13, 10,
         32, 34, 101, 120, 112, 34, 58, 49, 51, 48, 48, 56, 49, 57, 51, 56,
         48, 44, 13, 10, 32, 34, 104, 116, 116, 112, 58, 47, 47, 101, 120, 97,
         109, 112, 108, 101, 46, 99, 111, 109, 47, 105, 115, 95, 114, 111,
         111, 116, 34, 58, 116, 114, 117, 101, 125]);
+      // rfc-7515 A.2.1
       const encodedPayload = 'eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFt' +
         'cGxlLmNvbS9pc19yb290Ijp0cnVlfQ';
+      // rfc-7515 A.2.1
       const rsaKey = {
         kty: 'RSA',
         n: 'ofgWCuLjybRlzo0tZWJjNiuSfb4p4fAkd_wWJcyQoTbji9k0l8W26mPddx' +
@@ -369,7 +374,7 @@ describe('JwsToken', () => {
             'y26F0EmpScGLq2MowX7fhd_QJQ3ydy5cY7YIBi87w93IKLEdfnbJtoOPLU' +
             'W0ITrJReOgo1cq9SbsxYawBgfp_gh6A5603k2-ZQwVK0JKSHuLFkuQ3U'
       };
-
+      // rfc-7515 A.2.1
       const finalJws = 'eyJhbGciOiJSUzI1NiJ9' +
         '.' +
         'eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFt' +

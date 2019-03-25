@@ -40,7 +40,7 @@ The webpage loads with a user action available (such as a button) that allows th
 
 *An [Authentication Request](../lib/interfaces/AuthenticationRequest.ts) Object.*  
 This object will be put in a JWS signed by the Application.
-```JSON
+```javascript
 /**
  * OpenID Connect Self-Issued Authentication Request
  */
@@ -95,7 +95,7 @@ The User Agent sends the Authentication Response signed by the chosen DID to the
 
 *An [Authentication Response](../lib/interfaces/AuthenticationResponse.ts) Object.*  
 This object will be a put into a JWS signed by the user.
-```JSON
+```
 /** 
  * OpenID Connect Self-Issued ID Token Response. 
  */

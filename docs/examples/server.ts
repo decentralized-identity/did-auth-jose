@@ -8,14 +8,14 @@ const didAuth = require('@decentralized-identity/did-auth-jose');
  * Constants
  */
 const discoveryEndpoint = 'HTTP_RESOLVER_ENDPOINT_HERE'; // e.g. https://beta.discover.did.microsoft.com/
-const REDIRECT_URL = 'exampleServerUrl.com'; // server url that client will send Authentication Response to
+const REDIRECT_URL = 'server.example.com'; // server url that client will send Authentication Response to
 const state = 'af0ifjsldkj'; // Base64Encoded opaque box for the server to put information (e.g. session id)
-const nonce = 'drnEJZTtfh'; // nonce created server-side
+const nonce = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16); // nonce created server-side
 
 /**
  * Fill in the server DID to use
  */
-const DID = 'did:example:YOUR_SERVER_DID_HERE';
+const DID = 'YOUR_SERVER_DID_HERE';
 
 /**
  * Fill in your full private key, including the `kid` field. The key must:

@@ -27,20 +27,20 @@ We've intentionally omitted the following goals from this document for the time 
 - enabling use on cross platform.
 
 ## Protocol Flow
-![Image](./assets/authFlow.png)
+![A UML sequence diagram detailed below.](./assets/authFlow.png)
 
 A. Application Request.  
 The user goes to the application in their preferred browser on their preferred device (desktop or mobile).
 
 B. Generate [Authentication Request](../lib/interfaces/AuthenticationRequest.ts).  
-The OpenID Connect Self-Issued Authentication Request with DID signatures is formed and signed.
+The OpenID Connect Self-Issued Authentication Request with DID signatures is formed and signed by the application.
 
 C. Application Response with [Authentication Request](../lib/interfaces/AuthenticationRequest.ts).  
 The webpage loads with a user action available (such as a button) that allows the user to sign into the application using their DID. The Authentication Request that the webpage will send to the User Agent is formed serverside and is included in this response back to the browser (See [OpenID Connect Claim Parameters](https://openid.net/specs/openid-connect-core-1_0.html#Claims) for more information about what types of claims are allowed).
 
 *An [Authentication Request](../lib/interfaces/AuthenticationRequest.ts) Object.*  
 This object will be put in a JWS signed by the Application.
-```=JSON
+```JSON
 /**
  * OpenID Connect Self-Issued Authentication Request
  */
@@ -95,7 +95,7 @@ The User Agent sends the Authentication Response signed by the chosen DID to the
 
 *An [Authentication Response](../lib/interfaces/AuthenticationResponse.ts) Object.*  
 This object will be a put into a JWS signed by the user.
-```=JSON
+```JSON
 /** 
  * OpenID Connect Self-Issued ID Token Response. 
  */

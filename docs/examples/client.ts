@@ -8,12 +8,12 @@ const didAuth = require('@decentralized-identity/did-auth-jose');
  * Constants
  */
 const discoveryEndpoint = 'HTTP_RESOLVER_ENDPOINT_HERE'; // e.g. https://beta.discover.did.microsoft.com/
-const redirectUrl = 'exampleServerUrl.com'; // server url that client will send Authentication Response to
+const redirectUrl = 'server.example.com'; // server url that client will send Authentication Response to
 
 /**
  * Fill in the client DID to use
  */
-const clientDID = 'did:example:YOUR_Client_DID_HERE';
+const clientDID = 'YOUR_Client_DID_HERE';
 
 /**
  * Fill in your full private key, including the `kid` field. The key must:

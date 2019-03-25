@@ -12,7 +12,7 @@ Authentication Flow
 
 DID Authentication uses two to three [JSON Web Tokens](https://jwt.io/) (JWT) per request. The first is an outer JSON Web Encryption (JWE), and the second is an inner JSON Web Signature (JWS), both utilizing the public private key pair of each DID retrieved from their DID Document. An optional third JWT access token may be included in a JWS header. This format ensures the content is encrypted end to end and independently verifiable. Each JWS contains a nonce header to associate requests with responses.
 
-Authentication is encapsilated in an [Authentication](docs/api.md#Authentication) containing private keys for decryption, cryptographic algorithms, and a Universal Resolver. Due to the extensible model, implementations for algorithms and a universal resolver must be passed in. A [standard set of algorithms](docs/Authentication.md#signature-and-encryption-algorithms) will be used by default. **Currently only RSA is supported**.
+Authentication is encapsilated in an [Authentication](docs/api.md#Authentication) containing private keys for decryption, cryptographic algorithms, and a Universal Resolver. Due to the extensible model, implementations for algorithms and a universal resolver must be passed in. A [standard set of algorithms](docs/Authentication.md#signature-and-encryption-algorithms) will be used by default. **Currently RSA, AES, and Secp256k1 is supported**.
 
 DID Documents are retrieved by the Universal Resolver. All documents are expected to conform to the [DID spec](https://w3c-ccg.github.io/did-spec/). An simple `http-resolver` is included in the [hub-node-core](https://github.com/decentralized-identity/hub-node-core) package, utilizing a remote Universal Resolver listening over http.
 

@@ -6,7 +6,7 @@ For an application to interact with DIDs, web developers will need javascript SD
 - requesting permissions from a user to access data in their identity hub.
 - reading and/or writing data to a user's identity hub.
 
-In this document, we'll focus creating a way for consumers of an extension or mobile app user agent (UA) to use their DID to securely sign into an application. We'll propose protocols based on architectures #1, #2, and #6 from [this DID auth paper](https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-spring2018/blob/master/final-documents/did-auth.md) and a set of APIs for implementing these protocols. The sections below include:
+In this document, we'll focus on creating a way for consumers of an extension or mobile app user agent (UA) to use their DID to securely sign into an application. We'll propose protocols based on architectures #1, #2, and #6 from [this DID auth paper](https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-spring2018/blob/master/final-documents/did-auth.md) and a set of APIs for implementing these protocols. The sections below include:
 
 * [Requirements](#Requirements): Briefly describes the goals of our protocols and APIs.
 * [Protocol Flow](#Protocol-Flow): Illustrate the sign-in flow and the steps taken to verify a user through their UA from the client side of the webpage to the server side.

@@ -14,6 +14,8 @@ import VerifiedRequest from './interfaces/VerifiedRequest';
 import TestPrivateKey from '../tests/mocks/TestPrivateKey';
 import { TestPublicKey } from '../tests/mocks/TestPublicKey';
 import TestCryptoSuite from '../tests/mocks/TestCryptoProvider';
+import AuthenticationRequest from './interfaces/AuthenticationRequest';
+import AuthenticationResponse from './interfaces/AuthenticationResponse';
 
 export { Authentication, AuthenticationOptions, VerifiedRequest };
 export { CryptoSuite, Encrypter, Signer };
@@ -23,3 +25,4 @@ export { Secp256k1CryptoSuite, EcPrivateKey };
 export { AesCryptoSuite };
 export { CryptoFactory, JwsToken, JweToken };
 export { TestCryptoSuite, TestPrivateKey, TestPublicKey };
+export { AuthenticationRequest, AuthenticationResponse };

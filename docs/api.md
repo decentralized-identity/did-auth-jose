@@ -5,6 +5,8 @@
 <dd><p>Class for decrypting and verifying, or signing and encrypting content in an End to End DID Authentication format</p></dd>
 <dt><a href="#Constants">Constants</a></dt>
 <dd><p>Class containing constants used in Authentication.</p></dd>
+<dt><a href="#AesCryptoSuite">AesCryptoSuite</a></dt>
+<dd><p>Encrypter plugin for Advanced Encryption Standard symmetric keys</p></dd>
 <dt><a href="#EcPrivateKey">EcPrivateKey</a> ⇐ <code><a href="#PrivateKey">PrivateKey</a></code></dt>
 <dd><p>Represents an Elliptic Curve private key</p></dd>
 <dt><a href="#EcPublicKey">EcPublicKey</a> ⇐ <code>PublicKey</code></dt>
@@ -299,6 +301,141 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 <p>Class containing constants used in Authentication.</p>
 
 **Kind**: global class  
+<a name="AesCryptoSuite"></a>
+
+## AesCryptoSuite
+<p>Encrypter plugin for Advanced Encryption Standard symmetric keys</p>
+
+**Kind**: global class  
+
+* [AesCryptoSuite](#AesCryptoSuite)
+    * [.encryptAesCbcHmacSha2(keySize, hashSize)](#AesCryptoSuite+encryptAesCbcHmacSha2) ⇒
+    * [.decryptAesCbcHmacSha2(keySize, hashSize)](#AesCryptoSuite+decryptAesCbcHmacSha2) ⇒
+    * [.encryptAesGcm(keySize)](#AesCryptoSuite+encryptAesGcm) ⇒
+    * [.decryptAesGcm(keySize)](#AesCryptoSuite+decryptAesGcm) ⇒
+    * [.generateHmacTag(hashSize, keySize, mackey, additionalAuthenticatedData, initializationVector, ciphertext)](#AesCryptoSuite+generateHmacTag) ⇒
+    * [.generateHmac(hashSize, mackey, additionalAuthenticatedData, initializationVector, ciphertext)](#AesCryptoSuite+generateHmac) ⇒
+    * [.getAdditionalAuthenticatedDataLength(additionalAuthenticatedData)](#AesCryptoSuite+getAdditionalAuthenticatedDataLength) ⇒
+    * [.generateSymmetricKey(bits)](#AesCryptoSuite+generateSymmetricKey)
+    * [.generateInitializationVector(bits)](#AesCryptoSuite+generateInitializationVector)
+
+<a name="AesCryptoSuite+encryptAesCbcHmacSha2"></a>
+
+### aesCryptoSuite.encryptAesCbcHmacSha2(keySize, hashSize) ⇒
+<p>Given the encryption parameters, returns the AES CBC HMAC SHA2 encryption function</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>a SymmetricEncrypter encrypt function</p>  
+
+| Param | Description |
+| --- | --- |
+| keySize | <p>Size of the keys</p> |
+| hashSize | <p>Size of the SHA2 hash</p> |
+
+<a name="AesCryptoSuite+decryptAesCbcHmacSha2"></a>
+
+### aesCryptoSuite.decryptAesCbcHmacSha2(keySize, hashSize) ⇒
+<p>Given the decryption parameters, returns an AES CBC HMAC SHA2 decryption function</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>a SymmetricEncrypter decrypt function</p>  
+
+| Param | Description |
+| --- | --- |
+| keySize | <p>Size of the keys</p> |
+| hashSize | <p>Size of the SHA2 hash</p> |
+
+<a name="AesCryptoSuite+encryptAesGcm"></a>
+
+### aesCryptoSuite.encryptAesGcm(keySize) ⇒
+<p>Given the encryption parameters, returns the AES GCM encryption function</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>a SymmetricEncrypter encrypt function</p>  
+
+| Param | Description |
+| --- | --- |
+| keySize | <p>Size of the keys</p> |
+
+<a name="AesCryptoSuite+decryptAesGcm"></a>
+
+### aesCryptoSuite.decryptAesGcm(keySize) ⇒
+<p>Given the decryption parameters, returns an AES GCM decryption function</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>a SymmetricEncrypter decrypt function</p>  
+
+| Param | Description |
+| --- | --- |
+| keySize | <p>Size of the keys</p> |
+
+<a name="AesCryptoSuite+generateHmacTag"></a>
+
+### aesCryptoSuite.generateHmacTag(hashSize, keySize, mackey, additionalAuthenticatedData, initializationVector, ciphertext) ⇒
+<p>Generates the HMAC Tag</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>HMAC Tag</p>  
+
+| Param | Description |
+| --- | --- |
+| hashSize | <p>HMAC hash size</p> |
+| keySize | <p>HMAC tag size</p> |
+| mackey | <p>MAC key</p> |
+| additionalAuthenticatedData | <p>Additional authenticated data</p> |
+| initializationVector | <p>initialization vector</p> |
+| ciphertext | <p>encrypted data</p> |
+
+<a name="AesCryptoSuite+generateHmac"></a>
+
+### aesCryptoSuite.generateHmac(hashSize, mackey, additionalAuthenticatedData, initializationVector, ciphertext) ⇒
+<p>Generates the full HMac</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>HMAC in full</p>  
+
+| Param | Description |
+| --- | --- |
+| hashSize | <p>HMAC hash size</p> |
+| mackey | <p>MAC key</p> |
+| additionalAuthenticatedData | <p>Additional authenticated data</p> |
+| initializationVector | <p>initialization vector</p> |
+| ciphertext | <p>encrypted data</p> |
+
+<a name="AesCryptoSuite+getAdditionalAuthenticatedDataLength"></a>
+
+### aesCryptoSuite.getAdditionalAuthenticatedDataLength(additionalAuthenticatedData) ⇒
+<p>Gets the Additional Authenticated Data length in Big Endian notation</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+**Returns**: <p>Additional Authenticated Data returned as a base64 big endian unsigned integer</p>  
+
+| Param | Description |
+| --- | --- |
+| additionalAuthenticatedData | <p>Additional authenticated data</p> |
+
+<a name="AesCryptoSuite+generateSymmetricKey"></a>
+
+### aesCryptoSuite.generateSymmetricKey(bits)
+<p>Generates a symmetric key</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+
+| Param | Description |
+| --- | --- |
+| bits | <p>Size in bits of the key</p> |
+
+<a name="AesCryptoSuite+generateInitializationVector"></a>
+
+### aesCryptoSuite.generateInitializationVector(bits)
+<p>Generates an initialization vector</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+
+| Param | Description |
+| --- | --- |
+| bits | <p>Size in bits of the initialization vector</p> |
+
 <a name="EcPrivateKey"></a>
 
 ## EcPrivateKey ⇐ [<code>PrivateKey</code>](#PrivateKey)
@@ -559,6 +696,8 @@ information</p>
     * [.constructPublicKey(key)](#CryptoFactory+constructPublicKey) ⇒
     * [.getEncrypter(name)](#CryptoFactory+getEncrypter) ⇒
     * [.getSigner(name)](#CryptoFactory+getSigner) ⇒
+    * [.getSymmetricEncrypter(name)](#CryptoFactory+getSymmetricEncrypter) ⇒
+    * [.getDefaultSymmetricEncryptionAlgorithm()](#CryptoFactory+getDefaultSymmetricEncryptionAlgorithm)
 
 <a name="new_CryptoFactory_new"></a>
 
@@ -629,6 +768,24 @@ if the key definition cannot be converted.</p>
 | --- | --- |
 | name | <p>The name of the algorithm</p> |
 
+<a name="CryptoFactory+getSymmetricEncrypter"></a>
+
+### cryptoFactory.getSymmetricEncrypter(name) ⇒
+<p>Gets the SymmetricEncrypter object given the symmetric encryption algorithm's name</p>
+
+**Kind**: instance method of [<code>CryptoFactory</code>](#CryptoFactory)  
+**Returns**: <p>The corresponding SymmetricEncrypter, if any</p>  
+
+| Param | Description |
+| --- | --- |
+| name | <p>The name of the algorithm</p> |
+
+<a name="CryptoFactory+getDefaultSymmetricEncryptionAlgorithm"></a>
+
+### cryptoFactory.getDefaultSymmetricEncryptionAlgorithm()
+<p>Gets the default symmetric encryption algorithm to use</p>
+
+**Kind**: instance method of [<code>CryptoFactory</code>](#CryptoFactory)  
 <a name="JoseToken"></a>
 
 ## JoseToken
@@ -636,22 +793,11 @@ if the key definition cannot be converted.</p>
 Not intended for creating instances of this class directly.</p>
 
 **Kind**: global class  
-
-* [JoseToken](#JoseToken)
-    * [new JoseToken()](#new_JoseToken_new)
-    * [.getHeader()](#JoseToken+getHeader)
-
 <a name="new_JoseToken_new"></a>
 
 ### new JoseToken()
 <p>Constructor for JoseToken that takes in a compact-serialized token string.</p>
 
-<a name="JoseToken+getHeader"></a>
-
-### joseToken.getHeader()
-<p>Gets the header as a JS object.</p>
-
-**Kind**: instance method of [<code>JoseToken</code>](#JoseToken)  
 <a name="JweToken"></a>
 
 ## JweToken
@@ -662,17 +808,27 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [JweToken](#JweToken)
     * [.encrypt()](#JweToken+encrypt) ⇒
+    * [.encryptFlatJson()](#JweToken+encryptFlatJson) ⇒
     * [.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk)](#JweToken+encryptContentEncryptionKey)
+    * [.getHeader()](#JweToken+getHeader)
     * [.decrypt()](#JweToken+decrypt) ⇒
 
 <a name="JweToken+encrypt"></a>
 
 ### jweToken.encrypt() ⇒
-<p>Encrypts the given string in JWE compact serialized format using the given key in JWK JSON object format.
-Content encryption algorithm is hardcoded to 'A128GCM'.</p>
+<p>Encrypts the original content from construction into a JWE compact serialized format
+using the given key in JWK JSON object format.Content encryption algorithm is hardcoded to 'A128GCM'.</p>
 
 **Kind**: instance method of [<code>JweToken</code>](#JweToken)  
-**Returns**: <p>Encrypted Buffer in JWE compact serialized format.</p>  
+**Returns**: <p>Buffer of the original content encrypted in JWE compact serialized format.</p>  
+<a name="JweToken+encryptFlatJson"></a>
+
+### jweToken.encryptFlatJson() ⇒
+<p>Encrypts the original content from construction into a JWE JSON serialized format using
+the given key in JWK JSON object format. Content encryption algorithm is hardcoded to 'A128GCM'.</p>
+
+**Kind**: instance method of [<code>JweToken</code>](#JweToken)  
+**Returns**: <p>Buffer of the original content encrytped in JWE flattened JSON serialized format.</p>  
 <a name="JweToken+encryptContentEncryptionKey"></a>
 
 ### jweToken.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk)
@@ -686,14 +842,19 @@ Content encryption algorithm is hardcoded to 'A128GCM'.</p>
 | keyBuffer | <p>The content encryption key to be encrypted.</p> |
 | jwk | <p>The asymmetric public key used to encrypt the content encryption key.</p> |
 
+<a name="JweToken+getHeader"></a>
+
+### jweToken.getHeader()
+<p>Gets the header as a JS object.</p>
+
+**Kind**: instance method of [<code>JweToken</code>](#JweToken)  
 <a name="JweToken+decrypt"></a>
 
 ### jweToken.decrypt() ⇒
-<p>Decrypts the given JWE compact serialized string using the given key in JWK JSON object format.
-TODO: implement decryption without node-jose dependency so we can use decryption algorithms from plugins.</p>
+<p>Decrypts the original JWE using the given key in JWK JSON object format.</p>
 
 **Kind**: instance method of [<code>JweToken</code>](#JweToken)  
-**Returns**: <p>Decrypted plaintext.</p>  
+**Returns**: <p>Decrypted plaintext of the JWE</p>  
 <a name="JwsToken"></a>
 
 ## JwsToken
@@ -704,15 +865,15 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [JwsToken](#JwsToken)
     * [.sign(jwsHeaderParameters)](#JwsToken+sign) ⇒
+    * [.signFlatJson(jwk, options)](#JwsToken+signFlatJson)
     * [.verifySignature()](#JwsToken+verifySignature) ⇒
-    * [.getSignedContent()](#JwsToken+getSignedContent)
     * [.getPayload()](#JwsToken+getPayload)
-    * [.getSignature()](#JwsToken+getSignature)
+    * [.getHeader()](#JwsToken+getHeader)
 
 <a name="JwsToken+sign"></a>
 
 ### jwsToken.sign(jwsHeaderParameters) ⇒
-<p>Sign the given content using the given private key in JWK format.</p>
+<p>Signs contents given at construction using the given private key in JWK format.</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
 **Returns**: <p>Signed payload in compact JWS format.</p>  
@@ -721,29 +882,35 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- |
 | jwsHeaderParameters | <p>Header parameters in addition to 'alg' and 'kid' to be included in the JWS.</p> |
 
+<a name="JwsToken+signFlatJson"></a>
+
+### jwsToken.signFlatJson(jwk, options)
+<p>Signs contents given at construction using the given private key in JWK format with additional optional header fields</p>
+
+**Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
+
+| Param | Description |
+| --- | --- |
+| jwk | <p>Private key used in the signature</p> |
+| options | <p>Additional protected and header fields to include in the JWS</p> |
+
 <a name="JwsToken+verifySignature"></a>
 
 ### jwsToken.verifySignature() ⇒
-<p>Verifies the given JWS compact serialized string using the given key in JWK object format.</p>
+<p>Verifies the JWS using the given key in JWK object format.</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
 **Returns**: <p>The payload if signature is verified. Throws exception otherwise.</p>  
-<a name="JwsToken+getSignedContent"></a>
-
-### jwsToken.getSignedContent()
-<p>Gets the signed content (i.e. '<header>.<payload>').</p>
-
-**Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
 <a name="JwsToken+getPayload"></a>
 
 ### jwsToken.getPayload()
 <p>Gets the base64 URL decrypted payload.</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
-<a name="JwsToken+getSignature"></a>
+<a name="JwsToken+getHeader"></a>
 
-### jwsToken.getSignature()
-<p>Gets the signature string.</p>
+### jwsToken.getHeader()
+<p>Gets the header as a JS object.</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
 <a name="PrivateKey"></a>
@@ -771,6 +938,7 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 * [Base64Url](#Base64Url)
     * [.encode()](#Base64Url.encode)
     * [.decode()](#Base64Url.decode)
+    * [.decodeToBuffer()](#Base64Url.decodeToBuffer)
     * [.toBase64()](#Base64Url.toBase64)
     * [.fromBase64()](#Base64Url.fromBase64)
 
@@ -784,6 +952,12 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 ### Base64Url.decode()
 <p>Decodes a Base64URL string.</p>
+
+**Kind**: static method of [<code>Base64Url</code>](#Base64Url)  
+<a name="Base64Url.decodeToBuffer"></a>
+
+### Base64Url.decodeToBuffer()
+<p>Decodes a Base64URL string</p>
 
 **Kind**: static method of [<code>Base64Url</code>](#Base64Url)  
 <a name="Base64Url.toBase64"></a>

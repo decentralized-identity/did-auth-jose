@@ -11,6 +11,8 @@ export default class TestCryptoSuite implements CryptoSuite {
   private static readonly DECRYPT = 0x2;
   private static readonly SIGN = 0x4;
   private static readonly VERIFY = 0x8;
+  private static readonly SYMENCRYPT = 0xF;
+  private static readonly SYMDECRYPT = 0x10;
 
   getKeyConstructors () {
     return {
@@ -50,6 +52,27 @@ export default class TestCryptoSuite implements CryptoSuite {
     };
   }
 
+  private symEncrypt (id: number): (plaintext: Buffer, _: Buffer) =>
+  Promise<{ciphertext: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer}> {
+    return (plaintext: Buffer, _) => {
+      TestCryptoSuite.called[id] |= TestCryptoSuite.SYMENCRYPT;
+      return Promise.resolve({
+        ciphertext: plaintext,
+        initializationVector: Buffer.alloc(0),
+        key: Buffer.alloc(0),
+        tag: Buffer.alloc(0)
+      });
+    };
+  }
+
+  private symDecrypt (id: number): (ciphertext: Buffer, additionalAuthenticatedData: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer) =>
+  Promise<Buffer> {
+    return (ciphertext: Buffer, _, __, ___, ____) => {
+      TestCryptoSuite.called[id] |= TestCryptoSuite.SYMDECRYPT;
+      return Promise.resolve(ciphertext);
+    };
+  }
+
   getEncrypters () {
     return {
       test: {
@@ -64,6 +87,15 @@ export default class TestCryptoSuite implements CryptoSuite {
       test: {
         sign: this.sign(this.id),
         verify: this.verify(this.id)
+      }
+    };
+  }
+
+  getSymmetricEncrypters () {
+    return {
+      test: {
+        encrypt: this.symEncrypt(this.id),
+        decrypt: this.symDecrypt(this.id)
       }
     };
   }
@@ -94,6 +126,20 @@ export default class TestCryptoSuite implements CryptoSuite {
    */
   wasVerifyCalled (): boolean {
     return (TestCryptoSuite.called[this.id] & TestCryptoSuite.VERIFY) > 0;
+  }
+
+  /**
+   * Returns true when Symmetric Encrypt was called since last reset()
+   */
+  wasSymEncryptCalled (): boolean {
+    return (TestCryptoSuite.called[this.id] & TestCryptoSuite.SYMENCRYPT) > 0;
+  }
+
+  /**
+   * Returns true when Symmetric Decrypt was called since last reset()
+   */
+  wasSymDecryptCalled (): boolean {
+    return (TestCryptoSuite.called[this.id] & TestCryptoSuite.SYMDECRYPT) > 0;
   }
 
   /**

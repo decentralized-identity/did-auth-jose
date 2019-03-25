@@ -1,4 +1,3 @@
-import Base64Url from '../utilities/Base64Url';
 import CryptoFactory from '../CryptoFactory';
 
 /**
@@ -10,6 +9,19 @@ export default abstract class JoseToken {
    * Content of the token
    */
   protected content: string;
+
+  /**
+   * Protected headers (base64url encoded)
+   */
+  protected protectedHeaders: string | undefined;
+  /**
+   * Unprotected headers
+   */
+  protected unprotectedHeaders: {[member: string]: any} | undefined;
+  /**
+   * Payload (base64url encoded)
+   */
+  protected payload: string | undefined;
   /**
    * Constructor for JoseToken that takes in a compact-serialized token string.
    */
@@ -24,13 +36,5 @@ export default abstract class JoseToken {
   /**
    * Gets the header as a JS object.
    */
-  public getHeader (): any {
-    let [headerBase64Url] = this.content.split('.');
-    if (!headerBase64Url) {
-      return;
-    }
-    const jsonString = Base64Url.decode(headerBase64Url);
-
-    return JSON.parse(jsonString);
-  }
+  public abstract getHeader (): any;
 }

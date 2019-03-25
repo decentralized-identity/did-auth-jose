@@ -22,8 +22,15 @@ export default class Base64Url {
    * Decodes a Base64URL string.
    */
   public static decode (base64urlString: string, encoding: string = 'utf8'): string {
+    return Base64Url.decodeToBuffer(base64urlString).toString(encoding);
+  }
+
+  /**
+   * Decodes a Base64URL string
+   */
+  public static decodeToBuffer (base64urlString: string): Buffer {
     const base64String = Base64Url.toBase64(base64urlString);
-    return Buffer.from(base64String, 'base64').toString(encoding);
+    return Buffer.from(base64String, 'base64');
   }
 
   /**
@@ -46,4 +53,5 @@ export default class Base64Url {
       .replace(/\//g, '_')
       .replace(/=/g, '');
   }
+
 }

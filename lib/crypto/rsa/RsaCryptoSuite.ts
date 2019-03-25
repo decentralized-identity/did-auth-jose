@@ -1,5 +1,5 @@
 import RsaPublicKey from './RsaPublicKey';
-import CryptoSuite from '../../interfaces/CryptoSuite';
+import CryptoSuite, { SymmetricEncrypter } from '../../interfaces/CryptoSuite';
 import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
 // TODO: Create and reference TypeScript definition file for 'jwk-to-pem'
 const jwkToPem = require('jwk-to-pem');
@@ -12,6 +12,11 @@ import PublicKey from '../../security/PublicKey';
  * Encrypter plugin for RsaSignature2018
  */
 export class RsaCryptoSuite implements CryptoSuite {
+
+  getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
+    return {};
+  }
+
   getEncrypters () {
     return {
       'RSA-OAEP': {

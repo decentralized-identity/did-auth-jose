@@ -9,7 +9,7 @@ For an application to interact with DIDs, web developers will need javascript SD
 In this document, we'll focus creating a way for consumers of an extension or mobile app user agent (UA) to use their DID to securely sign into an application. We'll propose protocols based on architectures #1, #2, and #6 from [this DID auth paper](https://github.com/WebOfTrustInfo/rebooting-the-web-of-trust-spring2018/blob/master/final-documents/did-auth.md) and a set of APIs for implementing these protocols. The sections below include:
 
 * [Requirements](#Requirements): Briefly describes the goals of our protocols and APIs.
-* [Protocol Flows](#Protocol-Flows): Illustrate the sign-in flow and the steps taken to verify a user through their UA from the client side of the webpage to the server side.
+* [Protocol Flow](#Protocol-Flow): Illustrate the sign-in flow and the steps taken to verify a user through their UA from the client side of the webpage to the server side.
 
 ## Requirements
 
@@ -32,13 +32,13 @@ We've intentionally omitted the following goals from this document for the time 
 A. Application Request.  
 The user goes to the application in their preferred browser on their preferred device (desktop or mobile).
 
-B. Generate Authentication Request.  
+B. Generate [Authentication Request](../lib/interfaces/AuthenticationRequest.ts).  
 The OpenID Connect Self-Issued Authentication Request with DID signatures is formed and signed.
 
-C. Application Response with Authentication Request.  
+C. Application Response with [Authentication Request](../lib/interfaces/AuthenticationRequest.ts).  
 The webpage loads with a user action available (such as a button) that allows the user to sign into the application using their DID. The Authentication Request that the webpage will send to the User Agent is formed serverside and is included in this response back to the browser (See [OpenID Connect Claim Parameters](https://openid.net/specs/openid-connect-core-1_0.html#Claims) for more information about what types of claims are allowed).
 
-*An Authentication Request Object.*  
+*An [Authentication Request](../lib/interfaces/AuthenticationRequest.ts) Object.*  
 This object will be put in a JWS signed by the Application.
 ```=JSON
 /**
@@ -56,7 +56,7 @@ This object will be put in a JWS signed by the Application.
   /** MUST be set to "openid" */
   "scope": "openid",
   /** Opaque value used by issuer for state */
-  "state": af0ifjsldkj,
+  "state": "af0ifjsldkj",
   /** Request Nonce */
   "nonce": "drnEJZTtfh",
   /** 
@@ -70,8 +70,8 @@ This object will be put in a JWS signed by the Application.
 }
 ```
 
-D. DID Authentication Request.  
-The Authentication Request is sent to the User Agent in various ways:
+D. DID [Authentication Request](../lib/interfaces/AuthenticationRequest.ts).  
+The [Authentication Request](../lib/interfaces/AuthenticationRequest.ts) is sent to the User Agent in various ways:
    - In the desktop browser-browser extension flow, the Authentication Request is sent by a customized navigator.did.requestAuthentication function.
    - In the desktop browser-mobile device flow, the Authentication Request is sent by creating a QR code and scanning the QR code using the camera on a mobile device.
    - In the mobile browser-mobile device flow, the Authentication Request is sent by deep linking to the UA from the mobile browser.
@@ -83,17 +83,17 @@ F. DID Resolver Result for Application's DID.
 The Universal Resolver sends back the DID Document of the queried DID. This DID Document contains information about the DID including it's public key.
 
 G. Application's DID Signature Verification.  
-The User Agent uses the applicationn's public key obtained by Step E to verify the signature on the JWT.
+The User Agent uses the application's public key obtained by Step E to verify the signature on the JWT.
 
   > A note about Steps E-G: These steps make up a security measure to protect against malicious applications posing as real businesses. The Authentication Request will be signed using the application's DID in the form of a JWT, and the User Agent will verify this signature in order to confirm that this application is not pretending to be another.
 
 H. DID Sign-In Request Approval.  
 The user approves the sign-in request in their User Agent. If the user has multiple DIDs registered in their UA, they pick which one they want to use to sign in.
 
-I. Authentication Response.  
+I. [Authentication Response](../lib/interfaces/AuthenticationResponse.ts).  
 The User Agent sends the Authentication Response signed by the chosen DID to the server endpoint that was specified in the Authentication Request.
 
-*An Authentication Response object.*  
+*An [Authentication Response](../lib/interfaces/AuthenticationResponse.ts) Object.*  
 This object will be a put into a JWS signed by the user.
 ```=JSON
 /** 
@@ -141,10 +141,14 @@ K. DID Resolver Result for User DID.
 The Universal Resolver sends back the DID Document of the queried DID.
 
 L. Challenge Response Signature Verification.  
-The server uses the user's public key obtained by Step K to verify the signature on the Authentication Response.
+The server uses the user's public key obtained by Step K to verify the signature on the [Authentication Response](../lib/interfaces/AuthenticationResponse.ts).
 
 M. Authorized Session Cookie.  
 The server sends the browser an authorized session cookie that signs the user into the website.
+
+## Example Code
+
+We have included example code in the docs/examples folder for a simple sign-in flow. The [Server Example Code](./examples/server.ts) contains methods that would be included on the server side of a website that a user wants to use their DID to sign into. The [Client Example Code](./examples/client.ts) contains methods that would be in the User Agent the user has.
 
 ## Future work
 - Include use of OpenID Connect registration object in request for conveying application details.

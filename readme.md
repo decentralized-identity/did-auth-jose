@@ -1,6 +1,11 @@
 Decentralized Identity Authentication via JOSE
 ===
-`did-auth-jose` is a library that provides JOSE encryption, decryption, signing, and verifying capabilities through a key and algorithm extensible model, as well as an authentication flow for use with decentralized identities (DIDs).
+`did-auth-jose` is a library that provides JOSE encryption, decryption, signing, and verifying capabilities through a key and algorithm extensible model, as well as two authentication flows for use with decentralized identities (DIDs).
+
+OIDC Authentication Flow
+---
+
+OIDC Authentication is loosely based off of OpenID Connect Self-Issued ID Token Protocol. The `AuthenticationRequest` and `AuthenticationResponse` objects are modeled after OIDC request and response objects. We have proposed an authentication protocol flow in [this OIDC Authentication document](./docs/OIDCAuthentication.md).
 
 Authentication Flow
 ---

@@ -231,7 +231,6 @@ export default class JweToken extends JoseToken {
     return encrypt(keyBuffer, jwk);
   }
 
-
   /**
    * Decrypts the original JWE using the given key in JWK JSON object format.
    *

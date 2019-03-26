@@ -341,7 +341,7 @@ describe('JwsToken', () => {
       expect(token.toFlatJsonJws()).toEqual({
         protected: expectedProtected,
         payload,
-        signature,
+        signature
       });
     });
 
@@ -381,7 +381,7 @@ describe('JwsToken', () => {
         payload,
         signature
       });
-    })
+    });
   });
 
   describe('validations', () => {

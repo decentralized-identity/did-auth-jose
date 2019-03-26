@@ -1,6 +1,6 @@
-import JoseToken from "../../lib/security/JoseToken";
-import { TestCryptoSuite, CryptoFactory } from "../../lib";
-import Base64Url from "../../lib/utilities/Base64Url";
+import JoseToken from '../../lib/security/JoseToken';
+import { TestCryptoSuite, CryptoFactory } from '../../lib';
+import Base64Url from '../../lib/utilities/Base64Url';
 
 class TestToken extends JoseToken {
   private static registry = new CryptoFactory([new TestCryptoSuite()]);
@@ -98,5 +98,5 @@ describe('JoseToken', () => {
       const token = new TestToken('not a token');
       expect(token.parsedToken()).toBeFalsy();
     });
-  })
+  });
 });

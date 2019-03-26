@@ -577,8 +577,8 @@ describe('JweToken', () => {
 
     it('should fail if alg is not a header', () => {
       const headers = Base64Url.encode(JSON.stringify({
-          enc: 'A128GCM'
-        }));
+        enc: 'A128GCM'
+      }));
       jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
       const token = new JweToken(jwe, registry);
       try {
@@ -591,12 +591,12 @@ describe('JweToken', () => {
 
     it('should fail if enc is not a header', () => {
       const headers = Base64Url.encode(JSON.stringify({
-        alg: 'RSA-OAEP',
+        alg: 'RSA-OAEP'
       }));
-    jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
-    const token = new JweToken(jwe, registry);
-    try {
-      token.toFlatJsonJwe();
+      jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
+      const token = new JweToken(jwe, registry);
+      try {
+        token.toFlatJsonJwe();
         fail('expected to throw');
       } catch (err) {
         expect(err.message).toContain('enc');

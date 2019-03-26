@@ -179,7 +179,7 @@ export default class JwsToken extends JoseToken {
    * Converts the JWS from the constructed type into a Flat JSON JWS
    * @param headers unprotected headers to use
    */
-  public toFlatJsonJws (headers: {[member: string]: any} | undefined): any {
+  public toFlatJsonJws (headers?: {[member: string]: any}): any {
     if (this.payload === undefined || this.signature === undefined) {
       throw new Error('Could not parse contents into a JWS');
     }

@@ -162,68 +162,6 @@ describe('JwsToken', () => {
     });
   });
 
-  describe('getHeader', () => {
-    it('should return headers from Compact JWS', () => {
-      const test = Math.random().toString(16);
-      const protectedHeaders = Base64Url.encode(JSON.stringify({
-        test
-      }));
-      const jws = new JwsToken(protectedHeaders + '..', registry);
-      const headers = jws.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['test']).toEqual(test);
-    });
-
-    it('should return headers from Flattened JSON Serialization', () => {
-      const test = Math.random().toString(16);
-      const headertest = Math.random().toString(16);
-      const protectedHeaders = Base64Url.encode(JSON.stringify({
-        test
-      }));
-      const jws = new JwsToken({
-        protected: protectedHeaders,
-        header: {
-          headertest
-        },
-        payload: '',
-        signature: ''
-      }, registry);
-      const headers = jws.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['test']).toEqual(test);
-      expect(headers['headertest']).toEqual(headertest);
-    });
-
-    it('should return headers from Flattened JSON Serialization with only header', () => {
-      const headertest = Math.random().toString(16);
-      const jws = new JwsToken({
-        header: {
-          headertest
-        },
-        payload: '',
-        signature: ''
-      }, registry);
-      const headers = jws.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['headertest']).toEqual(headertest);
-    });
-
-    it('should return headers from Flattened JSON Serialization with only protected', () => {
-      const test = Math.random().toString(16);
-      const protectedHeaders = Base64Url.encode(JSON.stringify({
-        test
-      }));
-      const jws = new JwsToken({
-        protected: protectedHeaders,
-        payload: '',
-        signature: ''
-      }, registry);
-      const headers = jws.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['test']).toEqual(test);
-    });
-  });
-
   describe('getPayload', () => {
     let data: string;
     let payload: string;
@@ -320,6 +258,130 @@ describe('JwsToken', () => {
       expect(jws.signature).toBeDefined();
       expect(Base64Url.decode(jws.payload)).toEqual(JSON.stringify(data));
     });
+  });
+
+  describe('toCompactJws', () => {
+    it('should fail if the token is not a JWS', () => {
+      const token = new JwsToken('definately not a jws', registry);
+      try {
+        token.toCompactJws();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('parse');
+      }
+    });
+
+    it('should fail if alg is not a protected header', () => {
+      const token = new JwsToken({
+        protected: '',
+        payload: '',
+        signature: ''
+      }, registry);
+      try {
+        token.toCompactJws();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('alg');
+      }
+    });
+
+    it('should form a compact JWS', () => {
+      const expectedProtected = Base64Url.encode(JSON.stringify({
+        alg: 'RSA-OAEP'
+      }));
+      const token = new JwsToken({
+        protected: expectedProtected,
+        header: {
+          test: 'should be ignored'
+        },
+        payload: 'signedContent',
+        signature: 'signature'
+      }, registry);
+      expect(token.toCompactJws()).toEqual(
+        `${expectedProtected}.signedContent.signature`
+      );
+    });
+  });
+
+  describe('toFlatJsonJws', () => {
+    const expectedProtected = Base64Url.encode(JSON.stringify({
+      alg: 'RSA-OAEP'
+    }));
+    const signature = 'signature';
+    const payload = 'signedContent';
+    let jws: string;
+
+    beforeEach(() => {
+      jws = `${expectedProtected}.${payload}.${signature}`;
+    });
+
+    it('should fail if the token is not a JWS', () => {
+      const token = new JwsToken('not a jws', registry);
+      try {
+        token.toFlatJsonJws();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('parse');
+      }
+    });
+
+    it('should fail if alg is not a header', () => {
+      jws = `.${payload}.${signature}`;
+      const token = new JwsToken(jws, registry);
+      try {
+        token.toFlatJsonJws();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('alg');
+      }
+    });
+
+    it('should form a JSON JWS from a compact JWS', () => {
+      const token = new JwsToken(jws, registry);
+      expect(token.toFlatJsonJws()).toEqual({
+        protected: expectedProtected,
+        payload,
+        signature,
+      });
+    });
+
+    it('should override unprotected headers with those passed to it', () => {
+      const headers = {
+        test: 'foo'
+      };
+      const token = new JwsToken({
+        protected: expectedProtected,
+        header: {
+          test: 'bar'
+        },
+        payload,
+        signature
+      }, registry);
+      expect(token.toFlatJsonJws(headers)).toEqual({
+        protected: expectedProtected,
+        header: headers,
+        payload,
+        signature
+      });
+    });
+
+    it('should accept JWSs with no protected header', () => {
+      const headers = {
+        alg: 'RSA-OAEP'
+      };
+      const token = new JwsToken({
+        header: {
+          test: 'bar'
+        },
+        payload,
+        signature
+      }, registry);
+      expect(token.toFlatJsonJws(headers)).toEqual({
+        header: headers,
+        payload,
+        signature
+      });
+    })
   });
 
   describe('validations', () => {

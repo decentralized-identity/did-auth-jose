@@ -1,4 +1,5 @@
 import CryptoFactory from '../CryptoFactory';
+import Base64Url from '../utilities/Base64Url';
 
 /**
  * Base class for containing common operations for JWE and JWS tokens.
@@ -36,5 +37,34 @@ export default abstract class JoseToken {
   /**
    * Gets the header as a JS object.
    */
-  public abstract getHeader (): any;
+  public getHeader (): {[member: string]: any} {
+    let headers = this.unprotectedHeaders;
+    if (!headers) {
+      headers = {};
+    }
+    if (this.protectedHeaders) {
+      headers = Object.assign(headers, this.getProtectedHeader());
+    }
+    return headers;
+  }
+
+  /**
+   * Gets the protected headers as a JS object.
+   */
+  public getProtectedHeader (): {[member: string]: any} {
+    let headers = {};
+    if (this.protectedHeaders) {
+      const jsonString = Base64Url.decode(this.protectedHeaders);
+      const protect = JSON.parse(jsonString) as {[key: string]: any};
+      headers = Object.assign(headers, protect);
+    }
+    return headers;
+  }
+
+  /**
+   * Returns true if and only if the content was parsed as a token
+   */
+  public parsedToken (): boolean {
+    return this.payload !== undefined;
+  }
 }

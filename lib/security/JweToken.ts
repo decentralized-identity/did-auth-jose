@@ -231,21 +231,6 @@ export default class JweToken extends JoseToken {
     return encrypt(keyBuffer, jwk);
   }
 
-  /**
-   * Gets the header as a JS object.
-   */
-  public getHeader (): any {
-    let headers = this.unprotectedHeaders;
-    if (!headers) {
-      headers = {};
-    }
-    if (this.protectedHeaders) {
-      const jsonString = Base64Url.decode(this.protectedHeaders);
-      const protect = JSON.parse(jsonString) as {[key: string]: any};
-      headers = Object.assign(headers, protect);
-    }
-    return headers;
-  }
 
   /**
    * Decrypts the original JWE using the given key in JWK JSON object format.
@@ -308,5 +293,64 @@ export default class JweToken extends JoseToken {
     }
     // 18. If there was no recipient, the JWE is invalid. Otherwise output the plaintext.
     return plaintext.toString('utf8');
+  }
+
+  /**
+   * Converts the JWE from the constructed type into a Compact JWE
+   */
+  public toCompactJwe (): string {
+    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
+      throw new Error('Could not parse contents into a JWE');
+    }
+    const protectedHeaders = this.getProtectedHeader();
+    if (!('alg' in protectedHeaders) || !('enc' in protectedHeaders)) {
+      throw new Error("'alg' and 'enc' are required to be in the protected header");
+    }
+    if (this.aad !== Buffer.from(this.protectedHeaders || '')) {
+      throw new Error("'aad' must not be set in original JWE");
+    }
+    const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
+    const initializationVectorBase64Url = Base64Url.encode(this.iv);
+    const authenticationTagBase64Url = Base64Url.encode(this.tag);
+    return `${this.protectedHeaders}.${encryptedKeyBase64Url}.${initializationVectorBase64Url}.${this.payload}.${authenticationTagBase64Url}`;
+  }
+
+  /**
+   * Converts the JWE from the constructed type into a Flat JSON JWE
+   * @param headers unprotected headers to use
+   */
+  public toFlatJsonJwe (headers: {[member: string]: any} | undefined): any {
+    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
+      throw new Error('Could not parse contents into a JWE');
+    }
+    const unprotectedHeaders = headers || this.unprotectedHeaders || undefined;
+    const protectedHeaders = this.getProtectedHeader();
+    // TODO: verify no header parameters in unprotected headers conflict with protected headers
+    if ((!('alg' in protectedHeaders) &&
+         !(unprotectedHeaders && ('alg' in unprotectedHeaders))
+        ) || (
+         !('enc' in protectedHeaders) &&
+         !(unprotectedHeaders && ('enc' in unprotectedHeaders))
+        )) {
+      throw new Error("'alg' and 'enc' are required to be in the header or protected header");
+    }
+    const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
+    const initializationVectorBase64Url = Base64Url.encode(this.iv);
+    const authenticationTagBase64Url = Base64Url.encode(this.tag);
+    const additionalAuthenticatedData = Base64Url.encode(this.aad);
+    let jwe = {
+      encrypted_key: encryptedKeyBase64Url,
+      aad: additionalAuthenticatedData,
+      iv: initializationVectorBase64Url,
+      ciphertext: this.payload,
+      tag: authenticationTagBase64Url
+    };
+    if (this.protectedHeaders) {
+      jwe = Object.assign(jwe, { protected: this.protectedHeaders });
+    }
+    if (unprotectedHeaders) {
+      jwe = Object.assign(jwe, { unprotected: unprotectedHeaders });
+    }
+    return jwe;
   }
 }

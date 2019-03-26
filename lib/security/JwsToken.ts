@@ -163,19 +163,43 @@ export default class JwsToken extends JoseToken {
   }
 
   /**
-   * Gets the header as a JS object.
+   * Converts the JWS from the constructed type into a Compact JWS
    */
-  public getHeader (): any {
-    let headers = this.unprotectedHeaders;
-    if (!headers) {
-      headers = {};
+  public toCompactJws (): string {
+    if (this.payload === undefined || this.signature === undefined) {
+      throw new Error('Could not parse contents into a JWS');
     }
-    if (this.protectedHeaders) {
-      const jsonString = Base64Url.decode(this.protectedHeaders);
-      const protect = JSON.parse(jsonString) as {[key: string]: any};
-      headers = Object.assign(headers, protect);
+    if (!('alg' in this.getProtectedHeader())) {
+      throw new Error("'alg' is required to be in the protected header");
     }
-    return headers;
+    return `${this.protectedHeaders}.${this.payload}.${this.signature}`;
   }
 
+  /**
+   * Converts the JWS from the constructed type into a Flat JSON JWS
+   * @param headers unprotected headers to use
+   */
+  public toFlatJsonJws (headers: {[member: string]: any} | undefined): any {
+    if (this.payload === undefined || this.signature === undefined) {
+      throw new Error('Could not parse contents into a JWS');
+    }
+    const unprotectedHeaders = headers || this.unprotectedHeaders || undefined;
+    const protectedHeaders = this.getProtectedHeader();
+    // TODO: verify no header parameters in unprotected headers conflict with protected headers
+    if (!('alg' in protectedHeaders) &&
+        !(unprotectedHeaders && ('alg' in unprotectedHeaders))) {
+      throw new Error("'alg' is required to be in the header or protected header");
+    }
+    let jws = {
+      payload: this.payload,
+      signature: this.signature
+    };
+    if (this.protectedHeaders) {
+      jws = Object.assign(jws, { protected: this.protectedHeaders });
+    }
+    if (unprotectedHeaders) {
+      jws = Object.assign(jws, { header: unprotectedHeaders });
+    }
+    return jws;
+  }
 }

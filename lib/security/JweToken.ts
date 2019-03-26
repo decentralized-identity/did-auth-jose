@@ -305,7 +305,7 @@ export default class JweToken extends JoseToken {
     if (!('alg' in protectedHeaders) || !('enc' in protectedHeaders)) {
       throw new Error("'alg' and 'enc' are required to be in the protected header");
     }
-    if (this.aad !== Buffer.from(this.protectedHeaders || '')) {
+    if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
       throw new Error("'aad' must not be set in original JWE");
     }
     const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
@@ -318,7 +318,7 @@ export default class JweToken extends JoseToken {
    * Converts the JWE from the constructed type into a Flat JSON JWE
    * @param headers unprotected headers to use
    */
-  public toFlatJsonJwe (headers: {[member: string]: any} | undefined): any {
+  public toFlatJsonJwe (headers?: {[member: string]: any}): any {
     if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
       throw new Error('Could not parse contents into a JWE');
     }
@@ -336,14 +336,19 @@ export default class JweToken extends JoseToken {
     const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
     const initializationVectorBase64Url = Base64Url.encode(this.iv);
     const authenticationTagBase64Url = Base64Url.encode(this.tag);
-    const additionalAuthenticatedData = Base64Url.encode(this.aad);
     let jwe = {
       encrypted_key: encryptedKeyBase64Url,
-      aad: additionalAuthenticatedData,
       iv: initializationVectorBase64Url,
       ciphertext: this.payload,
       tag: authenticationTagBase64Url
     };
+    // add AAD if its unique
+    if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
+      // decrypt the aad and remove the protected headers.
+      const aadParts = this.aad.toString().split('.');
+      // Only the unique part of the aad is required
+      jwe = Object.assign(jwe, { aad: aadParts[1] });
+    }
     if (this.protectedHeaders) {
       jwe = Object.assign(jwe, { protected: this.protectedHeaders });
     }

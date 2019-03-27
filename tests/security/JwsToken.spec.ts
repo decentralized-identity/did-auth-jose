@@ -233,7 +233,7 @@ describe('JwsToken', () => {
         expect(err).toBeDefined();
         return;
       }
-    })
+    });
   });
 
   describe('signFlatJson', () => {
@@ -285,7 +285,7 @@ describe('JwsToken', () => {
       });
       expect(jws.signature).toBeDefined();
       expect(jws.protected).toBeUndefined();
-    })
+    });
   });
 
   describe('toCompactJws', () => {

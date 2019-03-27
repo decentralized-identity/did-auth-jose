@@ -219,6 +219,21 @@ describe('JwsToken', () => {
       await jwsToken.sign(new TestPrivateKey());
       expect(crypto.wasSignCalled()).toBeTruthy();
     });
+
+    it('should not add its own alg and kid headers if ones are provided', async () => {
+      const privateKey = new TestPrivateKey();
+      const jwsToken = new JwsToken(data, registry);
+      try {
+        await jwsToken.sign(privateKey, {
+          alg: 'unknown',
+          kid: 'also unknown'
+        });
+        fail('expected to throw');
+      } catch (err) {
+        expect(err).toBeDefined();
+        return;
+      }
+    })
   });
 
   describe('signFlatJson', () => {
@@ -258,6 +273,19 @@ describe('JwsToken', () => {
       expect(jws.signature).toBeDefined();
       expect(Base64Url.decode(jws.payload)).toEqual(JSON.stringify(data));
     });
+
+    it('should not add alg or kid if they are provided in the header', async () => {
+      const privateKey = new TestPrivateKey();
+      const jwsToken = new JwsToken(data, registry);
+      const jws = await jwsToken.signFlatJson(privateKey, {
+        header: {
+          alg: privateKey.defaultSignAlgorithm,
+          kid: privateKey.kid
+        }
+      });
+      expect(jws.signature).toBeDefined();
+      expect(jws.protected).toBeUndefined();
+    })
   });
 
   describe('toCompactJws', () => {

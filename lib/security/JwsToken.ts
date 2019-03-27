@@ -68,8 +68,11 @@ export default class JwsToken extends JoseToken {
     const encodedContent = Base64Url.encode(this.content);
     // 3. Compute the headers
     const headers = jwsHeaderParameters || {};
-    headers['alg'] = jwk.defaultSignAlgorithm;
-    if (jwk.kid) {
+    // add required fields if required
+    if (!('alg' in headers)) {
+      headers['alg'] = jwk.defaultSignAlgorithm;
+    }
+    if (jwk.kid && !('kid' in headers)) {
       headers['kid'] = jwk.kid;
     }
     // 4. Compute BASE64URL(UTF8(JWS Header))
@@ -99,23 +102,33 @@ export default class JwsToken extends JoseToken {
     // 3. Compute the headers
     const header = (options || {}).header;
     const protectedHeaders = (options || {}).protected || {};
-    protectedHeaders['alg'] = jwk.defaultSignAlgorithm;
-    protectedHeaders['kid'] = jwk.kid;
+    // add required fields if required
+    if (!(header && 'alg' in header) && !('alg' in protectedHeaders)) {
+      protectedHeaders['alg'] = jwk.defaultSignAlgorithm;
+    }
+    if (jwk.kid && !(header && 'kid' in header) && !('kid' in protectedHeaders)) {
+      protectedHeaders['kid'] = jwk.kid;
+    }
+    const alg = protectedHeaders.alg || header!.alg;
+    let protectedUsed = Object.keys(protectedHeaders).length > 0;
     // 4. Compute BASE64URL(UTF8(JWS Header))
-    const encodedProtected = Base64Url.encode(JSON.stringify(protectedHeaders));
+    const encodedProtected = !protectedUsed ? '' : Base64Url.encode(JSON.stringify(protectedHeaders));
     // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)
     //    using the "alg" signature algorithm.
     const signatureInput = `${encodedProtected}.${encodedContent}`;
-    const signature = await (this.cryptoFactory.getSigner(protectedHeaders['alg'])).sign(signatureInput, jwk);
+    const signature = await (this.cryptoFactory.getSigner(alg)).sign(signatureInput, jwk);
     // 6. Compute BASE64URL(JWS Signature)
     const encodedSignature = Base64Url.fromBase64(signature);
     // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
-    return {
-      protected: encodedProtected,
+    const jws: {protected?: string, header?: {[name: string]: string}, payload: string, signature: string} = {
       header,
       payload: encodedContent,
       signature: encodedSignature
     };
+    if (protectedUsed) {
+      jws.protected = encodedProtected;
+    }
+    return jws;
   }
 
   /**

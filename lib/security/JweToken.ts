@@ -10,6 +10,19 @@ import CryptoFactory from '../CryptoFactory';
 type EncryptDelegate = (data: Buffer, jwk: PublicKey) => Promise<Buffer>;
 
 /**
+ * JWE in flattened json format
+ */
+export type FlatJsonJwe = {
+  protected?: string,
+  unprotected?: {[key: string]: string},
+  encrypted_key: string,
+  iv: string,
+  ciphertext: string,
+  tag: string,
+  aad?: string
+};
+
+/**
  * Class for performing JWE encryption operations.
  * This class hides the JOSE and crypto library dependencies to allow support for additional crypto algorithms.
  */
@@ -149,15 +162,7 @@ export default class JweToken extends JoseToken {
       unprotected?: {[key: string]: any},
       protected?: {[key: string]: any},
       aad?: string | Buffer
-    }): Promise<{
-      protected?: string,
-      unprotected?: {[key: string]: string},
-      encrypted_key: string,
-      iv: string,
-      ciphertext: string,
-      tag: string,
-      aad?: string
-    }> {
+    }): Promise<FlatJsonJwe> {
 
     // Decide key encryption algorithm based on given JWK.
     const keyEncryptionAlgorithm = jwk.defaultEncryptionAlgorithm;
@@ -318,7 +323,7 @@ export default class JweToken extends JoseToken {
    * Converts the JWE from the constructed type into a Flat JSON JWE
    * @param headers unprotected headers to use
    */
-  public toFlatJsonJwe (headers?: {[member: string]: any}): any {
+  public toFlatJsonJwe (headers?: {[member: string]: any}): FlatJsonJwe {
     if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
       throw new Error('Could not parse contents into a JWE');
     }

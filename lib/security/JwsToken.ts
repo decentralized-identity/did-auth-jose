@@ -9,6 +9,16 @@ import { PrivateKey, CryptoFactory } from '..';
 type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: PublicKey) => Promise<boolean>;
 
 /**
+ * JWS in flattened json format
+ */
+export type FlatJsonJws = {
+  protected?: string,
+  header?: {[name: string]: string},
+  payload: string,
+  signature: string
+};
+
+/**
  * Class for containing JWS token operations.
  * This class hides the JOSE and crypto library dependencies to allow support for additional crypto algorithms.
  */
@@ -95,7 +105,7 @@ export default class JwsToken extends JoseToken {
    */
   public async signFlatJson (jwk: PrivateKey,
     options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}):
-    Promise<{protected?: string, header?: {[name: string]: string}, payload: string, signature: string}> {
+    Promise<FlatJsonJws> {
     // Steps according to RTC7515 5.1
     // 2. Compute encoded payload vlaue base64URL(JWS Payload)
     const encodedContent = Base64Url.encode(this.content);
@@ -192,7 +202,7 @@ export default class JwsToken extends JoseToken {
    * Converts the JWS from the constructed type into a Flat JSON JWS
    * @param headers unprotected headers to use
    */
-  public toFlatJsonJws (headers?: {[member: string]: any}): any {
+  public toFlatJsonJws (headers?: {[member: string]: any}): FlatJsonJws {
     if (this.payload === undefined || this.signature === undefined) {
       throw new Error('Could not parse contents into a JWS');
     }

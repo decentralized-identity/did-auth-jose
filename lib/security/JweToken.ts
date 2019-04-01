@@ -10,6 +10,19 @@ import CryptoFactory from '../CryptoFactory';
 type EncryptDelegate = (data: Buffer, jwk: PublicKey) => Promise<Buffer>;
 
 /**
+ * JWE in flattened json format
+ */
+export type FlatJsonJwe = {
+  protected?: string,
+  unprotected?: {[key: string]: string},
+  encrypted_key: string,
+  iv: string,
+  ciphertext: string,
+  tag: string,
+  aad?: string
+};
+
+/**
  * Class for performing JWE encryption operations.
  * This class hides the JOSE and crypto library dependencies to allow support for additional crypto algorithms.
  */
@@ -144,20 +157,12 @@ export default class JweToken extends JoseToken {
    *
    * @returns Buffer of the original content encrytped in JWE flattened JSON serialized format.
    */
-  public async encryptFlatJson (jwk: PublicKey,
+  public async encryptAsFlattenedJson (jwk: PublicKey,
     options?: {
       unprotected?: {[key: string]: any},
       protected?: {[key: string]: any},
       aad?: string | Buffer
-    }): Promise<{
-      protected?: string,
-      unprotected?: {[key: string]: string},
-      encrypted_key: string,
-      iv: string,
-      ciphertext: string,
-      tag: string,
-      aad?: string
-    }> {
+    }): Promise<FlatJsonJwe> {
 
     // Decide key encryption algorithm based on given JWK.
     const keyEncryptionAlgorithm = jwk.defaultEncryptionAlgorithm;
@@ -186,15 +191,7 @@ export default class JweToken extends JoseToken {
     const authenticationTagBase64Url = Base64Url.encode(symEncParams.tag);
 
     // Form final compact serialized JWE string.
-    let returnJwe: {
-      protected?: string,
-      unprotected?: {[key: string]: string},
-      encrypted_key: string,
-      iv: string,
-      ciphertext: string,
-      tag: string,
-      aad?: string
-    } = {
+    let returnJwe: FlatJsonJwe = {
       protected: protectedHeaderBase64Url,
       unprotected: (options || {}).unprotected,
       encrypted_key: encryptedKeyBase64Url,
@@ -229,22 +226,6 @@ export default class JweToken extends JoseToken {
       throw err;
     }
     return encrypt(keyBuffer, jwk);
-  }
-
-  /**
-   * Gets the header as a JS object.
-   */
-  public getHeader (): any {
-    let headers = this.unprotectedHeaders;
-    if (!headers) {
-      headers = {};
-    }
-    if (this.protectedHeaders) {
-      const jsonString = Base64Url.decode(this.protectedHeaders);
-      const protect = JSON.parse(jsonString) as {[key: string]: any};
-      headers = Object.assign(headers, protect);
-    }
-    return headers;
   }
 
   /**
@@ -308,5 +289,70 @@ export default class JweToken extends JoseToken {
     }
     // 18. If there was no recipient, the JWE is invalid. Otherwise output the plaintext.
     return plaintext.toString('utf8');
+  }
+
+  /**
+   * Converts the JWE from the constructed type into a Compact JWE
+   */
+  public toCompactJwe (): string {
+    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
+      throw new Error('Could not parse contents into a JWE');
+    }
+    const protectedHeaders = this.getProtectedHeader();
+    if (!('alg' in protectedHeaders) || !('enc' in protectedHeaders)) {
+      throw new Error("'alg' and 'enc' are required to be in the protected header");
+    }
+    // Compact JWEs must have the default AAD value of the protected header (RFC 7516 5.1.14)
+    if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
+      throw new Error("'aad' must not be set in original JWE");
+    }
+    const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
+    const initializationVectorBase64Url = Base64Url.encode(this.iv);
+    const authenticationTagBase64Url = Base64Url.encode(this.tag);
+    return `${this.protectedHeaders}.${encryptedKeyBase64Url}.${initializationVectorBase64Url}.${this.payload}.${authenticationTagBase64Url}`;
+  }
+
+  /**
+   * Converts the JWE from the constructed type into a Flat JSON JWE
+   * @param headers unprotected headers to use
+   */
+  public toFlattenedJsonJwe (headers?: {[member: string]: any}): FlatJsonJwe {
+    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
+      throw new Error('Could not parse contents into a JWE');
+    }
+    const unprotectedHeaders = headers || this.unprotectedHeaders || undefined;
+    const protectedHeaders = this.getProtectedHeader();
+    // TODO: verify no header parameters in unprotected headers conflict with protected headers
+    if ((!('alg' in protectedHeaders) &&
+         !(unprotectedHeaders && ('alg' in unprotectedHeaders))
+        ) || (
+         !('enc' in protectedHeaders) &&
+         !(unprotectedHeaders && ('enc' in unprotectedHeaders))
+        )) {
+      throw new Error("'alg' and 'enc' are required to be in the header or protected header");
+    }
+    const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
+    const initializationVectorBase64Url = Base64Url.encode(this.iv);
+    const authenticationTagBase64Url = Base64Url.encode(this.tag);
+    let jwe = {
+      encrypted_key: encryptedKeyBase64Url,
+      iv: initializationVectorBase64Url,
+      ciphertext: this.payload,
+      tag: authenticationTagBase64Url
+    };
+    // add AAD if its unique
+    if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
+      // decrypt the aad and remove the protected headers.
+      const aadParts = this.aad.toString().split('.');
+      // Only the unique part of the aad is required
+      jwe = Object.assign(jwe, { aad: aadParts[1] });
+    }
+    if (this.protectedHeaders) {
+      jwe = Object.assign(jwe, { protected: this.protectedHeaders });
+    }
+    if (unprotectedHeaders) {
+      jwe = Object.assign(jwe, { unprotected: unprotectedHeaders });
+    }
+    return jwe;
   }
 }

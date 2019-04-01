@@ -9,6 +9,16 @@ import { PrivateKey, CryptoFactory } from '..';
 type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: PublicKey) => Promise<boolean>;
 
 /**
+ * JWS in flattened json format
+ */
+export type FlatJsonJws = {
+  protected?: string,
+  header?: {[name: string]: string},
+  payload: string,
+  signature: string
+};
+
+/**
  * Class for containing JWS token operations.
  * This class hides the JOSE and crypto library dependencies to allow support for additional crypto algorithms.
  */
@@ -68,8 +78,11 @@ export default class JwsToken extends JoseToken {
     const encodedContent = Base64Url.encode(this.content);
     // 3. Compute the headers
     const headers = jwsHeaderParameters || {};
-    headers['alg'] = jwk.defaultSignAlgorithm;
-    if (jwk.kid) {
+    // add required fields if missing
+    if (!('alg' in headers)) {
+      headers['alg'] = jwk.defaultSignAlgorithm;
+    }
+    if (jwk.kid && !('kid' in headers)) {
       headers['kid'] = jwk.kid;
     }
     // 4. Compute BASE64URL(UTF8(JWS Header))
@@ -90,32 +103,42 @@ export default class JwsToken extends JoseToken {
    * @param jwk Private key used in the signature
    * @param options Additional protected and header fields to include in the JWS
    */
-  public async signFlatJson (jwk: PrivateKey,
+  public async signAsFlattenedJson (jwk: PrivateKey,
     options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}):
-    Promise<{protected?: string, header?: {[name: string]: string}, payload: string, signature: string}> {
+    Promise<FlatJsonJws> {
     // Steps according to RTC7515 5.1
     // 2. Compute encoded payload vlaue base64URL(JWS Payload)
     const encodedContent = Base64Url.encode(this.content);
     // 3. Compute the headers
     const header = (options || {}).header;
     const protectedHeaders = (options || {}).protected || {};
-    protectedHeaders['alg'] = jwk.defaultSignAlgorithm;
-    protectedHeaders['kid'] = jwk.kid;
+    // add required fields if missing
+    if (!(header && 'alg' in header) && !('alg' in protectedHeaders)) {
+      protectedHeaders['alg'] = jwk.defaultSignAlgorithm;
+    }
+    if (jwk.kid && !(header && 'kid' in header) && !('kid' in protectedHeaders)) {
+      protectedHeaders['kid'] = jwk.kid;
+    }
+    const alg = protectedHeaders.alg || header!.alg;
+    let protectedUsed = Object.keys(protectedHeaders).length > 0;
     // 4. Compute BASE64URL(UTF8(JWS Header))
-    const encodedProtected = Base64Url.encode(JSON.stringify(protectedHeaders));
+    const encodedProtected = !protectedUsed ? '' : Base64Url.encode(JSON.stringify(protectedHeaders));
     // 5. Compute the signature using data ASCII(BASE64URL(UTF8(JWS Header))) || . || . BASE64URL(JWS Payload)
     //    using the "alg" signature algorithm.
     const signatureInput = `${encodedProtected}.${encodedContent}`;
-    const signature = await (this.cryptoFactory.getSigner(protectedHeaders['alg'])).sign(signatureInput, jwk);
+    const signature = await (this.cryptoFactory.getSigner(alg)).sign(signatureInput, jwk);
     // 6. Compute BASE64URL(JWS Signature)
     const encodedSignature = Base64Url.fromBase64(signature);
     // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
-    return {
-      protected: encodedProtected,
+    const jws: FlatJsonJws = {
       header,
       payload: encodedContent,
       signature: encodedSignature
     };
+    if (protectedUsed) {
+      jws.protected = encodedProtected;
+    }
+    return jws;
   }
 
   /**
@@ -163,19 +186,43 @@ export default class JwsToken extends JoseToken {
   }
 
   /**
-   * Gets the header as a JS object.
+   * Converts the JWS from the constructed type into a Compact JWS
    */
-  public getHeader (): any {
-    let headers = this.unprotectedHeaders;
-    if (!headers) {
-      headers = {};
+  public toCompactJws (): string {
+    if (this.payload === undefined || this.signature === undefined) {
+      throw new Error('Could not parse contents into a JWS');
     }
-    if (this.protectedHeaders) {
-      const jsonString = Base64Url.decode(this.protectedHeaders);
-      const protect = JSON.parse(jsonString) as {[key: string]: any};
-      headers = Object.assign(headers, protect);
+    if (!('alg' in this.getProtectedHeader())) {
+      throw new Error("'alg' is required to be in the protected header");
     }
-    return headers;
+    return `${this.protectedHeaders}.${this.payload}.${this.signature}`;
   }
 
+  /**
+   * Converts the JWS from the constructed type into a Flat JSON JWS
+   * @param headers unprotected headers to use
+   */
+  public toFlattenedJsonJws (headers?: {[member: string]: any}): FlatJsonJws {
+    if (this.payload === undefined || this.signature === undefined) {
+      throw new Error('Could not parse contents into a JWS');
+    }
+    const unprotectedHeaders = headers || this.unprotectedHeaders || undefined;
+    const protectedHeaders = this.getProtectedHeader();
+    // TODO: verify no header parameters in unprotected headers conflict with protected headers
+    if (!('alg' in protectedHeaders) &&
+        !(unprotectedHeaders && ('alg' in unprotectedHeaders))) {
+      throw new Error("'alg' is required to be in the header or protected header");
+    }
+    let jws = {
+      payload: this.payload,
+      signature: this.signature
+    };
+    if (this.protectedHeaders) {
+      jws = Object.assign(jws, { protected: this.protectedHeaders });
+    }
+    if (unprotectedHeaders) {
+      jws = Object.assign(jws, { header: unprotectedHeaders });
+    }
+    return jws;
+  }
 }

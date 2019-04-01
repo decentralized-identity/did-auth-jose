@@ -183,7 +183,7 @@ describe('JweToken', () => {
     });
   });
 
-  describe('encryptFlatJson', () => {
+  describe('encryptAsFlattenedJson', () => {
     it('should fail for an unsupported encryption algorithm', () => {
       const testJwk = {
         kty: 'RSA',
@@ -192,7 +192,7 @@ describe('JweToken', () => {
         defaultSignAlgorithm: 'test'
       };
       const jwe = new JweToken('', registry);
-      jwe.encryptFlatJson(testJwk).then(() => {
+      jwe.encryptAsFlattenedJson(testJwk).then(() => {
         fail('Error was not thrown.');
       }).catch(
         (error) => {
@@ -209,7 +209,7 @@ describe('JweToken', () => {
         defaultSignAlgorithm: 'test'
       } as PublicKey;
       const jwe = new JweToken('', registry);
-      await jwe.encryptFlatJson(jwk);
+      await jwe.encryptAsFlattenedJson(jwk);
       expect(crypto.wasEncryptCalled()).toBeTruthy();
     });
 
@@ -226,7 +226,7 @@ describe('JweToken', () => {
       const plaintext = Math.round(Math.random()).toString(16);
       const jwe = new JweToken(plaintext, registry);
       crypto.reset();
-      const encrypted = await jwe.encryptFlatJson(jwk, {
+      const encrypted = await jwe.encryptAsFlattenedJson(jwk, {
         aad,
         protected: {
           test: protectedValue
@@ -363,7 +363,7 @@ describe('JweToken', () => {
       const pub = privateKey.getPublicKey();
       const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
       const jweToEncrypt = new JweToken(plaintext, registry);
-      const encrypted = await jweToEncrypt.encryptFlatJson(pub, {
+      const encrypted = await jweToEncrypt.encryptAsFlattenedJson(pub, {
         aad
       });
       expect(encrypted.aad).toEqual(Base64Url.encode(aad));
@@ -383,81 +383,224 @@ describe('JweToken', () => {
     });
   });
 
-  describe('getHeader', () => {
-    it('should return headers from Compact JWE', () => {
-      const test = Math.random().toString(16);
-      const protectedHeaders = Base64Url.encode(JSON.stringify({
-        test
-      }));
-      const jwe = new JweToken(protectedHeaders + '....', registry);
-      const headers = jwe.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['test']).toEqual(test);
+  describe('toCompactJwe', () => {
+    it('should fail if the token is not a JWE', () => {
+      const token = new JweToken('definately not a jwe', registry);
+      try {
+        token.toCompactJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('parse');
+      }
     });
 
-    it('should return headers from Flattened JSON Serialization', () => {
-      const test = Math.random().toString(16);
-      const headertest = Math.random().toString(16);
-      const unprotectedtest = Math.random().toString(16);
-      const protectedHeaders = Base64Url.encode(JSON.stringify({
-        test
-      }));
-      const jwe = new JweToken({
-        protected: protectedHeaders,
-        header: {
-          headertest
-        },
+    it('should fail if alg is not a protected header', () => {
+      const token = new JweToken({
+        protected: Base64Url.encode(JSON.stringify({
+          enc: 'A128GCM'
+        })),
         unprotected: {
-          unprotectedtest
+          alg: 'RSA-OAEP'
         },
         ciphertext: '',
         iv: '',
         tag: '',
         encrypted_key: ''
       }, registry);
-      const headers = jwe.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['test']).toEqual(test);
-      expect(headers['headertest']).toEqual(headertest);
-      expect(headers['unprotectedtest']).toEqual(unprotectedtest);
+      try {
+        token.toCompactJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('alg');
+      }
     });
 
-    it('should return headers from Flattened JSON Serialization with only header', () => {
-      const headertest = Math.random().toString(16);
-      const unprotectedtest = Math.random().toString(16);
-      const jwe = new JweToken({
-        header: {
-          headertest
-        },
+    it('should fail if enc is not a protected header', () => {
+      const token = new JweToken({
+        protected: Base64Url.encode(JSON.stringify({
+          alg: 'RSA-OAEP'
+        })),
         unprotected: {
-          unprotectedtest
+          enc: 'A128GCM'
         },
         ciphertext: '',
         iv: '',
         tag: '',
         encrypted_key: ''
       }, registry);
-      const headers = jwe.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['headertest']).toEqual(headertest);
-      expect(headers['unprotectedtest']).toEqual(unprotectedtest);
+      try {
+        token.toCompactJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('enc');
+      }
     });
 
-    it('should return headers from Flattened JSON Serialization with only protected', () => {
-      const test = Math.random().toString(16);
-      const protectedHeaders = Base64Url.encode(JSON.stringify({
-        test
-      }));
-      const jwe = new JweToken({
-        protected: protectedHeaders,
+    it('should fail if aad does not match compact aad', () => {
+      const token = new JweToken({
+        protected: Base64Url.encode(JSON.stringify({
+          alg: 'RSA-OAEP',
+          enc: 'A128GCM'
+        })),
         ciphertext: '',
         iv: '',
         tag: '',
-        encrypted_key: ''
+        encrypted_key: '',
+        aad: 'cafecafe'
       }, registry);
-      const headers = jwe.getHeader();
-      expect(headers).toBeDefined();
-      expect(headers['test']).toEqual(test);
+      try {
+        token.toCompactJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('aad');
+      }
+    });
+
+    it('should form a compact JWE from a JSON JWE', () => {
+      const headers = Base64Url.encode(JSON.stringify({
+        alg: 'RSA-OAEP',
+        enc: 'A128GCM'
+      }));
+      const token = new JweToken({
+        protected: headers,
+        ciphertext: 'cccc',
+        iv: 'bbbb',
+        tag: 'dddd',
+        encrypted_key: 'aaaa'
+      }, registry);
+      expect(token.toCompactJwe()).toEqual(`${headers}.aaaa.bbbb.cccc.dddd`);
+    });
+  });
+
+  describe('toFlattenedJsonJwe', () => {
+    let jwe: string;
+    const expectedProtected = Base64Url.encode(JSON.stringify({
+      enc: 'A128GCM',
+      alg: 'RSA-OAEP'
+    }));
+    const iv = 'initializationVector';
+    const key = 'encryptedKey';
+    const cipher = 'cipher';
+    const tag = 'authTag';
+
+    beforeEach(() => {
+      jwe = `${expectedProtected}.${key}.${iv}.${cipher}.${tag}`;
+    });
+
+    it('should fail if the token is not a JWE', () => {
+      const token = new JweToken('definately not a jwe', registry);
+      try {
+        token.toFlattenedJsonJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('parse');
+      }
+    });
+
+    it('should fail if alg is not a header', () => {
+      const headers = Base64Url.encode(JSON.stringify({
+        enc: 'A128GCM'
+      }));
+      jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
+      const token = new JweToken(jwe, registry);
+      try {
+        token.toFlattenedJsonJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('alg');
+      }
+    });
+
+    it('should fail if enc is not a header', () => {
+      const headers = Base64Url.encode(JSON.stringify({
+        alg: 'RSA-OAEP'
+      }));
+      jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
+      const token = new JweToken(jwe, registry);
+      try {
+        token.toFlattenedJsonJwe();
+        fail('expected to throw');
+      } catch (err) {
+        expect(err.message).toContain('enc');
+      }
+    });
+
+    it('should form a JSON JWE from a compact JWE', () => {
+      const token = new JweToken(jwe, registry);
+      expect(token.toFlattenedJsonJwe()).toEqual({
+        protected: expectedProtected,
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag
+      });
+    });
+
+    it('should override unprotected headers with those passed to it', () => {
+      const headers = {
+        test: 'foo'
+      };
+      const token = new JweToken({
+        protected: expectedProtected,
+        unprotected: {
+          test: 'bar'
+        },
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag
+      }, registry);
+      expect(token.toFlattenedJsonJwe(headers)).toEqual({
+        protected: expectedProtected,
+        unprotected: headers,
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag
+      });
+    });
+
+    it('should accept JWEs with no protected header', () => {
+      const headers = {
+        enc: 'A128GCM',
+        alg: 'RSA-OAEP'
+      };
+      const token = new JweToken({
+        unprotected: {
+          test: 'bar'
+        },
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag
+      }, registry);
+      expect(token.toFlattenedJsonJwe(headers)).toEqual({
+        unprotected: headers,
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag
+      });
+    });
+
+    it('should handle AAD data', () => {
+      const aad = 'foobarbaz';
+      const token = new JweToken({
+        protected: expectedProtected,
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag,
+        aad
+      }, registry);
+      expect(token.toFlattenedJsonJwe()).toEqual({
+        protected: expectedProtected,
+        iv: iv,
+        encrypted_key: key,
+        ciphertext: cipher,
+        tag,
+        aad
+      });
     });
   });
 

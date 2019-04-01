@@ -88,15 +88,15 @@ describe('JoseToken', () => {
     });
   });
 
-  describe('parsedToken', () => {
+  describe('isContentWellFormedToken', () => {
     it('should return true if it was able to parse the token', () => {
       const token = new TestToken('token');
-      expect(token.parsedToken()).toBeTruthy();
+      expect(token.isContentWellFormedToken()).toBeTruthy();
     });
 
     it('should return false if it was unable to parse the token', () => {
       const token = new TestToken('not a token');
-      expect(token.parsedToken()).toBeFalsy();
+      expect(token.isContentWellFormedToken()).toBeFalsy();
     });
   });
 });

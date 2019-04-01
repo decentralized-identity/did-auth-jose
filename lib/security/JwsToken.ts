@@ -130,7 +130,7 @@ export default class JwsToken extends JoseToken {
     // 6. Compute BASE64URL(JWS Signature)
     const encodedSignature = Base64Url.fromBase64(signature);
     // 8. Create the desired output: BASE64URL(UTF8(JWS Header)) || . BASE64URL(JWS payload) || . || BASE64URL(JWS Signature)
-    const jws: {protected?: string, header?: {[name: string]: string}, payload: string, signature: string} = {
+    const jws: FlatJsonJws = {
       header,
       payload: encodedContent,
       signature: encodedSignature

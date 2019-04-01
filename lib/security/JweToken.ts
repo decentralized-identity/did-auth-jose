@@ -191,15 +191,7 @@ export default class JweToken extends JoseToken {
     const authenticationTagBase64Url = Base64Url.encode(symEncParams.tag);
 
     // Form final compact serialized JWE string.
-    let returnJwe: {
-      protected?: string,
-      unprotected?: {[key: string]: string},
-      encrypted_key: string,
-      iv: string,
-      ciphertext: string,
-      tag: string,
-      aad?: string
-    } = {
+    let returnJwe: FlatJsonJwe = {
       protected: protectedHeaderBase64Url,
       unprotected: (options || {}).unprotected,
       encrypted_key: encryptedKeyBase64Url,

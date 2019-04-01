@@ -310,6 +310,7 @@ export default class JweToken extends JoseToken {
     if (!('alg' in protectedHeaders) || !('enc' in protectedHeaders)) {
       throw new Error("'alg' and 'enc' are required to be in the protected header");
     }
+    // Compact JWEs must have the default AAD value of the protected header (RFC 7516 5.1.14)
     if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
       throw new Error("'aad' must not be set in original JWE");
     }

@@ -62,7 +62,7 @@ export default abstract class JoseToken {
   /**
    * Returns true if and only if the content was parsed as a token
    */
-  public parsedToken (): boolean {
+  public isContentWellFormedToken (): boolean {
     return this.payload !== undefined;
   }
 }

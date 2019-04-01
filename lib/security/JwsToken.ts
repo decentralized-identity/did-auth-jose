@@ -78,7 +78,7 @@ export default class JwsToken extends JoseToken {
     const encodedContent = Base64Url.encode(this.content);
     // 3. Compute the headers
     const headers = jwsHeaderParameters || {};
-    // add required fields if required
+    // add required fields if missing
     if (!('alg' in headers)) {
       headers['alg'] = jwk.defaultSignAlgorithm;
     }
@@ -112,7 +112,7 @@ export default class JwsToken extends JoseToken {
     // 3. Compute the headers
     const header = (options || {}).header;
     const protectedHeaders = (options || {}).protected || {};
-    // add required fields if required
+    // add required fields if missing
     if (!(header && 'alg' in header) && !('alg' in protectedHeaders)) {
       protectedHeaders['alg'] = jwk.defaultSignAlgorithm;
     }

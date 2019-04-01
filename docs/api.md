@@ -798,7 +798,7 @@ Not intended for creating instances of this class directly.</p>
     * [new JoseToken()](#new_JoseToken_new)
     * [.getHeader()](#JoseToken+getHeader)
     * [.getProtectedHeader()](#JoseToken+getProtectedHeader)
-    * [.parsedToken()](#JoseToken+parsedToken)
+    * [.isContentWellFormedToken()](#JoseToken+isContentWellFormedToken)
 
 <a name="new_JoseToken_new"></a>
 
@@ -817,9 +817,9 @@ Not intended for creating instances of this class directly.</p>
 <p>Gets the protected headers as a JS object.</p>
 
 **Kind**: instance method of [<code>JoseToken</code>](#JoseToken)  
-<a name="JoseToken+parsedToken"></a>
+<a name="JoseToken+isContentWellFormedToken"></a>
 
-### joseToken.parsedToken()
+### joseToken.isContentWellFormedToken()
 <p>Returns true if and only if the content was parsed as a token</p>
 
 **Kind**: instance method of [<code>JoseToken</code>](#JoseToken)  

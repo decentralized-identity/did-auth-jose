@@ -183,7 +183,7 @@ describe('JweToken', () => {
     });
   });
 
-  describe('encryptFlatJson', () => {
+  describe('encryptAsFlattenedJson', () => {
     it('should fail for an unsupported encryption algorithm', () => {
       const testJwk = {
         kty: 'RSA',
@@ -192,7 +192,7 @@ describe('JweToken', () => {
         defaultSignAlgorithm: 'test'
       };
       const jwe = new JweToken('', registry);
-      jwe.encryptFlatJson(testJwk).then(() => {
+      jwe.encryptAsFlattenedJson(testJwk).then(() => {
         fail('Error was not thrown.');
       }).catch(
         (error) => {
@@ -209,7 +209,7 @@ describe('JweToken', () => {
         defaultSignAlgorithm: 'test'
       } as PublicKey;
       const jwe = new JweToken('', registry);
-      await jwe.encryptFlatJson(jwk);
+      await jwe.encryptAsFlattenedJson(jwk);
       expect(crypto.wasEncryptCalled()).toBeTruthy();
     });
 
@@ -226,7 +226,7 @@ describe('JweToken', () => {
       const plaintext = Math.round(Math.random()).toString(16);
       const jwe = new JweToken(plaintext, registry);
       crypto.reset();
-      const encrypted = await jwe.encryptFlatJson(jwk, {
+      const encrypted = await jwe.encryptAsFlattenedJson(jwk, {
         aad,
         protected: {
           test: protectedValue
@@ -363,7 +363,7 @@ describe('JweToken', () => {
       const pub = privateKey.getPublicKey();
       const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
       const jweToEncrypt = new JweToken(plaintext, registry);
-      const encrypted = await jweToEncrypt.encryptFlatJson(pub, {
+      const encrypted = await jweToEncrypt.encryptAsFlattenedJson(pub, {
         aad
       });
       expect(encrypted.aad).toEqual(Base64Url.encode(aad));
@@ -472,7 +472,7 @@ describe('JweToken', () => {
     });
   });
 
-  describe('toFlatJsonJwe', () => {
+  describe('toFlattenedJsonJwe', () => {
     let jwe: string;
     const expectedProtected = Base64Url.encode(JSON.stringify({
       enc: 'A128GCM',
@@ -490,7 +490,7 @@ describe('JweToken', () => {
     it('should fail if the token is not a JWE', () => {
       const token = new JweToken('definately not a jwe', registry);
       try {
-        token.toFlatJsonJwe();
+        token.toFlattenedJsonJwe();
         fail('expected to throw');
       } catch (err) {
         expect(err.message).toContain('parse');
@@ -504,7 +504,7 @@ describe('JweToken', () => {
       jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
       const token = new JweToken(jwe, registry);
       try {
-        token.toFlatJsonJwe();
+        token.toFlattenedJsonJwe();
         fail('expected to throw');
       } catch (err) {
         expect(err.message).toContain('alg');
@@ -518,7 +518,7 @@ describe('JweToken', () => {
       jwe = `${headers}.${key}.${iv}.${cipher}.${tag}`;
       const token = new JweToken(jwe, registry);
       try {
-        token.toFlatJsonJwe();
+        token.toFlattenedJsonJwe();
         fail('expected to throw');
       } catch (err) {
         expect(err.message).toContain('enc');
@@ -527,7 +527,7 @@ describe('JweToken', () => {
 
     it('should form a JSON JWE from a compact JWE', () => {
       const token = new JweToken(jwe, registry);
-      expect(token.toFlatJsonJwe()).toEqual({
+      expect(token.toFlattenedJsonJwe()).toEqual({
         protected: expectedProtected,
         iv: iv,
         encrypted_key: key,
@@ -550,7 +550,7 @@ describe('JweToken', () => {
         ciphertext: cipher,
         tag
       }, registry);
-      expect(token.toFlatJsonJwe(headers)).toEqual({
+      expect(token.toFlattenedJsonJwe(headers)).toEqual({
         protected: expectedProtected,
         unprotected: headers,
         iv: iv,
@@ -574,7 +574,7 @@ describe('JweToken', () => {
         ciphertext: cipher,
         tag
       }, registry);
-      expect(token.toFlatJsonJwe(headers)).toEqual({
+      expect(token.toFlattenedJsonJwe(headers)).toEqual({
         unprotected: headers,
         iv: iv,
         encrypted_key: key,
@@ -593,7 +593,7 @@ describe('JweToken', () => {
         tag,
         aad
       }, registry);
-      expect(token.toFlatJsonJwe()).toEqual({
+      expect(token.toFlattenedJsonJwe()).toEqual({
         protected: expectedProtected,
         iv: iv,
         encrypted_key: key,

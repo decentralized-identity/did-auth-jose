@@ -236,7 +236,7 @@ describe('JwsToken', () => {
     });
   });
 
-  describe('signFlatJson', () => {
+  describe('signAsFlattenedJson', () => {
 
     let data: any;
 
@@ -251,7 +251,7 @@ describe('JwsToken', () => {
       privateKey.defaultSignAlgorithm = 'unsupported';
       const jwsToken = new JwsToken(data, registry);
       try {
-        await jwsToken.signFlatJson(privateKey);
+        await jwsToken.signAsFlattenedJson(privateKey);
       } catch (err) {
         expect(err).toBeDefined();
         return;
@@ -262,14 +262,14 @@ describe('JwsToken', () => {
     it('should call the crypto Algorithms\'s sign', async () => {
       const jwsToken = new JwsToken(data, registry);
       crypto.reset();
-      await jwsToken.signFlatJson(new TestPrivateKey());
+      await jwsToken.signAsFlattenedJson(new TestPrivateKey());
       expect(crypto.wasSignCalled()).toBeTruthy();
     });
 
     it('should return the expected JSON JWS', async () => {
       const jwsToken = new JwsToken(data, registry);
       const key = new TestPrivateKey();
-      const jws = await jwsToken.signFlatJson(key);
+      const jws = await jwsToken.signAsFlattenedJson(key);
       expect(jws.signature).toBeDefined();
       expect(Base64Url.decode(jws.payload)).toEqual(JSON.stringify(data));
     });
@@ -277,7 +277,7 @@ describe('JwsToken', () => {
     it('should not add alg or kid if they are provided in the header', async () => {
       const privateKey = new TestPrivateKey();
       const jwsToken = new JwsToken(data, registry);
-      const jws = await jwsToken.signFlatJson(privateKey, {
+      const jws = await jwsToken.signAsFlattenedJson(privateKey, {
         header: {
           alg: privateKey.defaultSignAlgorithm,
           kid: privateKey.kid
@@ -331,7 +331,7 @@ describe('JwsToken', () => {
     });
   });
 
-  describe('toFlatJsonJws', () => {
+  describe('toFlattenedJsonJws', () => {
     const expectedProtected = Base64Url.encode(JSON.stringify({
       alg: 'RSA-OAEP'
     }));
@@ -346,7 +346,7 @@ describe('JwsToken', () => {
     it('should fail if the token is not a JWS', () => {
       const token = new JwsToken('not a jws', registry);
       try {
-        token.toFlatJsonJws();
+        token.toFlattenedJsonJws();
         fail('expected to throw');
       } catch (err) {
         expect(err.message).toContain('parse');
@@ -357,7 +357,7 @@ describe('JwsToken', () => {
       jws = `.${payload}.${signature}`;
       const token = new JwsToken(jws, registry);
       try {
-        token.toFlatJsonJws();
+        token.toFlattenedJsonJws();
         fail('expected to throw');
       } catch (err) {
         expect(err.message).toContain('alg');
@@ -366,7 +366,7 @@ describe('JwsToken', () => {
 
     it('should form a JSON JWS from a compact JWS', () => {
       const token = new JwsToken(jws, registry);
-      expect(token.toFlatJsonJws()).toEqual({
+      expect(token.toFlattenedJsonJws()).toEqual({
         protected: expectedProtected,
         payload,
         signature
@@ -385,7 +385,7 @@ describe('JwsToken', () => {
         payload,
         signature
       }, registry);
-      expect(token.toFlatJsonJws(headers)).toEqual({
+      expect(token.toFlattenedJsonJws(headers)).toEqual({
         protected: expectedProtected,
         header: headers,
         payload,
@@ -404,7 +404,7 @@ describe('JwsToken', () => {
         payload,
         signature
       }, registry);
-      expect(token.toFlatJsonJws(headers)).toEqual({
+      expect(token.toFlattenedJsonJws(headers)).toEqual({
         header: headers,
         payload,
         signature

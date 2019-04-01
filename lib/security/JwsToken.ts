@@ -103,7 +103,7 @@ export default class JwsToken extends JoseToken {
    * @param jwk Private key used in the signature
    * @param options Additional protected and header fields to include in the JWS
    */
-  public async signFlatJson (jwk: PrivateKey,
+  public async signAsFlattenedJson (jwk: PrivateKey,
     options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}):
     Promise<FlatJsonJws> {
     // Steps according to RTC7515 5.1
@@ -202,7 +202,7 @@ export default class JwsToken extends JoseToken {
    * Converts the JWS from the constructed type into a Flat JSON JWS
    * @param headers unprotected headers to use
    */
-  public toFlatJsonJws (headers?: {[member: string]: any}): FlatJsonJws {
+  public toFlattenedJsonJws (headers?: {[member: string]: any}): FlatJsonJws {
     if (this.payload === undefined || this.signature === undefined) {
       throw new Error('Could not parse contents into a JWS');
     }

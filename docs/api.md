@@ -833,11 +833,11 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [JweToken](#JweToken)
     * [.encrypt()](#JweToken+encrypt) ⇒
-    * [.encryptFlatJson()](#JweToken+encryptFlatJson) ⇒
+    * [.encryptAsFlattenedJson()](#JweToken+encryptAsFlattenedJson) ⇒
     * [.encryptContentEncryptionKey(keyEncryptionAlgorithm, keyBuffer, jwk)](#JweToken+encryptContentEncryptionKey)
     * [.decrypt()](#JweToken+decrypt) ⇒
     * [.toCompactJwe()](#JweToken+toCompactJwe)
-    * [.toFlatJsonJwe(headers)](#JweToken+toFlatJsonJwe)
+    * [.toFlattenedJsonJwe(headers)](#JweToken+toFlattenedJsonJwe)
 
 <a name="JweToken+encrypt"></a>
 
@@ -847,9 +847,9 @@ using the given key in JWK JSON object format.Content encryption algorithm is ha
 
 **Kind**: instance method of [<code>JweToken</code>](#JweToken)  
 **Returns**: <p>Buffer of the original content encrypted in JWE compact serialized format.</p>  
-<a name="JweToken+encryptFlatJson"></a>
+<a name="JweToken+encryptAsFlattenedJson"></a>
 
-### jweToken.encryptFlatJson() ⇒
+### jweToken.encryptAsFlattenedJson() ⇒
 <p>Encrypts the original content from construction into a JWE JSON serialized format using
 the given key in JWK JSON object format. Content encryption algorithm is hardcoded to 'A128GCM'.</p>
 
@@ -881,9 +881,9 @@ the given key in JWK JSON object format. Content encryption algorithm is hardcod
 <p>Converts the JWE from the constructed type into a Compact JWE</p>
 
 **Kind**: instance method of [<code>JweToken</code>](#JweToken)  
-<a name="JweToken+toFlatJsonJwe"></a>
+<a name="JweToken+toFlattenedJsonJwe"></a>
 
-### jweToken.toFlatJsonJwe(headers)
+### jweToken.toFlattenedJsonJwe(headers)
 <p>Converts the JWE from the constructed type into a Flat JSON JWE</p>
 
 **Kind**: instance method of [<code>JweToken</code>](#JweToken)  
@@ -902,11 +902,11 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [JwsToken](#JwsToken)
     * [.sign(jwsHeaderParameters)](#JwsToken+sign) ⇒
-    * [.signFlatJson(jwk, options)](#JwsToken+signFlatJson)
+    * [.signAsFlattenedJson(jwk, options)](#JwsToken+signAsFlattenedJson)
     * [.verifySignature()](#JwsToken+verifySignature) ⇒
     * [.getPayload()](#JwsToken+getPayload)
     * [.toCompactJws()](#JwsToken+toCompactJws)
-    * [.toFlatJsonJws(headers)](#JwsToken+toFlatJsonJws)
+    * [.toFlattenedJsonJws(headers)](#JwsToken+toFlattenedJsonJws)
 
 <a name="JwsToken+sign"></a>
 
@@ -920,9 +920,9 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- |
 | jwsHeaderParameters | <p>Header parameters in addition to 'alg' and 'kid' to be included in the JWS.</p> |
 
-<a name="JwsToken+signFlatJson"></a>
+<a name="JwsToken+signAsFlattenedJson"></a>
 
-### jwsToken.signFlatJson(jwk, options)
+### jwsToken.signAsFlattenedJson(jwk, options)
 <p>Signs contents given at construction using the given private key in JWK format with additional optional header fields</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
@@ -951,9 +951,9 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 <p>Converts the JWS from the constructed type into a Compact JWS</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  
-<a name="JwsToken+toFlatJsonJws"></a>
+<a name="JwsToken+toFlattenedJsonJws"></a>
 
-### jwsToken.toFlatJsonJws(headers)
+### jwsToken.toFlattenedJsonJws(headers)
 <p>Converts the JWS from the constructed type into a Flat JSON JWS</p>
 
 **Kind**: instance method of [<code>JwsToken</code>](#JwsToken)  

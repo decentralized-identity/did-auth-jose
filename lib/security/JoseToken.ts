@@ -52,13 +52,11 @@ export default abstract class JoseToken {
    * Gets the protected headers as a JS object.
    */
   public getProtectedHeader (): {[member: string]: any} {
-    let headers = {};
     if (this.protectedHeaders) {
       const jsonString = Base64Url.decode(this.protectedHeaders);
-      const protect = JSON.parse(jsonString) as {[key: string]: any};
-      headers = Object.assign(headers, protect);
+      return JSON.parse(jsonString) as {[key: string]: any};
     }
-    return headers;
+    return {};
   }
 
   /**

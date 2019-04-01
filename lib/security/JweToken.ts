@@ -157,7 +157,7 @@ export default class JweToken extends JoseToken {
    *
    * @returns Buffer of the original content encrytped in JWE flattened JSON serialized format.
    */
-  public async encryptFlatJson (jwk: PublicKey,
+  public async encryptAsFlattenedJson (jwk: PublicKey,
     options?: {
       unprotected?: {[key: string]: any},
       protected?: {[key: string]: any},
@@ -323,7 +323,7 @@ export default class JweToken extends JoseToken {
    * Converts the JWE from the constructed type into a Flat JSON JWE
    * @param headers unprotected headers to use
    */
-  public toFlatJsonJwe (headers?: {[member: string]: any}): FlatJsonJwe {
+  public toFlattenedJsonJwe (headers?: {[member: string]: any}): FlatJsonJwe {
     if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
       throw new Error('Could not parse contents into a JWE');
     }

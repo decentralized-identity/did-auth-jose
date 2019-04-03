@@ -88,6 +88,19 @@ describe('JwsToken', () => {
       const jws = new JwsToken(correctJWS, registry);
       expect(jws['protectedHeaders']).toBeUndefined();
     });
+
+    it('should parse a JSON JWS from a string', async () => {
+      const testValue = Math.random().toString(16);
+      const token = new JwsToken(testValue, registry);
+      const privateKey = new TestPrivateKey();
+      const encryptedToken = await token.signAsFlattenedJson(privateKey);
+      const encryptedTokenAsString = JSON.stringify(encryptedToken);
+
+      const actualToken = new JwsToken(encryptedTokenAsString, registry);
+      expect(actualToken.isContentWellFormedToken()).toBeTruthy();
+      const actualValue = await actualToken.verifySignature(privateKey.getPublicKey());
+      expect(actualValue).toEqual(testValue);
+    });
   });
 
   describe('verifySignature', () => {

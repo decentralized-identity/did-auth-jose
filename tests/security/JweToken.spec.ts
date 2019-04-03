@@ -128,6 +128,19 @@ describe('JweToken', () => {
           expect(token['unprotectedHeaders']).toBeUndefined();
         });
       });
+
+    it('should parse a JSON JWE from a string', async () => {
+      const testValue = Math.random().toString(16);
+      const token = new JweToken(testValue, registry);
+      const privateKey = new TestPrivateKey();
+      const encryptedToken = await token.encryptAsFlattenedJson(privateKey.getPublicKey());
+      const encryptedTokenAsString = JSON.stringify(encryptedToken);
+
+      const actualToken = new JweToken(encryptedTokenAsString, registry);
+      expect(actualToken.isContentWellFormedToken()).toBeTruthy();
+      const actualValue = await actualToken.decrypt(privateKey);
+      expect(actualValue).toEqual(testValue);
+    });
   });
 
   describe('encrypt', () => {

@@ -190,12 +190,13 @@ describe('Authentication', () => {
 
   describe('formAuthenticationResponse', () => {
 
-    it('should form Authenticaiton Request from Authentication Response', async () => {
+    it('should form Authenticaiton Request from Authentication Response', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
       const jws = new JwsToken(response, registry);
       const payload = await jws.verifySignature(hubPublicKey);
       const payloadObj = JSON.parse(payload);
+
       expect(payloadObj.iss).toEqual('https://self-issued.me');
       expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
@@ -204,6 +205,7 @@ describe('Authentication', () => {
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
       expect(payloadObj.exp).toBeDefined();
+      done();
     });
 
     it('should form Authenticaiton Request from Authentication Response with expiration', async () => {

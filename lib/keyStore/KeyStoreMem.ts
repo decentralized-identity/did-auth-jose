@@ -17,10 +17,22 @@ export default class KeyStoreMem implements IKeyStore {
    * @param keyReference for which to return the key.
    * @param publicKeyOnly True if only the public key is needed.
    */
-  get (keyReference: string, _publicKeyOnly: boolean): Promise<Buffer | PrivateKey | PublicKey> {
+  get (keyReference: string, publicKeyOnly: boolean): Promise<Buffer | PrivateKey | PublicKey> {
     return new Promise((resolve, reject) => {
       if (this.store.has(keyReference)) {
-        resolve(this.store.get(keyReference));
+        const key: any = this.store.get(keyReference);
+        if (publicKeyOnly) {
+          switch (key.kty.toLowerCase()) {
+            case 'ec':
+            case 'rsa':
+              return resolve(key.getPublicKey());
+            default:
+              throw new Error(`A secret does not has a public key`);
+          }
+        } else {
+          resolve(key);
+        }
+
       } else {
         reject(`${keyReference} not found`);
       }

@@ -13,13 +13,20 @@ import VerifiedRequest from './interfaces/VerifiedRequest';
 import AuthenticationRequest from './interfaces/AuthenticationRequest';
 import AuthenticationResponse from './interfaces/AuthenticationResponse';
 import AesCryptoSuite from './crypto/aes/AesCryptoSuite';
+import IKeyStore from './keyStore/IKeyStore';
+import KeyStoreMem from './keyStore/KeyStoreMem';
+import { ProtectionFormat } from './keyStore/ProtectionFormat';
 
 /**
  * Named arguments to construct an Authentication object
  */
 export interface AuthenticationOptions {
   /** A dictionary with the did document key id mapping to private keys */
-  keys: {[name: string]: PrivateKey};
+  keys?: {[name: string]: PrivateKey};
+  /** A dictionary with the did document key id mapping to private key references in the keystore */
+  keyReferences?: string[];
+  /** The keystore */
+  keyStore?: IKeyStore;
   /** DID Resolver used to retrieve public keys */
   resolver: IDidResolver;
   /** Optional parameter to customize supported CryptoSuites */
@@ -38,7 +45,11 @@ export default class Authentication {
   /** The amount of time a token is valid in minutes */
   private tokenValidDurationInMinutes: number;
   /** Private keys of the authentication owner */
-  private keys: {[name: string]: PrivateKey};
+  private keys?: {[name: string]: PrivateKey};
+  /** Reference to Private keys of the authentication owner */
+  private keyReferences?: string[];
+  /** The keystore */
+  private keyStore: IKeyStore;
   /** Factory for creating JWTs and public keys */
   private factory: CryptoFactory;
 
@@ -49,27 +60,36 @@ export default class Authentication {
   constructor (options: AuthenticationOptions) {
     this.resolver = options.resolver;
     this.tokenValidDurationInMinutes = options.tokenValidDurationInMinutes || Constants.defaultTokenDurationInMinutes;
+    if (options.keyStore) {
+      this.keyStore = options.keyStore;
+    } else {
+      this.keyStore = new KeyStoreMem();
+    }
     this.keys = options.keys;
+    this.keyReferences = options.keyReferences;
+
     this.factory = new CryptoFactory(options.cryptoSuites || [new AesCryptoSuite(), new RsaCryptoSuite(), new Secp256k1CryptoSuite()]);
   }
 
   /**
    * Signs the AuthenticationRequest with the private key of the Requester and returns the signed JWT.
    * @param request well-formed AuthenticationRequest object
-   * @param responseDid DID of the requester.
+   * @returns the signed compact JWT.
    */
   public async signAuthenticationRequest (request: AuthenticationRequest): Promise<string> {
     if (request.response_type !== 'id_token' || request.scope !== 'openid') {
       throw new Error('Authentication Request not formed correctly');
     }
-    const requesterDid = request.iss;
-    const key: PrivateKey | undefined = this.getKey(requesterDid);
-    if (!key) {
-      throw new Error(`Could not find a key for ${requesterDid}`);
-    }
 
-    const token = new JwsToken(request, this.factory);
-    return token.sign(key);
+    // Make sure the passed in key is stored in the key store
+    let referenceToStoredKey: string;
+    if (this.keyReferences) {
+      // for signing always use last key
+      referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
+    } else {
+      referenceToStoredKey = await this.getKeyReference(request.iss);
+    }
+    return this.keyStore.protect(referenceToStoredKey, JSON.stringify(request), ProtectionFormat.CompactJsonJws, this.factory);
   }
 
   /**
@@ -100,14 +120,13 @@ export default class Authentication {
    * @param responseDid The DID to respond with
    * @param claims Claims that the requester asked for
    * @param expiration optional expiration datetime of the response
+   * @param keyReference pointing to the signing key
    */
-  public async formAuthenticationResponse (authRequest: AuthenticationRequest, responseDid: string, claims: any, expiration?: Date): Promise<string> {
-    const key: PrivateKey | undefined = this.getKey(responseDid);
-    if (!key) {
-      throw new Error(`Could not find a key for ${responseDid}`);
-    }
+  public async formAuthenticationResponse (authRequest: AuthenticationRequest, responseDid: string, claims: any, expiration?: Date)
+  : Promise<string> {
+    const referenceToStoredKey = await this.getKeyReference(responseDid);
 
-    const publicKey: PublicKey = key.getPublicKey();
+    const publicKey: PublicKey = await this.keyStore.get(referenceToStoredKey, true) as PublicKey;
     const base64UrlThumbprint = await PublicKey.getThumbprint(publicKey);
 
     // milliseconds to seconds
@@ -130,12 +149,30 @@ export default class Authentication {
     };
 
     response = Object.assign(response, claims);
-
-    const token = new JwsToken(response, this.factory);
-    return token.sign(key, {
+    return this.keyStore.protect(referenceToStoredKey, JSON.stringify(response), ProtectionFormat.CompactJsonJws, this.factory, {
       iat: iat.toString(),
       exp: Math.floor(expiration.getTime() / milliseconds).toString()
     });
+  }
+
+  /**
+   * Return a reference to the private key that was passed by caller.
+   * If the key was passed in by value, it will be stored in the store and a reference is returned
+   * @param iss Issuer identifier
+   */
+  private async getKeyReference (iss: string): Promise<string> {
+    let referenceToStoredKey: string;
+    if (this.keys) {
+      const key: PrivateKey | undefined = this.getKey(iss);
+      if (!key) {
+        throw new Error(`Could not find a key for ${iss}`);
+      }
+      referenceToStoredKey = key.kid;
+      await this.keyStore.save(referenceToStoredKey, key);
+    } else {
+      throw new Error(`No private keys passed`);
+    }
+    return referenceToStoredKey;
   }
 
   /**
@@ -253,6 +290,10 @@ export default class Authentication {
     request: VerifiedRequest,
     response: string): Promise<Buffer> {
 
+    if (!this.keys) {
+      throw new Error(`Unable to sign and encrypt response; keys were not passed`);
+    }
+
     const localkey = this.keys[request.localKeyId];
     if (!localkey) {
       throw new Error('Unable to find encryption key used');
@@ -285,6 +326,7 @@ export default class Authentication {
     }
 
     // perhaps a more intellegent key choosing algorithm could be implemented here
+    // TODO get the key based on kid
     const documentKey = document.publicKey[0];
 
     const publicKey = this.factory.constructPublicKey(documentKey);
@@ -299,6 +341,9 @@ export default class Authentication {
    */
   private getPrivateKeyForJwe (jweToken: JweToken): PrivateKey {
     const keyId = jweToken.getHeader().kid;
+    if (!this.keys) {
+      throw new Error(`Unable to decrypt request; decryption key '${keyId}' was not passed`);
+    }
     const key = this.keys[keyId];
     if (!key) {
       throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);

@@ -36,6 +36,7 @@ export default class JweToken extends JoseToken {
 
   public constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
+    let jsonContent: any = content;
     // check for compact JWE
     if (typeof content === 'string') {
       // 1. Parse JWE for components: BASE64URL(UTF8(JWE Header)) || '.' || BASE64URL(JWE Encrypted Key) || '.' ||
@@ -53,9 +54,14 @@ export default class JweToken extends JoseToken {
         this.aad = Buffer.from(base64EncodedValues[0]);
         return;
       }
+      // attempt to parse the string into a JSON object in the event it is a JSON serialized token
+      try {
+        jsonContent = JSON.parse(content);
+      } catch (error) {
+        // it was not.
+      }
     }
 
-    const jsonContent: any = content;
     if (typeof jsonContent === 'object' &&
     'ciphertext' in jsonContent && typeof jsonContent.ciphertext === 'string' &&
     'iv' in jsonContent && typeof jsonContent.iv === 'string' &&

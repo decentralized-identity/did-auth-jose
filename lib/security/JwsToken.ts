@@ -30,6 +30,7 @@ export default class JwsToken extends JoseToken {
   constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
     // check for compact JWS
+    let jsonObject: any = content;
     if (typeof content === 'string') {
       const parts = content.split('.');
       if (parts.length === 3) {
@@ -38,10 +39,15 @@ export default class JwsToken extends JoseToken {
         this.signature = parts[2];
         return;
       }
+      // attempt to parse the string into a JSON object in the event it is a JSON serialized token
+      try {
+        jsonObject = JSON.parse(content);
+      } catch (error) {
+        // it was not.
+      }
     }
     // Check for JSON Serialization and reparse content if appropriate
-    if (typeof content === 'object') {
-      const jsonObject: any = content;
+    if (typeof jsonObject === 'object') {
       if ('payload' in jsonObject && typeof jsonObject.payload === 'string') {
         // TODO: General JWS JSON Serialization signatures and one of protected or header for each (Issue #22)
         if ('signature' in jsonObject && typeof jsonObject.signature === 'string') {

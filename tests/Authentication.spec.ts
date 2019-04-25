@@ -418,9 +418,9 @@ describe('Authentication', () => {
 
   describe('getAuthenticatedRequest', () => {
 
-    it('should encrypt with the DID\'s public key', async () => {
+    it(`should encrypt with the DID's public key`, async () => {
       const content = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
-      const request = await auth.getAuthenticatedRequest(content, hubkey, exampleDID, await newAccessToken(examplekey));
+      const request = await auth.getAuthenticatedRequest(content, exampleDID, await newAccessToken(examplekey));
       const jwe = registry.constructJwe(request.toString());
       const jwsstring = await jwe.decrypt(examplekey);
       const jws = registry.constructJws(jwsstring);
@@ -430,12 +430,12 @@ describe('Authentication', () => {
   });
 
   describe('getAuthenticatedResponse', () => {
-    it('should be understood by decrypt and validate', async () => {
+    fit('should be understood by decrypt and validate', async () => {
       const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
 
       setResolve(hubDID, hubResolvedDID);
 
-      const request = await auth.getAuthenticatedRequest(requestString, examplekey, hubDID, header['did-access-token']);
+      const request = await auth.getAuthenticatedRequest(requestString, hubDID, header['did-access-token']);
 
       const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
 

@@ -294,12 +294,7 @@ export default class Authentication {
       throw new Error(`Unable to sign and encrypt response; keys were not passed`);
     }
 
-    const localkey = this.keys[request.localKeyId];
-    if (!localkey) {
-      throw new Error('Unable to find encryption key used');
-    }
-
-    return this.signThenEncryptInternal(request.nonce, localkey, request.requesterPublicKey, response);
+    return this.signThenEncryptInternal(request.nonce, request.requesterPublicKey, response);
   }
 
   /**
@@ -311,7 +306,6 @@ export default class Authentication {
    */
   public async getAuthenticatedRequest (
     content: string,
-    privateKey: PrivateKey,
     recipient: string,
     accessToken?: string
   ): Promise<Buffer> {
@@ -331,7 +325,7 @@ export default class Authentication {
 
     const publicKey = this.factory.constructPublicKey(documentKey);
 
-    return this.signThenEncryptInternal(requesterNonce, privateKey, publicKey, content, accessToken);
+    return this.signThenEncryptInternal(requesterNonce, publicKey, content, accessToken);
   }
 
   /**
@@ -383,14 +377,12 @@ export default class Authentication {
   /**
    * Forms a JWS using the local private key and content, then wraps in JWE using the requesterKey and nonce.
    * @param nonce Nonce to be included in the response
-   * @param localKey PrivateKey in which to sign the response
    * @param requesterkey PublicKey in which to encrypt the response
    * @param content The content to be signed and encrypted
    * @returns An encrypted and signed form of the content
    */
   private async signThenEncryptInternal (
     nonce: string,
-    localKey: PrivateKey,
     requesterkey: PublicKey,
     content: string,
     accesstoken?: string
@@ -399,10 +391,21 @@ export default class Authentication {
     if (accesstoken) {
       jwsHeaderParameters['did-access-token'] = accesstoken;
     }
+    // Make sure the passed in key is stored in the key store
+    let referenceToStoredKey: string;
+    if (this.keyReferences) {
+      // for signing always use last key
+      referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
+    } else {
+      if (!this.keys) {
+        throw new Error(`No private keys passed into Authentication`);
+      }
+      // Assumption, the last added property is the last and more recent key
+      const kid = Object.keys(this.keys)[Object.keys(this.keys).length - 1];
+      referenceToStoredKey = await this.getKeyReference(kid);
+    }
 
-    const jwsToken = this.factory.constructJws(content);
-    const jwsCompactString = await jwsToken.sign(localKey, jwsHeaderParameters);
-
+    const jwsCompactString = await this.keyStore.protect(referenceToStoredKey, content, ProtectionFormat.CompactJsonJws, this.factory, jwsHeaderParameters);
     const jweToken = this.factory.constructJwe(jwsCompactString);
 
     return jweToken.encrypt(requesterkey);
@@ -422,7 +425,7 @@ export default class Authentication {
     const accessToken = await this.createAccessToken(subjectDid, issuerKey, this.tokenValidDurationInMinutes);
 
     // Sign then encrypt the new access token.
-    return this.signThenEncryptInternal(nonce, issuerKey, requesterKey, accessToken);
+    return this.signThenEncryptInternal(nonce, requesterKey, accessToken);
   }
 
   /**

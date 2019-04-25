@@ -89,7 +89,7 @@ export default class Authentication {
     } else {
       referenceToStoredKey = await this.getKeyReference(request.iss);
     }
-    return this.keyStore.protect(referenceToStoredKey, JSON.stringify(request), ProtectionFormat.CompactJsonJws, this.factory);
+    return this.keyStore.sign(referenceToStoredKey, JSON.stringify(request), ProtectionFormat.CompactJsonJws, this.factory);
   }
 
   /**
@@ -149,7 +149,7 @@ export default class Authentication {
     };
 
     response = Object.assign(response, claims);
-    return this.keyStore.protect(referenceToStoredKey, JSON.stringify(response), ProtectionFormat.CompactJsonJws, this.factory, {
+    return this.keyStore.sign(referenceToStoredKey, JSON.stringify(response), ProtectionFormat.CompactJsonJws, this.factory, {
       iat: iat.toString(),
       exp: Math.floor(expiration.getTime() / milliseconds).toString()
     });
@@ -413,7 +413,7 @@ export default class Authentication {
       referenceToStoredKey = await this.getKeyReference(kid);
     }
 
-    const jwsCompactString = await this.keyStore.protect(referenceToStoredKey, content, ProtectionFormat.CompactJsonJws, this.factory, jwsHeaderParameters);
+    const jwsCompactString = await this.keyStore.sign(referenceToStoredKey, content, ProtectionFormat.CompactJsonJws, this.factory, jwsHeaderParameters);
     const jweToken = this.factory.constructJwe(jwsCompactString);
 
     return jweToken.encrypt(requesterkey);

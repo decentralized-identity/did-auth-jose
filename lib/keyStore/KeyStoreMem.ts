@@ -76,7 +76,7 @@ export default class KeyStoreMem implements IKeyStore {
    * @param tokenHeaderParameters Header parameters in addition to 'alg' and 'kid' to be included in the header of the token.
    * @returns The protected message
    */
-  public async protect (keyIdentifier: string,
+  public async sign (keyIdentifier: string,
     payload: string,
     format: ProtectionFormat,
     cryptoFactory: CryptoFactory,

@@ -39,6 +39,6 @@ export default interface IKeyStore {
    * @param tokenHeaderParameters Header parameters in addition to 'alg' and 'kid' to be included in the header of the token.
    * @returns The protected message
    */
-  protect (keyReference: string,
+  sign (keyReference: string,
     data: string, format: ProtectionFormat, cryptoFactory: CryptoFactory, tokenHeaderParameters?: { [name: string]: string }): Promise<string>;
 }

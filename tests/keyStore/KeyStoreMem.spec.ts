@@ -29,7 +29,7 @@ describe('KeyStoreMem', () => {
     expect(ecPublic.d).toBeUndefined();
 
     // Check signature
-    const signature = await keyStore.protect('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory);
+    const signature = await keyStore.sign('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory);
     expect(signature).toBeDefined();
     done();
   });
@@ -41,7 +41,7 @@ describe('KeyStoreMem', () => {
     // Setup registration environment
     const keyStore = new KeyStoreMem();
     await keyStore.save('key', jwk);
-    const signature = await keyStore.protect('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory);
+    const signature = await keyStore.sign('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory);
     expect(signature).toBeDefined();
     done();
   });
@@ -75,7 +75,7 @@ describe('KeyStoreMem', () => {
     // Setup registration environment
     const keyStore = new KeyStoreMem();
     let throwCaught = false;
-    const signature = await keyStore.protect('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory)
+    const signature = await keyStore.sign('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory)
     .catch(() => {
       throwCaught = true;
     });
@@ -114,7 +114,7 @@ describe('KeyStoreMem', () => {
     const keyStore = new KeyStoreMem();
     await keyStore.save('key', jwk);
     let throwCaught = false;
-    const signature = await keyStore.protect('key', 'abc', ProtectionFormat.CompactJsonJwe, cryptoFactory)
+    const signature = await keyStore.sign('key', 'abc', ProtectionFormat.CompactJsonJwe, cryptoFactory)
     .catch((err) => {
       throwCaught = true;
       expect(err.message).toBe('Non signature format passed: 2');
@@ -138,7 +138,7 @@ describe('KeyStoreMem', () => {
     await keyStore.save('key', jwk);
 
     let throwCaught = false;
-    const signature = await keyStore.protect('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory)
+    const signature = await keyStore.sign('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory)
     .catch(() => {
       throwCaught = true;
     });

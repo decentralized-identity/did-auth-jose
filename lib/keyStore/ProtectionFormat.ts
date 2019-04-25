@@ -11,5 +11,10 @@ export enum ProtectionFormat {
   /**
    * Format for a compact JSON signature
    */
-  CompactJsonJws
+  CompactJsonJws,
+
+  /**
+   * Format for a compact JSON encryption
+   */
+  CompactJsonJwe
 }

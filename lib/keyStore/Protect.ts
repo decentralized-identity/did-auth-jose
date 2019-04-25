@@ -53,7 +53,7 @@ export default class Protect {
         const flatSignature: FlatJsonJws = await token.signAsFlattenedJson(jwk, tokenHeaderParameters);
         return JSON.stringify(flatSignature);
       default:
-        throw new Error(`Non signature format passed ${format}`);
+        throw new Error(`Non signature format passed: ${format.toString()}`);
     }
   }
 }

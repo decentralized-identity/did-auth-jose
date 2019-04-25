@@ -4,8 +4,10 @@ import { ProtectionFormat } from '../../lib/keyStore/ProtectionFormat';
 import EcPrivateKey from '../../lib/crypto/ec/EcPrivateKey';
 import { Secp256k1CryptoSuite } from '../../lib/crypto/ec/Secp256k1CryptoSuite';
 import RsaPrivateKey from '../../lib/crypto/rsa/RsaPrivateKey';
+import RsaPublicKey from '../../lib/crypto/rsa/RsaPublicKey';
 import { RsaCryptoSuite } from '../../lib/crypto/rsa/RsaCryptoSuite';
-import { CryptoFactory } from '../../lib';
+import { CryptoFactory, PublicKey } from '../../lib';
+import { RecommendedKeyType } from '../../lib/security/PublicKey';
 
 describe('KeyStoreMem', () => {
 
@@ -41,6 +43,30 @@ describe('KeyStoreMem', () => {
     await keyStore.save('key', jwk);
     const signature = await keyStore.protect('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory);
     expect(signature).toBeDefined();
+    done();
+  });
+
+  it('should list all keys in the store', async (done) => {
+    const keyStore = new KeyStoreMem();
+    const key1: RsaPublicKey = {
+      kty: RecommendedKeyType.Rsa,
+      kid: 'kid1',
+      e: 'AAEE',
+      n: 'xxxxxxxxx',
+      defaultEncryptionAlgorithm: 'none'
+    };
+    const key2: RsaPublicKey = {
+      kty: RecommendedKeyType.Rsa,
+      kid: 'kid2',
+      e: 'AAEE',
+      n: 'xxxxxxxxx',
+      defaultEncryptionAlgorithm: 'none'
+    };
+    await keyStore.save('1', key1 as PublicKey);
+    await keyStore.save('2', key2 as PublicKey);
+    let list = await keyStore.list();
+    expect(list['1']).toBe('kid1');
+    expect(list['2']).toBe('kid2');
     done();
   });
 

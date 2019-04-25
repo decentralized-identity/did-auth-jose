@@ -1,5 +1,5 @@
 import { DidDocument, unitTestExports } from '@decentralized-identity/did-common-typescript';
-import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite, AesCryptoSuite } from '../lib';
+import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite, AesCryptoSuite, KeyStoreMem } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
 import AuthenticationResponse from '../lib/interfaces/AuthenticationResponse';
 import AuthenticationRequest from '../lib/interfaces/AuthenticationRequest';
@@ -430,35 +430,97 @@ describe('Authentication', () => {
   });
 
   describe('getAuthenticatedResponse', () => {
-    fit('should be understood by decrypt and validate', async () => {
+    it('should be understood by decrypt and validate. Key passed by value', async () => {
       const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+
+      // Set context for client authentication request
+      const clientExamplekeys: any = {};
+      clientExamplekeys[`${exampleDID}#keys-1`] = examplekey;
+
+      const clientAuth: Authentication = new Authentication({
+        resolver,
+        keys: clientExamplekeys
+      });
 
       setResolve(hubDID, hubResolvedDID);
 
-      const request = await auth.getAuthenticatedRequest(requestString, hubDID, header['did-access-token']);
+      // generate request for hub
+      const request = await clientAuth.getAuthenticatedRequest(requestString, hubDID, header['did-access-token']);
 
-      const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+      // Set context for hub verification of authentication request
+      const hubExamplekeys: any = {};
+      hubExamplekeys[`did:example:did#key1`] = hubkey;
+
+      const hubAuthentication: Authentication = new Authentication({
+        resolver,
+        keys: hubExamplekeys
+      });
 
       setResolve(exampleDID, exampleResolvedDID);
 
-      const verifiedRequest = await auth.getVerifiedRequest(request, true);
+      const verifiedRequest = await hubAuthentication.getVerifiedRequest(request, true);
 
       if (verifiedRequest instanceof Buffer) {
         fail('Request should validate with the given access token');
         return;
       }
 
-      const response = await auth.getAuthenticatedResponse(verifiedRequest, testContent);
+      // Setup hub response
+      const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+      const response = await hubAuthentication.getAuthenticatedResponse(verifiedRequest, testContent);
 
-      const clientAuth = new Authentication({
+      setResolve(hubDID, hubResolvedDID);
+
+      // Client validates hub response
+      const context = await clientAuth.getVerifiedRequest(response, false);
+      expect((context as VerifiedRequest).request).toEqual(testContent);
+    });
+    it('should be understood by decrypt and validate. Key passed by reference', async () => {
+      const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+
+      // Set context for client authentication request
+      let clientKeyStore = new KeyStoreMem();
+      const clientKeyId = 'clientKey';
+      await clientKeyStore.save(clientKeyId, examplekey);
+
+      const clientAuth: Authentication = new Authentication({
         resolver,
-        keys: {
-          'did:example:123456789abcdefghi#keys-1': examplekey
-        }
+        keyStore: clientKeyStore,
+        keyReferences: [clientKeyId]
       });
 
       setResolve(hubDID, hubResolvedDID);
 
+      // generate request for hub
+      const request = await clientAuth.getAuthenticatedRequest(requestString, hubDID, header['did-access-token']);
+
+      // Set context for hub verification of authentication request
+      let hubKeyStore = new KeyStoreMem();
+      const hubKeyId = 'hubKey';
+      await hubKeyStore.save(hubKeyId, hubkey);
+
+      const hubAuthentication: Authentication = new Authentication({
+        resolver,
+        keyStore: hubKeyStore,
+        keyReferences: [hubKeyId]
+      });
+
+      setResolve(exampleDID, exampleResolvedDID);
+
+      const verifiedRequest = await hubAuthentication.getVerifiedRequest(request, true);
+
+      if (verifiedRequest instanceof Buffer) {
+        fail('Request should validate with the given access token');
+        return;
+      }
+
+      // Setup hub response
+      const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+      const response = await hubAuthentication.getAuthenticatedResponse(verifiedRequest, testContent);
+
+      setResolve(hubDID, hubResolvedDID);
+
+      // Client validates hub response
       const context = await clientAuth.getVerifiedRequest(response, false);
       expect((context as VerifiedRequest).request).toEqual(testContent);
     });

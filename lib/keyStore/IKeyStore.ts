@@ -26,6 +26,11 @@ export default interface IKeyStore {
   save (keyReference: string, key: Buffer | PrivateKey): Promise<void>;
 
   /**
+   * Lists all keys with their corresponding key ids
+   */
+  list (): Promise<{ [name: string]: string }>;
+
+  /**
    * Sign the data with the key referenced by keyReference.
    * @param keyReference Reference to the key used for signature.
    * @param data Data to sign

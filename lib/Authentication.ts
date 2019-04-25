@@ -247,7 +247,9 @@ export default class Authentication {
     // Load the key specified by 'kid' in the JWE header.
     const requestString = request.toString();
     const jweToken = this.factory.constructJwe(requestString);
-    const localKey = this.getPrivateKeyForJwe(jweToken);
+    const keyReference = await this.getPrivateKeyForJwe(jweToken);
+    // TODO work with reference
+    const localKey = await this.keyStore.get(keyReference, false) as PrivateKey;
     const jwsString = await jweToken.decrypt(localKey);
     const jwsToken = this.factory.constructJws(jwsString);
 
@@ -290,10 +292,6 @@ export default class Authentication {
     request: VerifiedRequest,
     response: string): Promise<Buffer> {
 
-    if (!this.keys) {
-      throw new Error(`Unable to sign and encrypt response; keys were not passed`);
-    }
-
     return this.signThenEncryptInternal(request.nonce, request.requesterPublicKey, response);
   }
 
@@ -333,16 +331,26 @@ export default class Authentication {
    * @param jweToken The JWE to inspect
    * @returns The PrivateKey corresponding to the JWE's encryption
    */
-  private getPrivateKeyForJwe (jweToken: JweToken): PrivateKey {
+  private async getPrivateKeyForJwe (jweToken: JweToken): Promise<string> {
     const keyId = jweToken.getHeader().kid;
-    if (!this.keys) {
-      throw new Error(`Unable to decrypt request; decryption key '${keyId}' was not passed`);
+    if (this.keys) {
+      const key = this.keys[keyId];
+      if (!key) {
+        throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);
+      }
+      await this.keyStore.save(keyId, key);
+      return keyId;
+    } else {
+      if (!this.keyReferences) {
+        throw new Error(`Missing key reference for decrypting jwe`);
+      }
+      const allKeys = await this.keyStore.list();
+      let keyReferences = this.keyReferences.filter((reference) => allKeys[reference] && allKeys[reference] === keyId);
+      if (!keyReferences) {
+        throw new Error(`Key reference for decrypting jwe not found`);
+      }
+      return keyReferences[0];
     }
-    const key = this.keys[keyId];
-    if (!key) {
-      throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);
-    }
-    return key;
   }
 
   /**

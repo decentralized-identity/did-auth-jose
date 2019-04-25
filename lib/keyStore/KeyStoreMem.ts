@@ -39,6 +39,21 @@ export default class KeyStoreMem implements IKeyStore {
     });
   }
 
+ /**
+   * Lists all keys with their corresponding key ids
+   */
+  list (): Promise<{ [name: string]: string }> {
+    const dictionary: { [name: string]: string } = {};
+    for (let [key, value] of this.store) {
+      if ((value as any).kid) {
+        dictionary[key] = (value as any).kid;
+      }
+    }
+    return new Promise((resolve) => {
+      resolve(dictionary);
+    });
+  }
+
   /**
    * Saves the specified key to the key store using
    * the key identifier.
@@ -52,7 +67,6 @@ export default class KeyStoreMem implements IKeyStore {
       resolve();
     });
   }
-
   /**
    * Sign the data with the key referenced by keyIdentifier.
    * @param keyIdentifier for the key used for signature.

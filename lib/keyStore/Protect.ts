@@ -3,6 +3,7 @@ import JwsToken, { FlatJsonJws } from '../security/JwsToken';
 import CryptoFactory from '../CryptoFactory';
 import IKeyStore from './IKeyStore';
 import { ProtectionFormat } from './ProtectionFormat';
+import PrivateKey from '../security/PrivateKey';
 
  /**
   * Class to model protection mechanisms
@@ -10,16 +11,16 @@ import { ProtectionFormat } from './ProtectionFormat';
 export default class Protect {
   /**
    * Sign the payload
-   * @param payload to sign
    * @param keyStorageReference used to reference hte signing key
+   * @param payload to sign
    * @param format Signature format
    * @param keyStore where to retrieve the signing key
    * @param cryptoFactory used to specify the algorithms to use
    * @param tokenHeaderParameters Header parameters in addition to 'alg' and 'kid' to be included in the header of the token.
    */
   public static async sign (
-    payload: string,
     keyStorageReference: string,
+    payload: string,
     format: ProtectionFormat,
     keyStore: IKeyStore,
     cryptoFactory: CryptoFactory,
@@ -55,5 +56,30 @@ export default class Protect {
       default:
         throw new Error(`Non signature format passed: ${format.toString()}`);
     }
+  }
+
+  /**
+   * Decrypt the data with the key referenced by keyReference.
+   * @param keyStorageReference Reference to the key used for signature.
+   * @param cipher Data to decrypt
+   * @param format Protection format used to decrypt the data
+   * @param keyStore where to retrieve the signing key
+   * @param cryptoFactory used to specify the algorithms to use
+   * @returns The plain text message
+   */
+  public static async decrypt (keyStorageReference: string, cipher: string,
+    format: ProtectionFormat, keyStore: IKeyStore, cryptoFactory: CryptoFactory): Promise<string> {
+    if (format !== ProtectionFormat.CompactJsonJwe) {
+      throw new Error(`Only CompactJsonJwe is supported by decryption`);
+    }
+    // Get the key
+    const jwk: PrivateKey = await (keyStore.get(keyStorageReference, false) as Promise<PrivateKey>)
+    .catch((err) => {
+      throw new Error(`The key referenced by '${keyStorageReference}' is not available: '${err}'`);
+    });
+
+    const jweToken = cryptoFactory.constructJwe(cipher);
+    const payload = await jweToken.decrypt(jwk);
+    return payload;
   }
 }

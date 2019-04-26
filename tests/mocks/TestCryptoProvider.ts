@@ -73,6 +73,7 @@ export default class TestCryptoSuite implements CryptoSuite {
     };
   }
 
+  /** Encryption algorithms */
   getEncrypters () {
     return {
       test: {
@@ -82,6 +83,7 @@ export default class TestCryptoSuite implements CryptoSuite {
     };
   }
 
+  /** Signing algorithms */
   getSigners () {
     return {
       test: {

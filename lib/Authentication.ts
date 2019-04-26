@@ -248,9 +248,7 @@ export default class Authentication {
     const requestString = request.toString();
     const jweToken = this.factory.constructJwe(requestString);
     const keyReference = await this.getPrivateKeyForJwe(jweToken);
-    // TODO work with reference
-    const localKey = await this.keyStore.get(keyReference, false) as PrivateKey;
-    const jwsString = await jweToken.decrypt(localKey);
+    const jwsString = await this.keyStore.decrypt(keyReference, requestString, ProtectionFormat.CompactJsonJwe, this.factory);
     const jwsToken = this.factory.constructJws(jwsString);
 
     // getting metadata for the request
@@ -260,14 +258,18 @@ export default class Authentication {
     const requesterKey = await this.getPublicKey(jwsToken);
     const nonce = this.getRequesterNonce(jwsToken);
 
+    // Get the public key for validation
+    const localPublicKey = await this.keyStore.get(keyReference, true) as PublicKey;
+
     if (accessTokenCheck) {
       // verify access token
       const accessTokenString = jwsHeader['did-access-token'];
       if (!accessTokenString) {
         // no access token was given, this should be a seperate endpoint request
-        return this.issueNewAccessToken(requester, nonce, localKey, requesterKey);
+        return this.issueNewAccessToken(requester, nonce, keyReference, requesterKey);
       }
-      if (!await this.verifyJwt(localKey, accessTokenString, requester)) {
+
+      if (!await this.verifyJwt(localPublicKey, accessTokenString, requester)) {
         throw new Error('Invalid access token');
       }
     }
@@ -275,7 +277,7 @@ export default class Authentication {
     const plaintext = await jwsToken.verifySignature(requesterKey);
 
     return {
-      localKeyId: localKey.kid,
+      localKeyId: localPublicKey.kid,
       requesterPublicKey: requesterKey,
       nonce,
       request: plaintext
@@ -423,14 +425,14 @@ export default class Authentication {
    * Creates a new access token and wrap it in a JWE/JWS pair.
    * @param subjectDid the DID this access token is issue to
    * @param nonce the nonce used in the original request
-   * @param issuerKey the key used in the original request
+   * @param issuerKeyReference A reference to the key used in the original request
    * @param requesterKey the requesters key to encrypt the response with
    * @returns A new access token
    */
-  private async issueNewAccessToken (subjectDid: string, nonce: string, issuerKey: PrivateKey, requesterKey: PublicKey)
+  private async issueNewAccessToken (subjectDid: string, nonce: string, issuerKeyReference: string, requesterKey: PublicKey)
     : Promise<Buffer> {
     // Create a new access token.
-    const accessToken = await this.createAccessToken(subjectDid, issuerKey, this.tokenValidDurationInMinutes);
+    const accessToken = await this.createAccessToken(subjectDid, issuerKeyReference, this.tokenValidDurationInMinutes);
 
     // Sign then encrypt the new access token.
     return this.signThenEncryptInternal(nonce, requesterKey, accessToken);
@@ -439,16 +441,17 @@ export default class Authentication {
   /**
    * Creates an access token for the subjectDid using the privateKey for the validDurationInMinutes
    * @param subjectDid The did this access token is issued to
-   * @param privateKey The private key used to generate this access token
+   * @param privateKeyReference The private key used to generate this access token
    * @param validDurationInMinutes The duration this token is valid for, in minutes
    * @returns Signed JWT in compact serialized format.
    */
-  private async createAccessToken (subjectDid: string, privateKey: PrivateKey, validDurationInMinutes: number): Promise<string> {
-    return this.factory.constructJws({
+  private async createAccessToken (subjectDid: string, privateKeyReference: string, validDurationInMinutes: number): Promise<string> {
+    const payload = this.factory.constructJws({
       sub: subjectDid,
       iat: new Date(Date.now()),
       exp: new Date(Date.now() + validDurationInMinutes * 60 * 1000)
-    }).sign(privateKey);
+    });
+    return this.keyStore.sign(privateKeyReference, JSON.stringify(payload), ProtectionFormat.CompactJsonJws, this.factory);
   }
 
   /**

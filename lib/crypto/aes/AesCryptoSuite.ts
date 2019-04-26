@@ -6,10 +6,12 @@ import crypto from 'crypto';
  */
 export default class AesCryptoSuite implements CryptoSuite {
 
+  /** Encryption algorithms */
   getEncrypters (): { [algorithm: string]: Encrypter } {
     return {};
   }
 
+  /** Signing algorithms */
   getSigners (): { [algorithm: string]: Signer; } {
     return {};
   }

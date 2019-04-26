@@ -40,8 +40,8 @@ export default class KeyStoreMem implements IKeyStore {
   }
 
  /**
-   * Lists all keys with their corresponding key ids
-   */
+  * Lists all keys with their corresponding key ids
+  */
   list (): Promise<{ [name: string]: string }> {
     const dictionary: { [name: string]: string } = {};
     for (let [key, value] of this.store) {
@@ -69,19 +69,30 @@ export default class KeyStoreMem implements IKeyStore {
   }
   /**
    * Sign the data with the key referenced by keyIdentifier.
-   * @param keyIdentifier for the key used for signature.
+   * @param keyReference for the key used for signature.
    * @param payload Data to sign
    * @param format used to protect the content
    * @param cryptoFactory used to specify the algorithms to use
    * @param tokenHeaderParameters Header parameters in addition to 'alg' and 'kid' to be included in the header of the token.
    * @returns The protected message
    */
-  public async sign (keyIdentifier: string,
+  public async sign (keyReference: string,
     payload: string,
     format: ProtectionFormat,
     cryptoFactory: CryptoFactory,
     tokenHeaderParameters?: { [name: string]: string }): Promise<string> {
-      // TODO add encryption formats
-    return Protect.sign(payload, keyIdentifier, format, this, cryptoFactory, tokenHeaderParameters);
+    return Protect.sign(keyReference, payload, format, this, cryptoFactory, tokenHeaderParameters);
+  }
+
+  /**
+   * Decrypt the data with the key referenced by keyReference.
+   * @param keyReference Reference to the key used for signature.
+   * @param cipher Data to decrypt
+   * @param format Protection format used to decrypt the data
+   * @param cryptoFactory used to specify the algorithms to use
+   * @returns The plain text message
+   */
+  public async decrypt (keyReference: string, cipher: string, format: ProtectionFormat, cryptoFactory: CryptoFactory): Promise<string> {
+    return Protect.decrypt(keyReference, cipher, format, this, cryptoFactory);
   }
 }

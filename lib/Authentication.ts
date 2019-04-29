@@ -446,12 +446,12 @@ export default class Authentication {
    * @returns Signed JWT in compact serialized format.
    */
   private async createAccessToken (subjectDid: string, privateKeyReference: string, validDurationInMinutes: number): Promise<string> {
-    const payload = this.factory.constructJws({
+    const payload: any = this.factory.constructJws({
       sub: subjectDid,
       iat: new Date(Date.now()),
       exp: new Date(Date.now() + validDurationInMinutes * 60 * 1000)
     });
-    return this.keyStore.sign(privateKeyReference, JSON.stringify(payload), ProtectionFormat.CompactJsonJws, this.factory);
+    return this.keyStore.sign(privateKeyReference, payload.content, ProtectionFormat.CompactJsonJws, this.factory);
   }
 
   /**

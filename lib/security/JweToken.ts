@@ -13,12 +13,19 @@ type EncryptDelegate = (data: Buffer, jwk: PublicKey) => Promise<Buffer>;
  * JWE in flattened json format
  */
 export type FlatJsonJwe = {
+  /** The protected (integrity) header. */
   protected?: string,
+  /** The unprotected (unverified) header. */
   unprotected?: {[key: string]: string},
+  /** Contain the value BASE64URL(JWE Encrypted Key) */
   encrypted_key: string,
+  /** Contains the initial vector used for encryption */
   iv: string,
+  /** The encrypted data */
   ciphertext: string,
+  /** Contain the value BASE64URL(JWE Authentication Tag) */
   tag: string,
+  /**  Contains the additional value */
   aad?: string
 };
 
@@ -165,8 +172,11 @@ export default class JweToken extends JoseToken {
    */
   public async encryptAsFlattenedJson (jwk: PublicKey,
     options?: {
+  /** The unprotected (unverified) header. */
       unprotected?: {[key: string]: any},
+  /** The protected (integrity) header. */
       protected?: {[key: string]: any},
+  /**  Contains the additional value */
       aad?: string | Buffer
     }): Promise<FlatJsonJwe> {
 

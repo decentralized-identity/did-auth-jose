@@ -40,6 +40,8 @@ export interface AuthenticationOptions {
  */
 export default class Authentication {
 
+  // TODO need to support encryption and signature keys
+
   /** DID Resolver used to retrieve public keys */
   private resolver: IDidResolver;
   /** The amount of time a token is valid in minutes */
@@ -67,6 +69,14 @@ export default class Authentication {
     }
     this.keys = options.keys;
     this.keyReferences = options.keyReferences;
+
+    if (!this.keys && !this.keyReferences) {
+      throw new Error(`A key by reference (keyReferences) or a key by value (keys) is required`);
+    }
+
+    if (this.keys && this.keyReferences) {
+      throw new Error(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
+    }
 
     this.factory = new CryptoFactory(options.cryptoSuites || [new AesCryptoSuite(), new RsaCryptoSuite(), new Secp256k1CryptoSuite()]);
   }

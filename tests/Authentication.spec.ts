@@ -123,6 +123,37 @@ describe('Authentication', () => {
     };
   });
 
+  describe('Authentication', () => {
+    it('should throw if no keys are passed in', () => {
+      let throws = false;
+      try {
+        // tslint:disable-next-line:no-unused-expression
+        new Authentication({
+          resolver
+        });
+      } catch (err) {
+        throws = true;
+        expect(err.message).toEqual(`A key by reference (keyReferences) or a key by value (keys) is required`);
+      }
+      expect(throws).toBeTruthy();
+    });
+    it('should throw if mixed keys are passed in', () => {
+      let throws = false;
+      try {
+        // tslint:disable-next-line:no-unused-expression
+        new Authentication({
+          keys: hubKeys,
+          keyReferences: ['abc'],
+          resolver
+        });
+      } catch (err) {
+        throws = true;
+        expect(err.message).toEqual(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
+      }
+      expect(throws).toBeTruthy();
+    });
+  });
+
   describe('signAuthenticationRequest', () => {
 
     it('should throw error when cannot find key for DID', async () => {
@@ -494,7 +525,7 @@ describe('Authentication', () => {
       }
     });
 
-    it('should thorw if the key is not understood', async () => {
+    it('should throw if the key is not understood', async () => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };

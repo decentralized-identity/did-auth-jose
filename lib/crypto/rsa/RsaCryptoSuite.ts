@@ -17,6 +17,7 @@ export class RsaCryptoSuite implements CryptoSuite {
     return {};
   }
 
+  /** Encryption algorithms */
   getEncrypters () {
     return {
       'RSA-OAEP': {
@@ -26,6 +27,7 @@ export class RsaCryptoSuite implements CryptoSuite {
     };
   }
 
+  /** Signing algorithms */
   getSigners () {
     return {
       RS256: {

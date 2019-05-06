@@ -18,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@decentralized-identity/did-common-typescript": "0.1.11",
+    "@decentralized-identity/did-common-typescript": "0.1.18",
     "ec-key": "0.0.2",
     "jwk-to-pem": "2.0.0",
     "node-jose": "1.0.0",
@@ -36,6 +36,7 @@
     "husky": "^0.14.3",
     "jasmine": "^3.2.0",
     "jasmine-reporters": "^2.3.2",
+    "jasmine-spec-reporter": "^4.2.1",
     "jasmine-ts": "^0.2.1",
     "jsdoc-babel": "^0.5.0",
     "jsdoc-to-markdown": "^4.0.1",

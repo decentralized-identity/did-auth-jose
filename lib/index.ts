@@ -16,6 +16,9 @@ import { TestPublicKey } from '../tests/mocks/TestPublicKey';
 import TestCryptoSuite from '../tests/mocks/TestCryptoProvider';
 import AuthenticationRequest from './interfaces/AuthenticationRequest';
 import AuthenticationResponse from './interfaces/AuthenticationResponse';
+import IKeyStore from './keyStore/IKeyStore';
+import KeyStoreMem from './keyStore/KeyStoreMem';
+import { ProtectionFormat } from './keyStore/ProtectionFormat';
 
 export { Authentication, AuthenticationOptions, VerifiedRequest };
 export { CryptoSuite, Encrypter, Signer };
@@ -26,3 +29,4 @@ export { AesCryptoSuite };
 export { CryptoFactory, JwsToken, JweToken, FlatJsonJws, FlatJsonJwe };
 export { TestCryptoSuite, TestPrivateKey, TestPublicKey };
 export { AuthenticationRequest, AuthenticationResponse };
+export { IKeyStore, KeyStoreMem, ProtectionFormat };

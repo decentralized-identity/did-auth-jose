@@ -20,6 +20,7 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
     return {};
   }
 
+  /** Signing algorithms */
   getSigners () {
     return {
       ES256K: {

@@ -13,13 +13,20 @@ import VerifiedRequest from './interfaces/VerifiedRequest';
 import AuthenticationRequest from './interfaces/AuthenticationRequest';
 import AuthenticationResponse from './interfaces/AuthenticationResponse';
 import AesCryptoSuite from './crypto/aes/AesCryptoSuite';
+import IKeyStore from './keyStore/IKeyStore';
+import KeyStoreMem from './keyStore/KeyStoreMem';
+import { ProtectionFormat } from './keyStore/ProtectionFormat';
 
 /**
  * Named arguments to construct an Authentication object
  */
 export interface AuthenticationOptions {
-  /** A dictionary with the did document key id mapping to private keys */
-  keys: {[name: string]: PrivateKey};
+  /** An object with the did document key id mapping to private keys */
+  keys?: {[name: string]: PrivateKey};
+  /** A dictionary with the did document key id mapping to private key references in the keystore */
+  keyReferences?: string[];
+  /** The keystore */
+  keyStore?: IKeyStore;
   /** DID Resolver used to retrieve public keys */
   resolver: IDidResolver;
   /** Optional parameter to customize supported CryptoSuites */
@@ -33,12 +40,18 @@ export interface AuthenticationOptions {
  */
 export default class Authentication {
 
+  // TODO need to support encryption and signature keys
+
   /** DID Resolver used to retrieve public keys */
   private resolver: IDidResolver;
   /** The amount of time a token is valid in minutes */
   private tokenValidDurationInMinutes: number;
   /** Private keys of the authentication owner */
-  private keys: {[name: string]: PrivateKey};
+  private keys?: {[name: string]: PrivateKey};
+  /** Reference to Private keys of the authentication owner */
+  private keyReferences?: string[];
+  /** The keystore */
+  private keyStore: IKeyStore;
   /** Factory for creating JWTs and public keys */
   private factory: CryptoFactory;
 
@@ -49,27 +62,44 @@ export default class Authentication {
   constructor (options: AuthenticationOptions) {
     this.resolver = options.resolver;
     this.tokenValidDurationInMinutes = options.tokenValidDurationInMinutes || Constants.defaultTokenDurationInMinutes;
+    if (options.keyStore) {
+      this.keyStore = options.keyStore;
+    } else {
+      this.keyStore = new KeyStoreMem();
+    }
     this.keys = options.keys;
+    this.keyReferences = options.keyReferences;
+
+    if (!this.keys && !this.keyReferences) {
+      throw new Error(`A key by reference (keyReferences) or a key by value (keys) is required`);
+    }
+
+    if (this.keys && this.keyReferences) {
+      throw new Error(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
+    }
+
     this.factory = new CryptoFactory(options.cryptoSuites || [new AesCryptoSuite(), new RsaCryptoSuite(), new Secp256k1CryptoSuite()]);
   }
 
   /**
    * Signs the AuthenticationRequest with the private key of the Requester and returns the signed JWT.
    * @param request well-formed AuthenticationRequest object
-   * @param responseDid DID of the requester.
+   * @returns the signed compact JWT.
    */
   public async signAuthenticationRequest (request: AuthenticationRequest): Promise<string> {
     if (request.response_type !== 'id_token' || request.scope !== 'openid') {
       throw new Error('Authentication Request not formed correctly');
     }
-    const requesterDid = request.iss;
-    const key: PrivateKey | undefined = this.getKey(requesterDid);
-    if (!key) {
-      throw new Error(`Could not find a key for ${requesterDid}`);
-    }
 
-    const token = new JwsToken(request, this.factory);
-    return token.sign(key);
+    // Make sure the passed in key is stored in the key store
+    let referenceToStoredKey: string;
+    if (this.keyReferences) {
+      // for signing always use last key
+      referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
+    } else {
+      referenceToStoredKey = await this.getKeyReference(request.iss);
+    }
+    return this.keyStore.sign(referenceToStoredKey, JSON.stringify(request), ProtectionFormat.CompactJsonJws, this.factory);
   }
 
   /**
@@ -100,14 +130,13 @@ export default class Authentication {
    * @param responseDid The DID to respond with
    * @param claims Claims that the requester asked for
    * @param expiration optional expiration datetime of the response
+   * @param keyReference pointing to the signing key
    */
-  public async formAuthenticationResponse (authRequest: AuthenticationRequest, responseDid: string, claims: any, expiration?: Date): Promise<string> {
-    const key: PrivateKey | undefined = this.getKey(responseDid);
-    if (!key) {
-      throw new Error(`Could not find a key for ${responseDid}`);
-    }
+  public async formAuthenticationResponse (authRequest: AuthenticationRequest, responseDid: string, claims: any, expiration?: Date)
+  : Promise<string> {
+    const referenceToStoredKey = await this.getKeyReference(responseDid);
 
-    const publicKey: PublicKey = key.getPublicKey();
+    const publicKey: PublicKey = await this.keyStore.get(referenceToStoredKey, true) as PublicKey;
     const base64UrlThumbprint = await PublicKey.getThumbprint(publicKey);
 
     // milliseconds to seconds
@@ -130,12 +159,30 @@ export default class Authentication {
     };
 
     response = Object.assign(response, claims);
-
-    const token = new JwsToken(response, this.factory);
-    return token.sign(key, {
+    return this.keyStore.sign(referenceToStoredKey, JSON.stringify(response), ProtectionFormat.CompactJsonJws, this.factory, {
       iat: iat.toString(),
       exp: Math.floor(expiration.getTime() / milliseconds).toString()
     });
+  }
+
+  /**
+   * Return a reference to the private key that was passed by caller.
+   * If the key was passed in by value, it will be stored in the store and a reference is returned
+   * @param iss Issuer identifier
+   */
+  private async getKeyReference (iss: string): Promise<string> {
+    let referenceToStoredKey: string;
+    if (this.keys) {
+      const key: PrivateKey | undefined = this.getKey(iss);
+      if (!key) {
+        throw new Error(`Could not find a key for ${iss}`);
+      }
+      referenceToStoredKey = key.kid;
+      await this.keyStore.save(referenceToStoredKey, key);
+    } else {
+      throw new Error(`No private keys passed`);
+    }
+    return referenceToStoredKey;
   }
 
   /**
@@ -210,8 +257,8 @@ export default class Authentication {
     // Load the key specified by 'kid' in the JWE header.
     const requestString = request.toString();
     const jweToken = this.factory.constructJwe(requestString);
-    const localKey = this.getPrivateKeyForJwe(jweToken);
-    const jwsString = await jweToken.decrypt(localKey);
+    const keyReference = await this.getPrivateKeyForJwe(jweToken);
+    const jwsString = await this.keyStore.decrypt(keyReference, requestString, ProtectionFormat.CompactJsonJwe, this.factory);
     const jwsToken = this.factory.constructJws(jwsString);
 
     // getting metadata for the request
@@ -221,14 +268,18 @@ export default class Authentication {
     const requesterKey = await this.getPublicKey(jwsToken);
     const nonce = this.getRequesterNonce(jwsToken);
 
+    // Get the public key for validation
+    const localPublicKey = await this.keyStore.get(keyReference, true) as PublicKey;
+
     if (accessTokenCheck) {
       // verify access token
       const accessTokenString = jwsHeader['did-access-token'];
       if (!accessTokenString) {
         // no access token was given, this should be a seperate endpoint request
-        return this.issueNewAccessToken(requester, nonce, localKey, requesterKey);
+        return this.issueNewAccessToken(requester, nonce, keyReference, requesterKey);
       }
-      if (!await this.verifyJwt(localKey, accessTokenString, requester)) {
+
+      if (!await this.verifyJwt(localPublicKey, accessTokenString, requester)) {
         throw new Error('Invalid access token');
       }
     }
@@ -236,7 +287,7 @@ export default class Authentication {
     const plaintext = await jwsToken.verifySignature(requesterKey);
 
     return {
-      localKeyId: localKey.kid,
+      localKeyId: localPublicKey.kid,
       requesterPublicKey: requesterKey,
       nonce,
       request: plaintext
@@ -253,12 +304,7 @@ export default class Authentication {
     request: VerifiedRequest,
     response: string): Promise<Buffer> {
 
-    const localkey = this.keys[request.localKeyId];
-    if (!localkey) {
-      throw new Error('Unable to find encryption key used');
-    }
-
-    return this.signThenEncryptInternal(request.nonce, localkey, request.requesterPublicKey, response);
+    return this.signThenEncryptInternal(request.nonce, request.requesterPublicKey, response);
   }
 
   /**
@@ -270,7 +316,6 @@ export default class Authentication {
    */
   public async getAuthenticatedRequest (
     content: string,
-    privateKey: PrivateKey,
     recipient: string,
     accessToken?: string
   ): Promise<Buffer> {
@@ -285,11 +330,12 @@ export default class Authentication {
     }
 
     // perhaps a more intellegent key choosing algorithm could be implemented here
+    // TODO get the key based on kid
     const documentKey = document.publicKey[0];
 
     const publicKey = this.factory.constructPublicKey(documentKey);
 
-    return this.signThenEncryptInternal(requesterNonce, privateKey, publicKey, content, accessToken);
+    return this.signThenEncryptInternal(requesterNonce, publicKey, content, accessToken);
   }
 
   /**
@@ -297,13 +343,26 @@ export default class Authentication {
    * @param jweToken The JWE to inspect
    * @returns The PrivateKey corresponding to the JWE's encryption
    */
-  private getPrivateKeyForJwe (jweToken: JweToken): PrivateKey {
+  private async getPrivateKeyForJwe (jweToken: JweToken): Promise<string> {
     const keyId = jweToken.getHeader().kid;
-    const key = this.keys[keyId];
-    if (!key) {
-      throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);
+    if (this.keys) {
+      const key = this.keys[keyId];
+      if (!key) {
+        throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);
+      }
+      await this.keyStore.save(keyId, key);
+      return keyId;
+    } else {
+      if (!this.keyReferences) {
+        throw new Error(`Missing key reference for decrypting jwe`);
+      }
+      const allKeys = await this.keyStore.list();
+      let keyReferences = this.keyReferences.filter((reference) => allKeys[reference] && allKeys[reference] === keyId);
+      if (!keyReferences) {
+        throw new Error(`Key reference for decrypting jwe not found`);
+      }
+      return keyReferences[0];
     }
-    return key;
   }
 
   /**
@@ -338,14 +397,12 @@ export default class Authentication {
   /**
    * Forms a JWS using the local private key and content, then wraps in JWE using the requesterKey and nonce.
    * @param nonce Nonce to be included in the response
-   * @param localKey PrivateKey in which to sign the response
    * @param requesterkey PublicKey in which to encrypt the response
    * @param content The content to be signed and encrypted
    * @returns An encrypted and signed form of the content
    */
   private async signThenEncryptInternal (
     nonce: string,
-    localKey: PrivateKey,
     requesterkey: PublicKey,
     content: string,
     accesstoken?: string
@@ -354,10 +411,21 @@ export default class Authentication {
     if (accesstoken) {
       jwsHeaderParameters['did-access-token'] = accesstoken;
     }
+    // Make sure the passed in key is stored in the key store
+    let referenceToStoredKey: string;
+    if (this.keyReferences) {
+      // for signing always use last key
+      referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
+    } else {
+      if (!this.keys) {
+        throw new Error(`No private keys passed into Authentication`);
+      }
+      // Assumption, the last added property is the last and more recent key
+      const kid = Object.keys(this.keys)[Object.keys(this.keys).length - 1];
+      referenceToStoredKey = await this.getKeyReference(kid);
+    }
 
-    const jwsToken = this.factory.constructJws(content);
-    const jwsCompactString = await jwsToken.sign(localKey, jwsHeaderParameters);
-
+    const jwsCompactString = await this.keyStore.sign(referenceToStoredKey, content, ProtectionFormat.CompactJsonJws, this.factory, jwsHeaderParameters);
     const jweToken = this.factory.constructJwe(jwsCompactString);
 
     return jweToken.encrypt(requesterkey);
@@ -367,32 +435,33 @@ export default class Authentication {
    * Creates a new access token and wrap it in a JWE/JWS pair.
    * @param subjectDid the DID this access token is issue to
    * @param nonce the nonce used in the original request
-   * @param issuerKey the key used in the original request
+   * @param issuerKeyReference A reference to the key used in the original request
    * @param requesterKey the requesters key to encrypt the response with
    * @returns A new access token
    */
-  private async issueNewAccessToken (subjectDid: string, nonce: string, issuerKey: PrivateKey, requesterKey: PublicKey)
+  private async issueNewAccessToken (subjectDid: string, nonce: string, issuerKeyReference: string, requesterKey: PublicKey)
     : Promise<Buffer> {
     // Create a new access token.
-    const accessToken = await this.createAccessToken(subjectDid, issuerKey, this.tokenValidDurationInMinutes);
+    const accessToken = await this.createAccessToken(subjectDid, issuerKeyReference, this.tokenValidDurationInMinutes);
 
     // Sign then encrypt the new access token.
-    return this.signThenEncryptInternal(nonce, issuerKey, requesterKey, accessToken);
+    return this.signThenEncryptInternal(nonce, requesterKey, accessToken);
   }
 
   /**
    * Creates an access token for the subjectDid using the privateKey for the validDurationInMinutes
    * @param subjectDid The did this access token is issued to
-   * @param privateKey The private key used to generate this access token
+   * @param privateKeyReference The private key used to generate this access token
    * @param validDurationInMinutes The duration this token is valid for, in minutes
    * @returns Signed JWT in compact serialized format.
    */
-  private async createAccessToken (subjectDid: string, privateKey: PrivateKey, validDurationInMinutes: number): Promise<string> {
-    return this.factory.constructJws({
+  private async createAccessToken (subjectDid: string, privateKeyReference: string, validDurationInMinutes: number): Promise<string> {
+    const payload: any = this.factory.constructJws({
       sub: subjectDid,
       iat: new Date(Date.now()),
       exp: new Date(Date.now() + validDurationInMinutes * 60 * 1000)
-    }).sign(privateKey);
+    });
+    return this.keyStore.sign(privateKeyReference, payload.content, ProtectionFormat.CompactJsonJws, this.factory);
   }
 
   /**

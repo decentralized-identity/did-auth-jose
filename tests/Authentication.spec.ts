@@ -1,5 +1,6 @@
 import { DidDocument, unitTestExports } from '@decentralized-identity/did-common-typescript';
 import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite, AesCryptoSuite } from '../lib';
+import { KeyStoreMem, IKeyStore, ProtectionFormat } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
 import AuthenticationResponse from '../lib/interfaces/AuthenticationResponse';
 import AuthenticationRequest from '../lib/interfaces/AuthenticationRequest';
@@ -122,6 +123,37 @@ describe('Authentication', () => {
     };
   });
 
+  describe('Authentication', () => {
+    it('should throw if no keys are passed in', () => {
+      let throws = false;
+      try {
+        // tslint:disable-next-line:no-unused-expression
+        new Authentication({
+          resolver
+        });
+      } catch (err) {
+        throws = true;
+        expect(err.message).toEqual(`A key by reference (keyReferences) or a key by value (keys) is required`);
+      }
+      expect(throws).toBeTruthy();
+    });
+    it('should throw if mixed keys are passed in', () => {
+      let throws = false;
+      try {
+        // tslint:disable-next-line:no-unused-expression
+        new Authentication({
+          keys: hubKeys,
+          keyReferences: ['abc'],
+          resolver
+        });
+      } catch (err) {
+        throws = true;
+        expect(err.message).toEqual(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
+      }
+      expect(throws).toBeTruthy();
+    });
+  });
+
   describe('signAuthenticationRequest', () => {
 
     it('should throw error when cannot find key for DID', async () => {
@@ -190,12 +222,13 @@ describe('Authentication', () => {
 
   describe('formAuthenticationResponse', () => {
 
-    it('should form Authenticaiton Request from Authentication Response', async () => {
+    it('should form Authenticaiton Request from Authentication Response', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
       const jws = new JwsToken(response, registry);
       const payload = await jws.verifySignature(hubPublicKey);
       const payloadObj = JSON.parse(payload);
+
       expect(payloadObj.iss).toEqual('https://self-issued.me');
       expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
@@ -204,6 +237,7 @@ describe('Authentication', () => {
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
       expect(payloadObj.exp).toBeDefined();
+      done();
     });
 
     it('should form Authenticaiton Request from Authentication Response with expiration', async () => {
@@ -321,7 +355,7 @@ describe('Authentication', () => {
       }
     });
 
-    it('should decrypt the request', async () => {
+    it('should decrypt the request with passed in key', async () => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -332,8 +366,120 @@ describe('Authentication', () => {
       const jwe = new JweToken(data, registry);
       const request = await jwe.encrypt(hubPublicKey);
 
+      // Set context for hub verification of authentication request
+      const hubExamplekeys: any = {};
+      hubExamplekeys[`did:example:did#key1`] = hubkey;
+
+      const hubAuthentication: Authentication = new Authentication({
+        resolver,
+        keys: hubExamplekeys
+      });
+
+      const context = await hubAuthentication.getVerifiedRequest(request);
+      expect((context as VerifiedRequest).request).toEqual(JSON.stringify(payload));
+    });
+
+    it('should decrypt the request with a key by reference', async () => {
+      const payload = {
+        'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
+      };
+
+      const keyStore: IKeyStore = new KeyStoreMem();
+      await keyStore.save('key', examplekey);
+      const data = await keyStore.sign('key', JSON.stringify(payload), ProtectionFormat.CompactJsonJws, registry, header);
+
+      const jwe = new JweToken(data, registry);
+      const request = await jwe.encrypt(hubPublicKey);
+
       const context = await auth.getVerifiedRequest(request);
       expect((context as VerifiedRequest).request).toEqual(JSON.stringify(payload));
+    });
+
+    it('should return false if access token is wrong token sub', async () => {
+      const examplekeys: any = {};
+      examplekeys[`${exampleDID}#keys-1`] = examplekey;
+
+      const keyStore = new KeyStoreMem();
+      await keyStore.save('key', examplekey);
+
+      const exampleAuth: any = new Authentication({
+        resolver,
+        keyStore,
+        keys: examplekeys
+      });
+
+      const jws = await exampleAuth.createAccessToken('xxx', 'key', 10);
+      const sub = await exampleAuth.verifyJwt(examplekey, jws, exampleDID);
+      expect(sub).toBe(false);
+    });
+
+    it('should return a new access token', async () => {
+      const exampleKeyStore = new KeyStoreMem();
+      await exampleKeyStore.save('example', examplekey);
+
+      const exampleAuth: any = new Authentication({
+        resolver,
+        keyStore: exampleKeyStore,
+        keyReferences: ['example']
+      });
+
+      const token = await exampleAuth.issueNewAccessToken(exampleDID, '1234567890', 'example', hubPublicKey);
+
+      const hubKeyStore = new KeyStoreMem();
+      await hubKeyStore.save('hub', hubkey);
+
+      const hubAuth: any = new Authentication({
+        resolver,
+        keyStore: hubKeyStore,
+        keyReferences: ['hub']
+      });
+
+      const data = await hubAuth.getVerifiedRequest(token, true);
+      expect(data).toBeDefined();
+    });
+
+    it('should return false if access token is expired', async () => {
+      const jws = await registry.constructJws({
+        sub: exampleDID,
+        iat: new Date(Date.now()),
+        exp: new Date(Date.now() - 5 * 60 * 1000)
+      }).sign(examplekey);
+      const examplekeys: any = {};
+      examplekeys[`${exampleDID}#keys-1`] = examplekey;
+
+      const exampleAuth: any = new Authentication({
+        resolver,
+        keys: examplekeys
+      });
+      const exp = await exampleAuth.verifyJwt(examplekey, jws, exampleDID);
+      expect(exp).toBe(false);
+    });
+
+    it('should return false if access token is mal formed', async () => {
+      const jws = 'abcdef';
+
+      const examplekeys: any = {};
+      examplekeys[`${exampleDID}#keys-1`] = examplekey;
+
+      const exampleAuth: any = new Authentication({
+        resolver,
+        keys: examplekeys
+      });
+      const tokenFormat = await exampleAuth.verifyJwt(examplekey, jws, exampleDID);
+      expect(tokenFormat).toBe(false);
+    });
+
+    it('should return false if payload is missing', async () => {
+
+      const examplekeys: any = {};
+      examplekeys[`${exampleDID}#keys-1`] = examplekey;
+
+      const exampleAuth: any = new Authentication({
+        resolver,
+        keys: examplekeys
+      });
+      const tokenFormat = await exampleAuth.verifyJwt(examplekey, undefined, exampleDID);
+      expect(tokenFormat).toBe(false);
     });
 
     it('should throw if invalid signature', async () => {
@@ -379,7 +525,7 @@ describe('Authentication', () => {
       }
     });
 
-    it('should thorw if the key is not understood', async () => {
+    it('should throw if the key is not understood', async () => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -416,9 +562,9 @@ describe('Authentication', () => {
 
   describe('getAuthenticatedRequest', () => {
 
-    it('should encrypt with the DID\'s public key', async () => {
+    it(`should encrypt with the DID's public key`, async () => {
       const content = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
-      const request = await auth.getAuthenticatedRequest(content, hubkey, exampleDID, await newAccessToken(examplekey));
+      const request = await auth.getAuthenticatedRequest(content, exampleDID, await newAccessToken(examplekey));
       const jwe = registry.constructJwe(request.toString());
       const jwsstring = await jwe.decrypt(examplekey);
       const jws = registry.constructJws(jwsstring);
@@ -428,35 +574,97 @@ describe('Authentication', () => {
   });
 
   describe('getAuthenticatedResponse', () => {
-    it('should be understood by decrypt and validate', async () => {
+    it('should be understood by decrypt and validate. Key passed by value', async () => {
       const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+
+      // Set context for client authentication request
+      const clientExamplekeys: any = {};
+      clientExamplekeys[`${exampleDID}#keys-1`] = examplekey;
+
+      const clientAuth: Authentication = new Authentication({
+        resolver,
+        keys: clientExamplekeys
+      });
 
       setResolve(hubDID, hubResolvedDID);
 
-      const request = await auth.getAuthenticatedRequest(requestString, examplekey, hubDID, header['did-access-token']);
+      // generate request for hub
+      const request = await clientAuth.getAuthenticatedRequest(requestString, hubDID, header['did-access-token']);
 
-      const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+      // Set context for hub verification of authentication request
+      const hubExamplekeys: any = {};
+      hubExamplekeys[`did:example:did#key1`] = hubkey;
+
+      const hubAuthentication: Authentication = new Authentication({
+        resolver,
+        keys: hubExamplekeys
+      });
 
       setResolve(exampleDID, exampleResolvedDID);
 
-      const verifiedRequest = await auth.getVerifiedRequest(request, true);
+      const verifiedRequest = await hubAuthentication.getVerifiedRequest(request, true);
 
       if (verifiedRequest instanceof Buffer) {
         fail('Request should validate with the given access token');
         return;
       }
 
-      const response = await auth.getAuthenticatedResponse(verifiedRequest, testContent);
+      // Setup hub response
+      const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+      const response = await hubAuthentication.getAuthenticatedResponse(verifiedRequest, testContent);
 
-      const clientAuth = new Authentication({
+      setResolve(hubDID, hubResolvedDID);
+
+      // Client validates hub response
+      const context = await clientAuth.getVerifiedRequest(response, false);
+      expect((context as VerifiedRequest).request).toEqual(testContent);
+    });
+    it('should be understood by decrypt and validate. Key passed by reference', async () => {
+      const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+
+      // Set context for client authentication request
+      let clientKeyStore = new KeyStoreMem();
+      const clientKeyId = 'clientKey';
+      await clientKeyStore.save(clientKeyId, examplekey);
+
+      const clientAuth: Authentication = new Authentication({
         resolver,
-        keys: {
-          'did:example:123456789abcdefghi#keys-1': examplekey
-        }
+        keyStore: clientKeyStore,
+        keyReferences: [clientKeyId]
       });
 
       setResolve(hubDID, hubResolvedDID);
 
+      // generate request for hub
+      const request = await clientAuth.getAuthenticatedRequest(requestString, hubDID, header['did-access-token']);
+
+      // Set context for hub verification of authentication request
+      let hubKeyStore = new KeyStoreMem();
+      const hubKeyId = 'hubKey';
+      await hubKeyStore.save(hubKeyId, hubkey);
+
+      const hubAuthentication: Authentication = new Authentication({
+        resolver,
+        keyStore: hubKeyStore,
+        keyReferences: [hubKeyId]
+      });
+
+      setResolve(exampleDID, exampleResolvedDID);
+
+      const verifiedRequest = await hubAuthentication.getVerifiedRequest(request, true);
+
+      if (verifiedRequest instanceof Buffer) {
+        fail('Request should validate with the given access token');
+        return;
+      }
+
+      // Setup hub response
+      const testContent = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
+      const response = await hubAuthentication.getAuthenticatedResponse(verifiedRequest, testContent);
+
+      setResolve(hubDID, hubResolvedDID);
+
+      // Client validates hub response
       const context = await clientAuth.getVerifiedRequest(response, false);
       expect((context as VerifiedRequest).request).toEqual(testContent);
     });

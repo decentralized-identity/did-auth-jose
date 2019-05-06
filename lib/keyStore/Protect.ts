@@ -11,7 +11,7 @@ import PrivateKey from '../security/PrivateKey';
 export default class Protect {
   /**
    * Sign the payload
-   * @param keyStorageReference used to reference hte signing key
+   * @param keyStorageReference used to reference the signing key
    * @param payload to sign
    * @param format Signature format
    * @param keyStore where to retrieve the signing key

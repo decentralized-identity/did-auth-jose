@@ -70,12 +70,26 @@ describe('KeyStoreMem', () => {
     done();
   });
 
-  it('should throw because key is not found in store', async (done) => {
+  it('should throw because signing key is not found in store', async (done) => {
 
     // Setup registration environment
     const keyStore = new KeyStoreMem();
     let throwCaught = false;
     const signature = await keyStore.sign('key', 'abc', ProtectionFormat.FlatJsonJws, cryptoFactory)
+    .catch(() => {
+      throwCaught = true;
+    });
+    expect(signature).toBeUndefined();
+    expect(throwCaught).toBe(true);
+    done();
+  });
+
+  it('should throw because decryption key is not found in store', async (done) => {
+
+    // Setup registration environment
+    const keyStore = new KeyStoreMem();
+    let throwCaught = false;
+    const signature = await keyStore.decrypt('key', 'abc', ProtectionFormat.FlatJsonJwe, cryptoFactory)
     .catch(() => {
       throwCaught = true;
     });
@@ -118,6 +132,24 @@ describe('KeyStoreMem', () => {
     .catch((err) => {
       throwCaught = true;
       expect(err.message).toBe('Non signature format passed: 2');
+    });
+    expect(signature).toBeUndefined();
+    expect(throwCaught).toBe(true);
+    done();
+  });
+
+  it('should throw because format passed is not an encryption format', async (done) => {
+
+    // Setup registration environment
+    const jwk = await RsaPrivateKey.generatePrivateKey('key1');
+
+    const keyStore = new KeyStoreMem();
+    await keyStore.save('key', jwk);
+    let throwCaught = false;
+    const signature = await keyStore.decrypt('key', 'abc', ProtectionFormat.CompactJsonJws, cryptoFactory)
+    .catch((err) => {
+      throwCaught = true;
+      expect(err.message).toBe('Only CompactJsonJwe, FlatJsonJwe is supported by decryption');
     });
     expect(signature).toBeUndefined();
     expect(throwCaught).toBe(true);

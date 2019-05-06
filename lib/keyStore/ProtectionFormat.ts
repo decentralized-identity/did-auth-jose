@@ -16,5 +16,10 @@ export enum ProtectionFormat {
   /**
    * Format for a compact JSON encryption
    */
-  CompactJsonJwe
+  CompactJsonJwe,
+
+  /**
+   * Format for a flat JSON encryption
+   */
+  FlatJsonJwe
 }

@@ -21,7 +21,7 @@ import { ProtectionFormat } from './keyStore/ProtectionFormat';
  * Named arguments to construct an Authentication object
  */
 export interface AuthenticationOptions {
-  /** A dictionary with the did document key id mapping to private keys */
+  /** An object with the did document key id mapping to private keys */
   keys?: {[name: string]: PrivateKey};
   /** A dictionary with the did document key id mapping to private key references in the keystore */
   keyReferences?: string[];

@@ -69,8 +69,8 @@ export default class Protect {
    */
   public static async decrypt (keyStorageReference: string, cipher: string,
     format: ProtectionFormat, keyStore: IKeyStore, cryptoFactory: CryptoFactory): Promise<string> {
-    if (format !== ProtectionFormat.CompactJsonJwe) {
-      throw new Error(`Only CompactJsonJwe is supported by decryption`);
+    if (format !== ProtectionFormat.CompactJsonJwe && format !== ProtectionFormat.FlatJsonJwe) {
+      throw new Error(`Only CompactJsonJwe, FlatJsonJwe is supported by decryption`);
     }
     // Get the key
     const jwk: PrivateKey = await (keyStore.get(keyStorageReference, false) as Promise<PrivateKey>)

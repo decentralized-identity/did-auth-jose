@@ -12,9 +12,13 @@ type VerifySignatureDelegate = (signedContent: string, signature: string, jwk: P
  * JWS in flattened json format
  */
 export type FlatJsonJws = {
+  /** The protected (signed) header. */
   protected?: string,
+  /** The unprotected (unverified) header. */
   header?: {[name: string]: string},
+  /** The application-specific payload. */
   payload: string,
+  /** The JWS signature. */
   signature: string
 };
 

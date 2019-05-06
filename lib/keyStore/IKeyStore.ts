@@ -26,7 +26,7 @@ export default interface IKeyStore {
   save (keyReference: string, key: Buffer | PrivateKey): Promise<void>;
 
   /**
-   * Lists all keys with their corresponding key ids
+   * Lists all key references with their corresponding key ids
    */
   list (): Promise<{ [name: string]: string }>;
 

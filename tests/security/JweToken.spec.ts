@@ -13,13 +13,31 @@ describe('JweToken', () => {
   });
 
   describe('constructor', () => {
-    it('should construct from a flattened JSON object with a protected', () => {
+    it('should throw because of missing aad value', () => {
       const jweObject = {
         ciphertext: 'secrets',
         iv: 'vector',
         tag: 'tag',
         encrypted_key: 'a key',
         protected: 'secret properties'
+      };
+      let throws = false;
+      try {
+        new JweToken(jweObject, registry);
+      } catch (err) {
+        throws = true;
+        expect(err.message).toEqual('Missing aad value in JWE');
+      }
+      expect(throws).toEqual(true);
+    });
+    it('should construct from a flattened JSON object with a protected', () => {
+      const jweObject = {
+        ciphertext: 'secrets',
+        iv: 'vector',
+        tag: 'tag',
+        encrypted_key: 'a key',
+        protected: 'secret properties',
+        aad: 'aad'
       };
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['protectedHeaders']).toEqual('secret properties');
@@ -37,7 +55,8 @@ describe('JweToken', () => {
         encrypted_key: 'a key',
         unprotected: {
           test: 'secret property'
-        }
+        },
+        aad: 'aad'
       };
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['unprotectedHeaders']).toBeDefined();
@@ -58,7 +77,8 @@ describe('JweToken', () => {
         },
         header: {
           test2: 'secret boogaloo'
-        }
+        },
+        aad: 'aad'
       };
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['unprotectedHeaders']).toBeDefined();
@@ -73,7 +93,8 @@ describe('JweToken', () => {
         encrypted_key: 'a key',
         header: {
           test: 'secret boogaloo'
-        }
+        },
+        aad: 'aad'
       };
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['unprotectedHeaders']).toBeDefined();
@@ -84,7 +105,8 @@ describe('JweToken', () => {
         ciphertext: 'secrets',
         iv: 'vector',
         tag: 'tag',
-        protected: 'secret properties'
+        protected: 'secret properties',
+        aad: 'aad'
       };
       const jwe = new JweToken(jweObject, registry);
       expect(jwe['protectedHeaders']).toBeUndefined();
@@ -235,7 +257,7 @@ describe('JweToken', () => {
       } as PublicKey;
       const protectedValue = Math.round(Math.random()).toString(16);
       const unprotectedValue = Math.round(Math.random()).toString(16);
-      const aad = Math.round(Math.random()).toString(16);
+      const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
       const plaintext = Math.round(Math.random()).toString(16);
       const jwe = new JweToken(plaintext, registry);
       crypto.reset();
@@ -250,10 +272,10 @@ describe('JweToken', () => {
       });
       expect(crypto.wasEncryptCalled()).toBeTruthy();
       expect(encrypted).toBeDefined();
-      expect(encrypted.aad).toEqual(Base64Url.encode(aad));
       expect(encrypted.unprotected!['test']).toEqual(unprotectedValue);
       expect(JSON.parse(Base64Url.decode(encrypted.protected!))['test']).toEqual(protectedValue);
       expect(encrypted.ciphertext).not.toEqual(plaintext);
+      expect(encrypted.aad).toEqual([encrypted.protected, Base64Url.encode(aad)].join('.'));
     });
   });
 
@@ -366,7 +388,8 @@ describe('JweToken', () => {
         encrypted_key: compactComponents[1],
         iv: compactComponents[2],
         ciphertext: compactComponents[3],
-        tag: compactComponents[4]
+        tag: compactComponents[4],
+        aad: compactComponents[0]
       }, registry);
       const payload = await jwe.decrypt(privateKey);
       expect(payload).toEqual(plaintext);
@@ -379,7 +402,7 @@ describe('JweToken', () => {
       const encrypted = await jweToEncrypt.encryptAsFlattenedJson(pub, {
         aad
       });
-      expect(encrypted.aad).toEqual(Base64Url.encode(aad));
+      expect(encrypted.aad).toEqual([encrypted.protected, Base64Url.encode(aad)].join('.'));
       const jwe = new JweToken(encrypted, registry);
       const payload = await jwe.decrypt(privateKey);
       expect(payload).toEqual(plaintext);
@@ -418,6 +441,7 @@ describe('JweToken', () => {
         ciphertext: '',
         iv: '',
         tag: '',
+        aad: '',
         encrypted_key: ''
       }, registry);
       try {
@@ -439,6 +463,7 @@ describe('JweToken', () => {
         ciphertext: '',
         iv: '',
         tag: '',
+        aad: '',
         encrypted_key: ''
       }, registry);
       try {
@@ -479,6 +504,7 @@ describe('JweToken', () => {
         ciphertext: 'cccc',
         iv: 'bbbb',
         tag: 'dddd',
+        aad: headers,
         encrypted_key: 'aaaa'
       }, registry);
       expect(token.toCompactJwe()).toEqual(`${headers}.aaaa.bbbb.cccc.dddd`);
@@ -545,7 +571,8 @@ describe('JweToken', () => {
         iv: iv,
         encrypted_key: key,
         ciphertext: cipher,
-        tag
+        tag,
+        aad: expectedProtected
       });
     });
 
@@ -561,7 +588,8 @@ describe('JweToken', () => {
         iv: iv,
         encrypted_key: key,
         ciphertext: cipher,
-        tag
+        tag,
+        aad: expectedProtected
       }, registry);
       expect(token.toFlattenedJsonJwe(headers)).toEqual({
         protected: expectedProtected,
@@ -573,7 +601,7 @@ describe('JweToken', () => {
       });
     });
 
-    it('should accept JWEs with no protected header', () => {
+    fit('should accept JWEs with no protected header', () => {
       const headers = {
         enc: 'A128GCM',
         alg: 'RSA-OAEP'
@@ -710,13 +738,13 @@ describe('JweToken', () => {
       'XFBoMYUZodetZdvTiFvSkQ';
       it('should parse the compact JWE correctly', () => {
         const parsedJwe = new JweToken(JWE, registry);
-        expect(parsedJwe['aad']).toEqual(Buffer.from(aad));
         expect(parsedJwe['encryptedKey']).toEqual(Buffer.from(cekEncrypted));
         expect(parsedJwe['iv']).toEqual(Buffer.from(iv));
         expect(parsedJwe['payload']).toEqual(Base64Url.encode(Buffer.from(ciphertext)));
         expect(parsedJwe['protectedHeaders']).toEqual(encodedProtectedHeader);
         expect(parsedJwe['tag']).toEqual(Buffer.from(tag));
         expect(parsedJwe['unprotectedHeaders']).toBeUndefined();
+        expect(parsedJwe['aad']).toEqual(Buffer.from(aad));
       });
 
       it('should decrypt correctly', async () => {

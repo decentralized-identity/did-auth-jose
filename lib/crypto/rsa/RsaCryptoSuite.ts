@@ -13,6 +13,7 @@ import PublicKey from '../../security/PublicKey';
  */
 export class RsaCryptoSuite implements CryptoSuite {
 
+  /** Get symmetric key encryptors */
   getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
     return {};
   }

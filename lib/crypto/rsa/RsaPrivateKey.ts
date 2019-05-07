@@ -7,6 +7,7 @@ const jose = require('node-jose');
 const keystore = jose.JWK.createKeyStore();
 
 /**
+ * TODO - evaluate if we need to support other.
  * Represents Other primes info (RFC7518 6.3.2.7)
  */
 type OtherPrime = {
@@ -22,6 +23,8 @@ type OtherPrime = {
  */
 export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
 
+  // TODO change to alg and the value is depending on the used sha algorithm
+  /** default algorithm */
   readonly defaultSignAlgorithm: string = 'RS256';
 
   /** Private exponent as specified by RFC7518 6.3.2.1 */
@@ -95,6 +98,7 @@ export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
     return RsaPrivateKey.wrapJwk(kid, keygen.toJSON(true));
   }
 
+  /** Get the public key */
   getPublicKey (): PublicKey {
     return {
       kty: this.kty,

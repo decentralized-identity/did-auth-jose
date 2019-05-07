@@ -193,7 +193,8 @@ export default class JweToken extends JoseToken {
     // Base64url encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
-    const aad = Buffer.from(options && options.aad ? `${protectedHeaderBase64Url}.${Base64Url.encode(options.aad)}` : protectedHeaderBase64Url);
+    const aadString = options && options.aad ? `${protectedHeaderBase64Url}.${Base64Url.encode(options.aad)}` : protectedHeaderBase64Url;
+    const aad = Buffer.from(aadString);
 
     // Symmetrically encrypt the content
     const symEncrypter = this.cryptoFactory.getSymmetricEncrypter(header.enc);
@@ -207,17 +208,16 @@ export default class JweToken extends JoseToken {
     const authenticationTagBase64Url = Base64Url.encode(symEncParams.tag);
 
     // Form final compact serialized JWE string.
+    // Add protected header as default aad. See https://tools.ietf.org/html/rfc7516#section-3.3
     let returnJwe: FlatJsonJwe = {
       protected: protectedHeaderBase64Url,
       unprotected: (options || {}).unprotected,
       encrypted_key: encryptedKeyBase64Url,
       iv: initializationVectorBase64Url,
       ciphertext: ciphertextBase64Url,
-      tag: authenticationTagBase64Url
+      tag: authenticationTagBase64Url,
+      aad: aadString
     };
-    if (options && options.aad) {
-      returnJwe.aad = Base64Url.encode(options.aad);
-    }
     return returnJwe;
   }
 

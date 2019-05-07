@@ -235,7 +235,7 @@ describe('JweToken', () => {
       } as PublicKey;
       const protectedValue = Math.round(Math.random()).toString(16);
       const unprotectedValue = Math.round(Math.random()).toString(16);
-      const aad = Math.round(Math.random()).toString(16);
+      const aad = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString(16);
       const plaintext = Math.round(Math.random()).toString(16);
       const jwe = new JweToken(plaintext, registry);
       crypto.reset();
@@ -250,10 +250,10 @@ describe('JweToken', () => {
       });
       expect(crypto.wasEncryptCalled()).toBeTruthy();
       expect(encrypted).toBeDefined();
-      expect(encrypted.aad).toEqual(Base64Url.encode(aad));
       expect(encrypted.unprotected!['test']).toEqual(unprotectedValue);
       expect(JSON.parse(Base64Url.decode(encrypted.protected!))['test']).toEqual(protectedValue);
       expect(encrypted.ciphertext).not.toEqual(plaintext);
+      expect(encrypted.aad).toEqual([encrypted.protected, Base64Url.encode(aad)].join('.'));
     });
   });
 
@@ -379,7 +379,7 @@ describe('JweToken', () => {
       const encrypted = await jweToEncrypt.encryptAsFlattenedJson(pub, {
         aad
       });
-      expect(encrypted.aad).toEqual(Base64Url.encode(aad));
+      expect(encrypted.aad).toEqual([encrypted.protected, Base64Url.encode(aad)].join('.'));
       const jwe = new JweToken(encrypted, registry);
       const payload = await jwe.decrypt(privateKey);
       expect(payload).toEqual(plaintext);

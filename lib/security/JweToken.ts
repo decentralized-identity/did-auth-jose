@@ -43,6 +43,8 @@ export default class JweToken extends JoseToken {
 
   public constructor (content: string | object, protected cryptoFactory: CryptoFactory) {
     super(content, cryptoFactory);
+
+    // TODO throw when bad content is presented
     let jsonContent: any = content;
     // check for compact JWE
     if (typeof content === 'string') {
@@ -58,7 +60,7 @@ export default class JweToken extends JoseToken {
         this.payload = base64EncodedValues[3];
         this.tag = Base64Url.decodeToBuffer(base64EncodedValues[4]);
         // 15. Let the Additional Authentication Data (AAD) be ASCII(encodedprotectedHeader)
-        this.aad = Buffer.from(base64EncodedValues[0]);
+        this.aad = Base64Url.decodeToBuffer(base64EncodedValues[0]);
         return;
       }
       // attempt to parse the string into a JSON object in the event it is a JSON serialized token
@@ -108,10 +110,12 @@ export default class JweToken extends JoseToken {
       this.iv = Base64Url.decodeToBuffer(jsonContent.iv);
       this.tag = Base64Url.decodeToBuffer(jsonContent.tag);
       this.payload = jsonContent.ciphertext;
-      if (jsonContent.aad) {
-        this.aad = Buffer.from(this.protectedHeaders + '.' + jsonContent.aad);
-      } else {
-        this.aad = Buffer.from(this.protectedHeaders || '');
+      if (!this.aad && this.protectedHeaders) {
+        if (jsonContent.aad || jsonContent.aad === '') {
+          this.aad = Base64Url.decodeToBuffer(jsonContent.aad);
+        } else {
+          throw new Error('Missing aad value in JWE');
+        }
       }
     }
   }
@@ -193,7 +197,8 @@ export default class JweToken extends JoseToken {
     // Base64url encode header.
     const protectedHeaderBase64Url = Base64Url.encode(JSON.stringify(header));
 
-    const aad = Buffer.from(options && options.aad ? `${protectedHeaderBase64Url}.${Base64Url.encode(options.aad)}` : protectedHeaderBase64Url);
+    const aadString = options && options.aad ? `${protectedHeaderBase64Url}.${Base64Url.encode(options.aad)}` : protectedHeaderBase64Url;
+    const aad = Buffer.from(aadString);
 
     // Symmetrically encrypt the content
     const symEncrypter = this.cryptoFactory.getSymmetricEncrypter(header.enc);
@@ -207,17 +212,19 @@ export default class JweToken extends JoseToken {
     const authenticationTagBase64Url = Base64Url.encode(symEncParams.tag);
 
     // Form final compact serialized JWE string.
-    let returnJwe: FlatJsonJwe = {
+    // Add protected header as default aad. See https://tools.ietf.org/html/rfc7516#section-3.3
+    const returnJwe: FlatJsonJwe = {
       protected: protectedHeaderBase64Url,
-      unprotected: (options || {}).unprotected,
       encrypted_key: encryptedKeyBase64Url,
       iv: initializationVectorBase64Url,
       ciphertext: ciphertextBase64Url,
-      tag: authenticationTagBase64Url
+      tag: authenticationTagBase64Url,
+      aad: aadString
     };
-    if (options && options.aad) {
-      returnJwe.aad = Base64Url.encode(options.aad);
+    if (options && options.unprotected) {
+      returnJwe.unprotected = options.unprotected;
     }
+
     return returnJwe;
   }
 
@@ -319,7 +326,7 @@ export default class JweToken extends JoseToken {
       throw new Error("'alg' and 'enc' are required to be in the protected header");
     }
     // Compact JWEs must have the default AAD value of the protected header (RFC 7516 5.1.14)
-    if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
+    if (this.aad.compare(Base64Url.decodeToBuffer(this.protectedHeaders || '')) !== 0) {
       throw new Error("'aad' must not be set in original JWE");
     }
     const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
@@ -333,7 +340,7 @@ export default class JweToken extends JoseToken {
    * @param headers unprotected headers to use
    */
   public toFlattenedJsonJwe (headers?: {[member: string]: any}): FlatJsonJwe {
-    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.aad === undefined || this.tag === undefined) {
+    if (this.encryptedKey === undefined || this.payload === undefined || this.iv === undefined || this.tag === undefined) {
       throw new Error('Could not parse contents into a JWE');
     }
     const unprotectedHeaders = headers || this.unprotectedHeaders || undefined;
@@ -350,19 +357,18 @@ export default class JweToken extends JoseToken {
     const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
     const initializationVectorBase64Url = Base64Url.encode(this.iv);
     const authenticationTagBase64Url = Base64Url.encode(this.tag);
-    let jwe = {
+
+    let jwe: FlatJsonJwe = {
       encrypted_key: encryptedKeyBase64Url,
       iv: initializationVectorBase64Url,
       ciphertext: this.payload,
       tag: authenticationTagBase64Url
     };
-    // add AAD if its unique
-    if (this.aad.compare(Buffer.from(this.protectedHeaders || '')) !== 0) {
-      // decrypt the aad and remove the protected headers.
-      const aadParts = this.aad.toString().split('.');
-      // Only the unique part of the aad is required
-      jwe = Object.assign(jwe, { aad: aadParts[1] });
+    
+    if (!this.aad && this.protectedHeaders) {
+      jwe.aad = this.protectedHeaders;
     }
+    
     if (this.protectedHeaders) {
       jwe = Object.assign(jwe, { protected: this.protectedHeaders });
     }

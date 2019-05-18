@@ -571,8 +571,7 @@ describe('JweToken', () => {
         iv: iv,
         encrypted_key: key,
         ciphertext: cipher,
-        tag,
-        aad: expectedProtected
+        tag
       });
     });
 
@@ -601,7 +600,7 @@ describe('JweToken', () => {
       });
     });
 
-    fit('should accept JWEs with no protected header', () => {
+    it('should accept JWEs with no protected header', () => {
       const headers = {
         enc: 'A128GCM',
         alg: 'RSA-OAEP'
@@ -624,7 +623,7 @@ describe('JweToken', () => {
       });
     });
 
-    it('should handle AAD data', () => {
+    fit('should handle AAD data', () => {
       const aad = 'foobarbaz';
       const token = new JweToken({
         protected: expectedProtected,

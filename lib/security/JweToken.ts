@@ -357,14 +357,18 @@ export default class JweToken extends JoseToken {
     const encryptedKeyBase64Url = Base64Url.encode(this.encryptedKey);
     const initializationVectorBase64Url = Base64Url.encode(this.iv);
     const authenticationTagBase64Url = Base64Url.encode(this.tag);
-    const aadBase64Url = Base64Url.encode(this.aad as Buffer);
-    let jwe = {
+
+    let jwe: FlatJsonJwe = {
       encrypted_key: encryptedKeyBase64Url,
       iv: initializationVectorBase64Url,
       ciphertext: this.payload,
-      tag: authenticationTagBase64Url,
-      aad: aadBase64Url
+      tag: authenticationTagBase64Url
     };
+    
+    if (!this.aad && this.protectedHeaders) {
+      jwe.aad = this.protectedHeaders;
+    }
+    
     if (this.protectedHeaders) {
       jwe = Object.assign(jwe, { protected: this.protectedHeaders });
     }

@@ -21,6 +21,10 @@
 <dd><p>Represents an Rsa public key</p></dd>
 <dt><a href="#CryptoFactory">CryptoFactory</a></dt>
 <dd><p>Utility class to handle all CryptoSuite dependency injection</p></dd>
+<dt><a href="#KeyStoreMem">KeyStoreMem</a></dt>
+<dd><p>Class defining methods and properties for a light KeyStore</p></dd>
+<dt><a href="#Protect">Protect</a></dt>
+<dd><p>Class to model protection mechanisms</p></dd>
 <dt><a href="#JoseToken">JoseToken</a></dt>
 <dd><p>Base class for containing common operations for JWE and JWS tokens.
 Not intended for creating instances of this class directly.</p></dd>
@@ -41,10 +45,26 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 ## Members
 
 <dl>
+<dt><a href="#ProtectionFormat">ProtectionFormat</a></dt>
+<dd><p>Enum to define different protection formats</p></dd>
 <dt><a href="#RecommendedKeyType">RecommendedKeyType</a></dt>
 <dd><p>JWA recommended KeyTypes to be implemented</p></dd>
 <dt><a href="#RecommendedKeyType">RecommendedKeyType</a></dt>
 <dd><p>JWK key operations</p></dd>
+<dt><a href="#iss">iss</a></dt>
+<dd><p>DID of the issuer of the request. This should match the signature</p></dd>
+<dt><a href="#response_type">response_type</a></dt>
+<dd><p>MUST be set as 'id_token' in order to match OIDC self-issued protocol</p></dd>
+<dt><a href="#client_id">client_id</a></dt>
+<dd><p>The redirect url as specified in the OIDC self-issued protocol</p></dd>
+<dt><a href="#scope">scope</a></dt>
+<dd><p>MUST be set to 'openid'</p></dd>
+<dt><a href="#state">state</a></dt>
+<dd><p>Opaque value used by issuer for state</p></dd>
+<dt><a href="#nonce">nonce</a></dt>
+<dd><p>Request Nonce</p></dd>
+<dt><a href="#claims">claims</a></dt>
+<dd><p>Claims that are requested</p></dd>
 </dl>
 
 <a name="Authentication"></a>
@@ -56,9 +76,10 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 * [Authentication](#Authentication)
     * [new Authentication(options)](#new_Authentication_new)
-    * [.signAuthenticationRequest(request, responseDid)](#Authentication+signAuthenticationRequest)
+    * [.signAuthenticationRequest(request)](#Authentication+signAuthenticationRequest) ⇒
     * [.verifyAuthenticationRequest(request)](#Authentication+verifyAuthenticationRequest)
-    * [.formAuthenticationResponse(authRequest, responseDid, claims, expiration)](#Authentication+formAuthenticationResponse)
+    * [.formAuthenticationResponse(authRequest, responseDid, claims, expiration, keyReference)](#Authentication+formAuthenticationResponse)
+    * [.getKeyReference(iss)](#Authentication+getKeyReference)
     * [.getKey(did)](#Authentication+getKey) ⇒
     * [.verifySignature(jwsToken)](#Authentication+verifySignature) ⇒
     * [.verifyAuthenticationResponse(authResponse)](#Authentication+verifyAuthenticationResponse) ⇒
@@ -68,9 +89,9 @@ This class hides the JOSE and crypto library dependencies to allow support for a
     * [.getPrivateKeyForJwe(jweToken)](#Authentication+getPrivateKeyForJwe) ⇒
     * [.getPublicKey(request)](#Authentication+getPublicKey) ⇒
     * [.getRequesterNonce(jwsToken)](#Authentication+getRequesterNonce) ⇒
-    * [.signThenEncryptInternal(nonce, localKey, requesterkey, content)](#Authentication+signThenEncryptInternal) ⇒
-    * [.issueNewAccessToken(subjectDid, nonce, issuerKey, requesterKey)](#Authentication+issueNewAccessToken) ⇒
-    * [.createAccessToken(subjectDid, privateKey, validDurationInMinutes)](#Authentication+createAccessToken) ⇒
+    * [.signThenEncryptInternal(nonce, requesterkey, content)](#Authentication+signThenEncryptInternal) ⇒
+    * [.issueNewAccessToken(subjectDid, nonce, issuerKeyReference, requesterKey)](#Authentication+issueNewAccessToken) ⇒
+    * [.createAccessToken(subjectDid, privateKeyReference, validDurationInMinutes)](#Authentication+createAccessToken) ⇒
     * [.verifyJwt(publicKey, signedJwtString, expectedRequesterDid)](#Authentication+verifyJwt) ⇒
 
 <a name="new_Authentication_new"></a>
@@ -85,15 +106,15 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 <a name="Authentication+signAuthenticationRequest"></a>
 
-### authentication.signAuthenticationRequest(request, responseDid)
+### authentication.signAuthenticationRequest(request) ⇒
 <p>Signs the AuthenticationRequest with the private key of the Requester and returns the signed JWT.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+**Returns**: <p>the signed compact JWT.</p>  
 
 | Param | Description |
 | --- | --- |
 | request | <p>well-formed AuthenticationRequest object</p> |
-| responseDid | <p>DID of the requester.</p> |
 
 <a name="Authentication+verifyAuthenticationRequest"></a>
 
@@ -108,7 +129,7 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 <a name="Authentication+formAuthenticationResponse"></a>
 
-### authentication.formAuthenticationResponse(authRequest, responseDid, claims, expiration)
+### authentication.formAuthenticationResponse(authRequest, responseDid, claims, expiration, keyReference)
 <p>Given a challenge, forms a signed response using a given DID that expires at expiration, or a default expiration.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
@@ -119,6 +140,19 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | responseDid | <p>The DID to respond with</p> |
 | claims | <p>Claims that the requester asked for</p> |
 | expiration | <p>optional expiration datetime of the response</p> |
+| keyReference | <p>pointing to the signing key</p> |
+
+<a name="Authentication+getKeyReference"></a>
+
+### authentication.getKeyReference(iss)
+<p>Return a reference to the private key that was passed by caller.
+If the key was passed in by value, it will be stored in the store and a reference is returned</p>
+
+**Kind**: instance method of [<code>Authentication</code>](#Authentication)  
+
+| Param | Description |
+| --- | --- |
+| iss | <p>Issuer identifier</p> |
 
 <a name="Authentication+getKey"></a>
 
@@ -234,7 +268,7 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 
 <a name="Authentication+signThenEncryptInternal"></a>
 
-### authentication.signThenEncryptInternal(nonce, localKey, requesterkey, content) ⇒
+### authentication.signThenEncryptInternal(nonce, requesterkey, content) ⇒
 <p>Forms a JWS using the local private key and content, then wraps in JWE using the requesterKey and nonce.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
@@ -243,13 +277,12 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | Param | Description |
 | --- | --- |
 | nonce | <p>Nonce to be included in the response</p> |
-| localKey | <p>PrivateKey in which to sign the response</p> |
 | requesterkey | <p>PublicKey in which to encrypt the response</p> |
 | content | <p>The content to be signed and encrypted</p> |
 
 <a name="Authentication+issueNewAccessToken"></a>
 
-### authentication.issueNewAccessToken(subjectDid, nonce, issuerKey, requesterKey) ⇒
+### authentication.issueNewAccessToken(subjectDid, nonce, issuerKeyReference, requesterKey) ⇒
 <p>Creates a new access token and wrap it in a JWE/JWS pair.</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
@@ -259,12 +292,12 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | --- | --- |
 | subjectDid | <p>the DID this access token is issue to</p> |
 | nonce | <p>the nonce used in the original request</p> |
-| issuerKey | <p>the key used in the original request</p> |
+| issuerKeyReference | <p>A reference to the key used in the original request</p> |
 | requesterKey | <p>the requesters key to encrypt the response with</p> |
 
 <a name="Authentication+createAccessToken"></a>
 
-### authentication.createAccessToken(subjectDid, privateKey, validDurationInMinutes) ⇒
+### authentication.createAccessToken(subjectDid, privateKeyReference, validDurationInMinutes) ⇒
 <p>Creates an access token for the subjectDid using the privateKey for the validDurationInMinutes</p>
 
 **Kind**: instance method of [<code>Authentication</code>](#Authentication)  
@@ -273,7 +306,7 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 | Param | Description |
 | --- | --- |
 | subjectDid | <p>The did this access token is issued to</p> |
-| privateKey | <p>The private key used to generate this access token</p> |
+| privateKeyReference | <p>The private key used to generate this access token</p> |
 | validDurationInMinutes | <p>The duration this token is valid for, in minutes</p> |
 
 <a name="Authentication+verifyJwt"></a>
@@ -309,6 +342,8 @@ This class hides the JOSE and crypto library dependencies to allow support for a
 **Kind**: global class  
 
 * [AesCryptoSuite](#AesCryptoSuite)
+    * [.getEncrypters()](#AesCryptoSuite+getEncrypters)
+    * [.getSigners()](#AesCryptoSuite+getSigners)
     * [.encryptAesCbcHmacSha2(keySize, hashSize)](#AesCryptoSuite+encryptAesCbcHmacSha2) ⇒
     * [.decryptAesCbcHmacSha2(keySize, hashSize)](#AesCryptoSuite+decryptAesCbcHmacSha2) ⇒
     * [.encryptAesGcm(keySize)](#AesCryptoSuite+encryptAesGcm) ⇒
@@ -319,6 +354,18 @@ This class hides the JOSE and crypto library dependencies to allow support for a
     * [.generateSymmetricKey(bits)](#AesCryptoSuite+generateSymmetricKey)
     * [.generateInitializationVector(bits)](#AesCryptoSuite+generateInitializationVector)
 
+<a name="AesCryptoSuite+getEncrypters"></a>
+
+### aesCryptoSuite.getEncrypters()
+<p>Encryption algorithms</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
+<a name="AesCryptoSuite+getSigners"></a>
+
+### aesCryptoSuite.getSigners()
+<p>Signing algorithms</p>
+
+**Kind**: instance method of [<code>AesCryptoSuite</code>](#AesCryptoSuite)  
 <a name="AesCryptoSuite+encryptAesCbcHmacSha2"></a>
 
 ### aesCryptoSuite.encryptAesCbcHmacSha2(keySize, hashSize) ⇒
@@ -511,6 +558,7 @@ information.</p>
 * [Secp256k1CryptoSuite](#Secp256k1CryptoSuite)
     * _instance_
         * [.getEncrypters()](#Secp256k1CryptoSuite+getEncrypters)
+        * [.getSigners()](#Secp256k1CryptoSuite+getSigners)
         * [.getKeyConstructors()](#Secp256k1CryptoSuite+getKeyConstructors)
     * _static_
         * [.verify()](#Secp256k1CryptoSuite.verify) ⇒
@@ -520,6 +568,12 @@ information.</p>
 
 ### secp256k1CryptoSuite.getEncrypters()
 <p>Encryption with Secp256k1 keys not supported</p>
+
+**Kind**: instance method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
+<a name="Secp256k1CryptoSuite+getSigners"></a>
+
+### secp256k1CryptoSuite.getSigners()
+<p>Signing algorithms</p>
 
 **Kind**: instance method of [<code>Secp256k1CryptoSuite</code>](#Secp256k1CryptoSuite)  
 <a name="Secp256k1CryptoSuite+getKeyConstructors"></a>
@@ -557,13 +611,29 @@ ones spotted in the wild.</p>
 **Kind**: global class  
 
 * [RsaCryptoSuite](#RsaCryptoSuite)
-    * [.verifySignatureRs256()](#RsaCryptoSuite.verifySignatureRs256) ⇒
-    * [.signRs256(jwsHeaderParameters)](#RsaCryptoSuite.signRs256) ⇒
-    * [.verifySignatureRs512()](#RsaCryptoSuite.verifySignatureRs512) ⇒
-    * [.signRs512(jwsHeaderParameters)](#RsaCryptoSuite.signRs512) ⇒
-    * [.encryptRsaOaep()](#RsaCryptoSuite.encryptRsaOaep)
-    * [.decryptRsaOaep()](#RsaCryptoSuite.decryptRsaOaep)
+    * _instance_
+        * [.getEncrypters()](#RsaCryptoSuite+getEncrypters)
+        * [.getSigners()](#RsaCryptoSuite+getSigners)
+    * _static_
+        * [.verifySignatureRs256()](#RsaCryptoSuite.verifySignatureRs256) ⇒
+        * [.signRs256(jwsHeaderParameters)](#RsaCryptoSuite.signRs256) ⇒
+        * [.verifySignatureRs512()](#RsaCryptoSuite.verifySignatureRs512) ⇒
+        * [.signRs512(jwsHeaderParameters)](#RsaCryptoSuite.signRs512) ⇒
+        * [.encryptRsaOaep()](#RsaCryptoSuite.encryptRsaOaep)
+        * [.decryptRsaOaep()](#RsaCryptoSuite.decryptRsaOaep)
 
+<a name="RsaCryptoSuite+getEncrypters"></a>
+
+### rsaCryptoSuite.getEncrypters()
+<p>Encryption algorithms</p>
+
+**Kind**: instance method of [<code>RsaCryptoSuite</code>](#RsaCryptoSuite)  
+<a name="RsaCryptoSuite+getSigners"></a>
+
+### rsaCryptoSuite.getSigners()
+<p>Signing algorithms</p>
+
+**Kind**: instance method of [<code>RsaCryptoSuite</code>](#RsaCryptoSuite)  
 <a name="RsaCryptoSuite.verifySignatureRs256"></a>
 
 ### RsaCryptoSuite.verifySignatureRs256() ⇒
@@ -786,6 +856,126 @@ if the key definition cannot be converted.</p>
 <p>Gets the default symmetric encryption algorithm to use</p>
 
 **Kind**: instance method of [<code>CryptoFactory</code>](#CryptoFactory)  
+<a name="KeyStoreMem"></a>
+
+## KeyStoreMem
+<p>Class defining methods and properties for a light KeyStore</p>
+
+**Kind**: global class  
+
+* [KeyStoreMem](#KeyStoreMem)
+    * [.get(keyReference, publicKeyOnly)](#KeyStoreMem+get)
+    * [.list()](#KeyStoreMem+list)
+    * [.save(keyIdentifier, key)](#KeyStoreMem+save)
+    * [.sign(keyReference, payload, format, cryptoFactory, tokenHeaderParameters)](#KeyStoreMem+sign) ⇒
+    * [.decrypt(keyReference, cipher, format, cryptoFactory)](#KeyStoreMem+decrypt) ⇒
+
+<a name="KeyStoreMem+get"></a>
+
+### keyStoreMem.get(keyReference, publicKeyOnly)
+<p>Returns the key associated with the specified
+key identifier.</p>
+
+**Kind**: instance method of [<code>KeyStoreMem</code>](#KeyStoreMem)  
+
+| Param | Description |
+| --- | --- |
+| keyReference | <p>for which to return the key.</p> |
+| publicKeyOnly | <p>True if only the public key is needed.</p> |
+
+<a name="KeyStoreMem+list"></a>
+
+### keyStoreMem.list()
+<p>Lists all keys with their corresponding key ids</p>
+
+**Kind**: instance method of [<code>KeyStoreMem</code>](#KeyStoreMem)  
+<a name="KeyStoreMem+save"></a>
+
+### keyStoreMem.save(keyIdentifier, key)
+<p>Saves the specified key to the key store using
+the key identifier.</p>
+
+**Kind**: instance method of [<code>KeyStoreMem</code>](#KeyStoreMem)  
+
+| Param | Description |
+| --- | --- |
+| keyIdentifier | <p>for the key being saved.</p> |
+| key | <p>being saved to the key store.</p> |
+
+<a name="KeyStoreMem+sign"></a>
+
+### keyStoreMem.sign(keyReference, payload, format, cryptoFactory, tokenHeaderParameters) ⇒
+<p>Sign the data with the key referenced by keyIdentifier.</p>
+
+**Kind**: instance method of [<code>KeyStoreMem</code>](#KeyStoreMem)  
+**Returns**: <p>The protected message</p>  
+
+| Param | Description |
+| --- | --- |
+| keyReference | <p>for the key used for signature.</p> |
+| payload | <p>Data to sign</p> |
+| format | <p>used to protect the content</p> |
+| cryptoFactory | <p>used to specify the algorithms to use</p> |
+| tokenHeaderParameters | <p>Header parameters in addition to 'alg' and 'kid' to be included in the header of the token.</p> |
+
+<a name="KeyStoreMem+decrypt"></a>
+
+### keyStoreMem.decrypt(keyReference, cipher, format, cryptoFactory) ⇒
+<p>Decrypt the data with the key referenced by keyReference.</p>
+
+**Kind**: instance method of [<code>KeyStoreMem</code>](#KeyStoreMem)  
+**Returns**: <p>The plain text message</p>  
+
+| Param | Description |
+| --- | --- |
+| keyReference | <p>Reference to the key used for signature.</p> |
+| cipher | <p>Data to decrypt</p> |
+| format | <p>Protection format used to decrypt the data</p> |
+| cryptoFactory | <p>used to specify the algorithms to use</p> |
+
+<a name="Protect"></a>
+
+## Protect
+<p>Class to model protection mechanisms</p>
+
+**Kind**: global class  
+
+* [Protect](#Protect)
+    * [.sign(keyStorageReference, payload, format, keyStore, cryptoFactory, tokenHeaderParameters)](#Protect.sign)
+    * [.decrypt(keyStorageReference, cipher, format, keyStore, cryptoFactory)](#Protect.decrypt) ⇒
+
+<a name="Protect.sign"></a>
+
+### Protect.sign(keyStorageReference, payload, format, keyStore, cryptoFactory, tokenHeaderParameters)
+<p>Sign the payload</p>
+
+**Kind**: static method of [<code>Protect</code>](#Protect)  
+
+| Param | Description |
+| --- | --- |
+| keyStorageReference | <p>used to reference the signing key</p> |
+| payload | <p>to sign</p> |
+| format | <p>Signature format</p> |
+| keyStore | <p>where to retrieve the signing key</p> |
+| cryptoFactory | <p>used to specify the algorithms to use</p> |
+| tokenHeaderParameters | <p>Header parameters in addition to 'alg' and 'kid' to be included in the header of the token.</p> |
+
+<a name="Protect.decrypt"></a>
+
+### Protect.decrypt(keyStorageReference, cipher, format, keyStore, cryptoFactory) ⇒
+<p>Decrypt the data with the key referenced by keyReference.</p>
+
+**Kind**: static method of [<code>Protect</code>](#Protect)  
+**Returns**: <p>The plain text message</p>  
+
+| Param | Description |
+| --- | --- |
+| keyStorageReference | <p>Reference to the key used for signature.</p> |
+| cipher | <p>Data to decrypt</p> |
+| format | <p>Protection format used to decrypt the data</p> |
+| keyStore | <p>where to retrieve the signing key</p> |
+| cryptoFactory | <p>used to specify the algorithms to use</p> |
+
 <a name="JoseToken"></a>
 
 ## JoseToken
@@ -1023,6 +1213,12 @@ TODO: Improve implementation perf.</p>
 TODO: Improve implementation perf.</p>
 
 **Kind**: static method of [<code>Base64Url</code>](#Base64Url)  
+<a name="ProtectionFormat"></a>
+
+## ProtectionFormat
+<p>Enum to define different protection formats</p>
+
+**Kind**: global variable  
 <a name="RecommendedKeyType"></a>
 
 ## RecommendedKeyType
@@ -1033,5 +1229,47 @@ TODO: Improve implementation perf.</p>
 
 ## RecommendedKeyType
 <p>JWK key operations</p>
+
+**Kind**: global variable  
+<a name="iss"></a>
+
+## iss
+<p>DID of the issuer of the request. This should match the signature</p>
+
+**Kind**: global variable  
+<a name="response_type"></a>
+
+## response\_type
+<p>MUST be set as 'id_token' in order to match OIDC self-issued protocol</p>
+
+**Kind**: global variable  
+<a name="client_id"></a>
+
+## client\_id
+<p>The redirect url as specified in the OIDC self-issued protocol</p>
+
+**Kind**: global variable  
+<a name="scope"></a>
+
+## scope
+<p>MUST be set to 'openid'</p>
+
+**Kind**: global variable  
+<a name="state"></a>
+
+## state
+<p>Opaque value used by issuer for state</p>
+
+**Kind**: global variable  
+<a name="nonce"></a>
+
+## nonce
+<p>Request Nonce</p>
+
+**Kind**: global variable  
+<a name="claims"></a>
+
+## claims
+<p>Claims that are requested</p>
 
 **Kind**: global variable  

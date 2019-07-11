@@ -94,7 +94,7 @@ export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
       defaultSignAlgorithm: 'RS256',
       kid: kid
     };
-    const keygen = await keystore.generate('RSA', 512, additionalProperties);
+    const keygen = await keystore.generate('RSA', 2048, additionalProperties);
     return RsaPrivateKey.wrapJwk(kid, keygen.toJSON(true));
   }
 

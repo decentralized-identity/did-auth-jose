@@ -61,6 +61,7 @@ describe('Authentication', () => {
       resolver,
       keys: hubKeys
     });
+    
     done();
   });
 
@@ -108,7 +109,7 @@ describe('Authentication', () => {
     claims: { id_token: {} }
   };
 
-  beforeEach(async () => {
+  beforeEach(async (done) => {
     const token = await newAccessToken();
 
     header = {
@@ -128,6 +129,7 @@ describe('Authentication', () => {
       nonce: '123456789',
       claims: { id_token: {} }
     };
+    done();
   });
 
   describe('Authentication', () => {
@@ -163,7 +165,7 @@ describe('Authentication', () => {
 
   describe('signAuthenticationRequest', () => {
 
-    it('should throw error when cannot find key for DID', async () => {
+    it('should throw error when cannot find key for DID', async (done) => {
       authenticationRequest.iss = 'did:test:wrongdid';
       try {
         const context = await auth.signAuthenticationRequest(authenticationRequest);
@@ -172,20 +174,21 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
 
-    it('should sign the request', async () => {
+    it('should sign the request', async (done) => {
       const request = await auth.signAuthenticationRequest(authenticationRequest);
       const jws = new JwsToken(request, registry);
       const payload = await jws.verifySignature(hubPublicKey);
       expect(payload).toEqual(JSON.stringify(authenticationRequest));
+      done();
     });
-
   });
 
   describe('verifyAuthenticationRequest', () => {
 
-    it('should throw error when public key cannot be found', async () => {
+    it('should throw error when public key cannot be found', async (done) => {
       setResolve(hubDID, exampleResolvedDID);
       const request = await auth.signAuthenticationRequest(authenticationRequest);
       try {
@@ -195,9 +198,10 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
 
-    it('should throw error when signing DID does not match issuer', async () => {
+    it('should throw error when signing DID does not match issuer', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       authenticationRequest.iss = 'did:test:wrongdid';
       const token = new JwsToken(authenticationRequest, registry);
@@ -209,21 +213,24 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
 
-    it('should verify the signed authentication request with request as string', async () => {
+    it('should verify the signed authentication request with request as string', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const request = await auth.signAuthenticationRequest(authenticationRequest);
       const context = await auth.verifyAuthenticationRequest(request);
       expect(context).toEqual(authenticationRequest);
+      done();
     });
 
-    it('should verify the signed authentication request with request as buffer', async () => {
+    it('should verify the signed authentication request with request as buffer', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const request = await auth.signAuthenticationRequest(authenticationRequest);
       const requestBuffer = Buffer.from(request);
       const context = await auth.verifyAuthenticationRequest(requestBuffer);
       expect(context).toEqual(authenticationRequest);
+      done();
     });
   });
 
@@ -248,7 +255,7 @@ describe('Authentication', () => {
       done();
     });
 
-    it('should form Authenticaiton Request from Authentication Response with expiration', async () => {
+    it('should form Authenticaiton Request from Authentication Response with expiration', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' }, new Date());
       const jws = new JwsToken(response, registry);
@@ -263,9 +270,10 @@ describe('Authentication', () => {
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
       expect(payloadObj.exp).toBeDefined();
+      done();
     });
 
-    it('should throw error because could not find a key for responseDid', async () => {
+    it('should throw error because could not find a key for responseDid', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       try {
         const response = await auth.formAuthenticationResponse(authenticationRequest, exampleDID, { key: 'hello' });
@@ -274,12 +282,13 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
   });
 
   describe('verifyAuthenticationResponse', async () => {
 
-    it('should verify an authentication response', async () => {
+    it('should verify an authentication response', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
       const payloadObj = await auth.verifyAuthenticationResponse(response);
@@ -292,9 +301,10 @@ describe('Authentication', () => {
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
       expect(payloadObj.exp).toBeDefined();
+      done();
     });
 
-    it('should verify an authentication response', async () => {
+    it('should verify an authentication response', async (done) => {
       setResolve(hubDID, hubResolvedDID);
       const response = await auth.formAuthenticationResponse(authenticationRequest, hubDID, { key: 'hello' });
       const responseBuffer = Buffer.from(response);
@@ -308,9 +318,10 @@ describe('Authentication', () => {
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
       expect(payloadObj.exp).toBeDefined();
+      done();
     });
 
-    it('should throw an error for signer does not match issuer', async () => {
+    it('should throw an error for signer does not match issuer', async (done) => {
       setResolve(hubDID, hubResolvedDID);
 
       const milliseconds = 1000;
@@ -340,12 +351,13 @@ describe('Authentication', () => {
         console.log(err);
         expect(err).toBeDefined();
       }
+      done();
     });
   });
 
   describe('getVerifiedRequest', () => {
 
-    it('should reject for hub keys it does not contain', async () => {
+    it('should reject for hub keys it does not contain', async (done) => {
       const payload = {
         description: 'Authentication test'
       };
@@ -364,9 +376,10 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
 
-    it('should decrypt the request with passed in key', async () => {
+    it('should decrypt the request with passed in key', async (done) => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -388,9 +401,10 @@ describe('Authentication', () => {
 
       const context = await hubAuthentication.getVerifiedRequest(request);
       expect((context as VerifiedRequest).request).toEqual(JSON.stringify(payload));
+      done();
     });
 
-    it('should decrypt the request with a key by reference', async () => {
+    it('should decrypt the request with a key by reference', async (done) => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -404,9 +418,10 @@ describe('Authentication', () => {
 
       const context = await auth.getVerifiedRequest(request);
       expect((context as VerifiedRequest).request).toEqual(JSON.stringify(payload));
+      done();
     });
 
-    it('should return false if access token is wrong token sub', async () => {
+    it('should return false if access token is wrong token sub', async (done) => {
       const examplekeys: any = {};
       examplekeys[`${exampleDID}#keys-1`] = examplekey;
 
@@ -422,9 +437,10 @@ describe('Authentication', () => {
       const jws = await exampleAuth.createAccessToken('xxx', 'key', 10);
       const sub = await exampleAuth.verifyJwt(examplekey, jws, exampleDID);
       expect(sub).toBe(false);
+      done();
     });
 
-    it('should return a new access token', async () => {
+    it('should return a new access token', async (done) => {
       const exampleKeyStore = new KeyStoreMem();
       await exampleKeyStore.save('example', examplekey);
 
@@ -447,9 +463,10 @@ describe('Authentication', () => {
 
       const data = await hubAuth.getVerifiedRequest(token, true);
       expect(data).toBeDefined();
+      done();
     });
 
-    it('should return false if access token is expired', async () => {
+    it('should return false if access token is expired', async (done) => {
       const jws = await registry.constructJws({
         sub: exampleDID,
         iat: new Date(Date.now()),
@@ -464,9 +481,10 @@ describe('Authentication', () => {
       });
       const exp = await exampleAuth.verifyJwt(examplekey, jws, exampleDID);
       expect(exp).toBe(false);
+      done();
     });
 
-    it('should return false if access token is mal formed', async () => {
+    it('should return false if access token is mal formed', async (done) => {
       const jws = 'abcdef';
 
       const examplekeys: any = {};
@@ -478,9 +496,10 @@ describe('Authentication', () => {
       });
       const tokenFormat = await exampleAuth.verifyJwt(examplekey, jws, exampleDID);
       expect(tokenFormat).toBe(false);
+      done();
     });
 
-    it('should return false if payload is missing', async () => {
+    it('should return false if payload is missing', async (done) => {
 
       const examplekeys: any = {};
       examplekeys[`${exampleDID}#keys-1`] = examplekey;
@@ -491,9 +510,10 @@ describe('Authentication', () => {
       });
       const tokenFormat = await exampleAuth.verifyJwt(examplekey, undefined, exampleDID);
       expect(tokenFormat).toBe(false);
+      done();
     });
 
-    it('should throw if invalid signature', async () => {
+    it('should throw if invalid signature', async (done) => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -513,9 +533,10 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
 
-    it('should throw if the requester key is not found', async () => {
+    it('should throw if the requester key is not found', async (done) => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -534,9 +555,10 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
 
-    it('should throw if the key is not understood', async () => {
+    it('should throw if the key is not understood', async (done) => {
       const payload = {
         'test-data': Math.round(Math.random() * Number.MAX_SAFE_INTEGER)
       };
@@ -568,24 +590,26 @@ describe('Authentication', () => {
       } catch (err) {
         expect(err).toBeDefined();
       }
+      done();
     });
   });
 
   describe('getAuthenticatedRequest', () => {
 
-    it(`should encrypt with the DID's public key`, async () => {
+    it(`should encrypt with the DID's public key`, async (done) => {
       const content = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
       const request = await auth.getAuthenticatedRequest(content, exampleDID, await newAccessToken(examplekey));
       const jwe = registry.constructJwe(request.toString());
       const jwsstring = await jwe.decrypt(examplekey);
       const jws = registry.constructJws(jwsstring);
       expect(jws.getPayload()).toEqual(content);
+      done();
     });
 
   });
 
   describe('getAuthenticatedResponse', () => {
-    it('should be understood by decrypt and validate. Key passed by value', async () => {
+    it('should be understood by decrypt and validate. Key passed by value', async (done) => {
       const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
 
       // Set context for client authentication request
@@ -629,8 +653,9 @@ describe('Authentication', () => {
       // Client validates hub response
       const context = await clientAuth.getVerifiedRequest(response, false);
       expect((context as VerifiedRequest).request).toEqual(testContent);
+      done();
     });
-    it('should be understood by decrypt and validate. Key passed by reference', async () => {
+    it('should be understood by decrypt and validate. Key passed by reference', async (done) => {
       const requestString = Math.round(Math.random() * Number.MAX_SAFE_INTEGER).toString();
 
       // Set context for client authentication request
@@ -678,6 +703,7 @@ describe('Authentication', () => {
       // Client validates hub response
       const context = await clientAuth.getVerifiedRequest(response, false);
       expect((context as VerifiedRequest).request).toEqual(testContent);
+      done();
     });
   });
 });

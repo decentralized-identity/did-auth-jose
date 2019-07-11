@@ -1,5 +1,5 @@
 import { DidDocument, unitTestExports } from '@decentralized-identity/did-common-typescript';
-import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, PrivateKeyRsa, RsaCryptoSuite, AesCryptoSuite } from '../lib';
+import { Authentication, CryptoFactory, PublicKey, PrivateKey, JweToken, JwsToken, RsaPrivateKey, RsaCryptoSuite, AesCryptoSuite } from '../lib';
 import { KeyStoreMem, IKeyStore, ProtectionFormat } from '../lib';
 import VerifiedRequest from '../lib/interfaces/VerifiedRequest';
 import AuthenticationResponse from '../lib/interfaces/AuthenticationResponse';
@@ -20,8 +20,8 @@ describe('Authentication', () => {
   const exampleDID = 'did:example:123456789abcdefghi';
 
   beforeAll(async (done) => {
-    hubkey = await PrivateKeyRsa.generatePrivateKey(`${hubDID}#key1`);
-    examplekey = await PrivateKeyRsa.generatePrivateKey(`${exampleDID}#keys-1`);
+    hubkey = await RsaPrivateKey.generatePrivateKey(`${hubDID}#key1`);
+    examplekey = await RsaPrivateKey.generatePrivateKey(`${exampleDID}#keys-1`);
     hubPublicKey = hubkey.getPublicKey();
     hubKeys = {
       'did:example:did#key1': hubkey
@@ -341,7 +341,7 @@ describe('Authentication', () => {
       const jwsToken = new JwsToken(payload, registry);
       const data = await jwsToken.sign(examplekey, header);
 
-      const unknownKey = await PrivateKeyRsa.generatePrivateKey('did:example:totallyunknown#key');
+      const unknownKey = await RsaPrivateKey.generatePrivateKey('did:example:totallyunknown#key');
 
       const jweToken = new JweToken(data, registry);
       const request = await jweToken.encrypt(unknownKey);
@@ -510,7 +510,7 @@ describe('Authentication', () => {
       };
       const jws = new JwsToken(payload, registry);
 
-      const unknownPublicKey = await PrivateKeyRsa.generatePrivateKey(`${exampleDID}#unknown-key`);
+      const unknownPublicKey = await RsaPrivateKey.generatePrivateKey(`${exampleDID}#unknown-key`);
 
       const data = await jws.sign(unknownPublicKey);
 

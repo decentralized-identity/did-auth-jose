@@ -289,7 +289,6 @@ export default class Authentication {
 
     const plaintext = await jwsToken.verifySignature(requesterKey);
 
-
     return {
       localKeyId: localPublicKey.kid,
       requesterPublicKey: requesterKey,
@@ -387,7 +386,7 @@ export default class Authentication {
    * @param document DID Document to convert public keys from
    * @returns an array of all understood public keys
    */
-  private async convertPublicKeys (document: DidDocument): Promise<PublicKey[]> { 
+  private async convertPublicKeys (document: DidDocument): Promise<PublicKey[]> {
     let documentKeys: PublicKey[] = [];
     document.publicKey.forEach((key) => {
       try {
@@ -420,12 +419,12 @@ export default class Authentication {
    * @param jwsToken JWS token in which to get the DID Document of the signing key
    * @returns the Signers DID Document
    */
-  private async getSignerDidDocumentFromJws(jwsToken: JwsToken): Promise<DidDocument> {
+  private async getSignerDidDocumentFromJws (jwsToken: JwsToken): Promise<DidDocument> {
     const jwsHeader = jwsToken.getHeader();
     const requestKid = jwsHeader.kid;
     const requester = DidDocument.getDidFromKeyId(requestKid);
     const result = await this.resolver.resolve(requester);
-    return <DidDocument> result.didDocument;
+    return result.didDocument;
   }
 
   /**

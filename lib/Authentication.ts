@@ -460,13 +460,44 @@ export default class Authentication {
     let referenceToStoredKey: string;
     if (this.keyReferences) {
       // for signing always use last key
-      referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
+      referenceToStoredKey = await new Promise<string>((resolve, reject) => {
+        let signingKey: string | undefined = undefined;
+        this.keyReferences!.forEach(async (keyReference) => {
+          if (signingKey !== undefined) {
+            return;
+          } else {
+            const key = await this.keyStore.get(keyReference, true);
+            if (key instanceof PublicKey) {
+              // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+              if (key.use && key.use === 'sig') {
+                signingKey = keyReference;
+                resolve(keyReference);
+              }
+            }
+          }
+        });
+        reject('Could not find a key with use equal to sig');
+      });
     } else {
       if (!this.keys) {
         throw new Error(`No private keys passed into Authentication`);
       }
-      // Assumption, the last added property is the last and more recent key
-      const kid = Object.keys(this.keys)[Object.keys(this.keys).length - 1];
+      
+      const kid = await new Promise<string>((resolve, reject) => {
+        let signingKey: PrivateKey | undefined = undefined;
+        Object.values(this.keys!).forEach((key) => {
+          if (signingKey !== undefined) {
+            return;
+          } else {
+            // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+            if (key.use && key.use === 'sig') {
+              signingKey = key;
+              resolve(key.kid);
+            }
+          }
+        });
+        reject('Could nto find a key with use equal to sig');
+      });
       referenceToStoredKey = await this.getKeyReference(kid);
     }
 

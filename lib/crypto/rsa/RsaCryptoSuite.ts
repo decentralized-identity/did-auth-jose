@@ -19,11 +19,13 @@ export class RsaCryptoSuite implements CryptoSuite {
 
   /** Encryption algorithms */
   getEncrypters () {
+    const oaep = {
+      encrypt: RsaCryptoSuite.encryptRsaOaep,
+      decrypt: RsaCryptoSuite.decryptRsaOaep
+    };
     return {
-      'RSA-OAEP': {
-        encrypt: RsaCryptoSuite.encryptRsaOaep,
-        decrypt: RsaCryptoSuite.decryptRsaOaep
-      }
+      'RSA-OAEP': oaep,
+      'RSA-OAEP-256': oaep
     };
   }
 

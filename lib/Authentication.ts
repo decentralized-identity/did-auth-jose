@@ -74,7 +74,7 @@ export default class Authentication {
       throw new Error(`A key by reference (keyReferences) or a key by value (keys) is required`);
     }
 
-    if (this.keys && this.keyReferences) {
+    if (this.keys && (this.keyReferences && this.keyReferences.length > 0)) {
       throw new Error(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
     }
 
@@ -482,7 +482,7 @@ export default class Authentication {
       if (!this.keys) {
         throw new Error(`No private keys passed into Authentication`);
       }
-      
+
       const kid = await new Promise<string>((resolve, reject) => {
         let signingKey: PrivateKey | undefined = undefined;
         Object.values(this.keys!).forEach((key) => {

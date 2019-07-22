@@ -43,6 +43,8 @@ export default class RsaPublicKey extends PublicKey {
       }
       this.e = jwk.e;
       this.n = jwk.n;
+      this.key_ops = jwk.key_ops;
+      this.use = this.use;
     } else {
       throw new Error('Cannot parse RsaVerificationKey2018');
     }

@@ -40,9 +40,9 @@ export default class EcPublicKey extends PublicKey {
       if (!jwk.crv || !jwk.x || !jwk.y) {
         throw new Error('JWK missing required parameters.');
       }
-      // this.crv = jwk.crv;
-      // this.x = jwk.x;
-      // this.y = jwk.y;
+      this.crv = jwk.crv;
+      this.x = jwk.x;
+      this.y = jwk.y;
       // this.key_ops = jwk.key_ops;
       // this.use = this.use;
     } else {

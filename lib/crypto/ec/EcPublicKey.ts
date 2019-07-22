@@ -31,14 +31,20 @@ export default class EcPublicKey extends PublicKey {
       if (!keyData.id.endsWith(jwk.kid)) {
         throw new Error('JWK kid does not match Did publickey id.');
       }
+      Object.keys(jwk).forEach((field) => {
+        if (field === 'kid') {
+          return;
+        }
+        (this as any)[field] = jwk[field];
+      });
       if (!jwk.crv || !jwk.x || !jwk.y) {
         throw new Error('JWK missing required parameters.');
       }
-      this.crv = jwk.crv;
-      this.x = jwk.x;
-      this.y = jwk.y;
-      this.key_ops = jwk.key_ops;
-      this.use = this.use;
+      // this.crv = jwk.crv;
+      // this.x = jwk.x;
+      // this.y = jwk.y;
+      // this.key_ops = jwk.key_ops;
+      // this.use = this.use;
     } else {
       throw new Error('Cannot parse Elliptic Curve key.');
     }

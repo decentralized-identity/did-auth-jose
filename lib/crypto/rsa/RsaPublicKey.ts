@@ -32,11 +32,16 @@ export default class RsaPublicKey extends PublicKey {
       if (!keyData.id.endsWith(jwk.kid)) {
         throw new Error(`JWK kid '${jwk.kid}' does not match DID public key id '${keyData.id}'.`);
       }
+      Object.keys(jwk).forEach((field) => {
+        if (field === 'kid') {
+          return;
+        }
+        (this as any)[field] = jwk[field];
+      });
       if (!jwk.n || !jwk.e) {
         throw new Error('JWK missing required parameters');
       }
-      this.n = jwk.n;
-      this.e = jwk.e;
+
     } else {
       throw new Error('Cannot parse RsaVerificationKey2018');
     }

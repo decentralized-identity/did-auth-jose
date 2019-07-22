@@ -74,7 +74,7 @@ export default class Authentication {
       throw new Error(`A key by reference (keyReferences) or a key by value (keys) is required`);
     }
 
-    if (this.keys && (this.keyReferences && this.keyReferences.length > 0)) {
+    if (this.keys && Object.keys(this.keys).length > 0 && (this.keyReferences && this.keyReferences.length > 0)) {
       throw new Error(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
     }
 
@@ -93,7 +93,7 @@ export default class Authentication {
 
     // Make sure the passed in key is stored in the key store
     let referenceToStoredKey: string;
-    if (this.keyReferences) {
+    if (this.keyReferences && this.keyReferences.length > 0) {
       // for signing always use last key
       referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
     } else {
@@ -172,7 +172,7 @@ export default class Authentication {
    */
   private async getKeyReference (iss: string): Promise<string> {
     let referenceToStoredKey: string;
-    if (this.keys) {
+    if (this.keys && Object.keys(this.keys).length > 0 ) {
       const key: PrivateKey | undefined = this.getKey(iss);
       if (!key) {
         throw new Error(`Could not find a key for ${iss}`);
@@ -338,7 +338,7 @@ export default class Authentication {
    */
   private async getPrivateKeyForJwe (jweToken: JweToken): Promise<string> {
     const keyId = jweToken.getHeader().kid;
-    if (this.keys) {
+    if (this.keys && Object.keys(this.keys).length > 0) {
       const key = this.keys[keyId];
       if (!key) {
         throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);
@@ -458,7 +458,7 @@ export default class Authentication {
     }
     // Make sure the passed in key is stored in the key store
     let referenceToStoredKey: string;
-    if (this.keyReferences) {
+    if (this.keyReferences && this.keyReferences.length > 0) {
       // for signing always use last key
       referenceToStoredKey = await new Promise<string>((resolve, reject) => {
         let signingKey: string | undefined = undefined;

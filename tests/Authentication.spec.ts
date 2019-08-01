@@ -64,6 +64,13 @@ describe('Authentication', () => {
     done();
   });
 
+  beforeEach(() => {
+    hubkey.use = 'sig';
+    examplekey.use = 'sig';
+    hubPublicKey.use = 'enc';
+    examplePublicKey.use = 'enc';
+  });
+
   // creates a new access token for 5 minutes using the key given
   async function newAccessToken (key: PrivateKey = hubkey): Promise<string> {
     return registry.constructJws({
@@ -233,6 +240,7 @@ describe('Authentication', () => {
       expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
+      hubPublicKey.use = 'sig';
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
@@ -250,6 +258,7 @@ describe('Authentication', () => {
       expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
+      hubPublicKey.use = 'sig';
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
@@ -278,6 +287,7 @@ describe('Authentication', () => {
       expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
+      hubPublicKey.use = 'sig';
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
@@ -293,6 +303,7 @@ describe('Authentication', () => {
       expect(payloadObj.sub).toBeDefined();
       expect(payloadObj.aud).toEqual('https://example.com/endpoint/8377464');
       expect(payloadObj.nonce).toEqual('123456789');
+      hubPublicKey.use = 'sig';
       expect(payloadObj.sub_jwk).toEqual(hubPublicKey);
       expect(payloadObj.did).toEqual(hubDID);
       expect(payloadObj.iat).toBeDefined();
@@ -423,7 +434,7 @@ describe('Authentication', () => {
         keyReferences: ['example']
       });
 
-      const token = await exampleAuth.issueNewAccessToken(exampleDID, '1234567890', 'example', hubPublicKey);
+      const token = await exampleAuth.issueNewAccessToken(exampleDID, '1234567890', 'example', [hubPublicKey]);
 
       const hubKeyStore = new KeyStoreMem();
       await hubKeyStore.save('hub', hubkey);

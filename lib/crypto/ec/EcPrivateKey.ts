@@ -31,7 +31,9 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
     if (!('d' in data)) {
       throw new Error('d required for private elliptic curve key.');
     }
+    this.kid = data.kid;
     this.d = data.d;
+    this.use = data.use;
   }
 
   /**
@@ -71,7 +73,7 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
       crv: this.crv,
       x: this.x,
       y: this.y,
-      use: 'verify',
+      use: this.use,
       defaultEncryptionAlgorithm: 'none'
     } as EcPublicKey;
   }

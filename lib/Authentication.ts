@@ -172,7 +172,7 @@ export default class Authentication {
    */
   private async getKeyReference (iss: string): Promise<string> {
     let referenceToStoredKey: string;
-    if (this.keys && Object.keys(this.keys).length > 0 ) {
+    if (this.keys && Object.keys(this.keys).length > 0) {
       const key: PrivateKey | undefined = this.getKey(iss);
       if (!key) {
         throw new Error(`Could not find a key for ${iss}`);
@@ -364,6 +364,9 @@ export default class Authentication {
    * @returns a public key with encryption use
    */
   private selectEncryptionKey (publicKeys: PublicKey[]): PublicKey {
+    if (publicKeys.length === 0) {
+      throw new Error('No Public Keys provided');
+    }
     let encryptionKey: PublicKey | undefined = undefined;
     publicKeys.forEach((key) => {
       if (encryptionKey !== undefined) {
@@ -457,48 +460,42 @@ export default class Authentication {
       jwsHeaderParameters['did-access-token'] = accesstoken;
     }
     // Make sure the passed in key is stored in the key store
-    let referenceToStoredKey: string;
+    let referenceToStoredKey: string | undefined;
     if (this.keyReferences && this.keyReferences.length > 0) {
       // for signing always use last key
-      referenceToStoredKey = await new Promise<string>((resolve, reject) => {
-        let signingKey: string | undefined = undefined;
-        this.keyReferences!.forEach(async (keyReference) => {
-          if (signingKey !== undefined) {
-            return;
-          } else {
-            const key = await this.keyStore.get(keyReference, true);
-            if (key instanceof PublicKey) {
-              // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
-              if (key.use && key.use === 'sig') {
-                signingKey = keyReference;
-                resolve(keyReference);
-              }
-            }
+      for (let i = 0; i < this.keyReferences.length; i++) {
+        let keyReference = this.keyReferences[i];
+        const key = await this.keyStore.get(keyReference, true);
+        if ('use' in key) {
+          // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+          if (key.use && key.use === 'sig') {
+            referenceToStoredKey = keyReference;
+            break;
           }
-        });
-        reject('Could not find a key with use equal to sig');
-      });
+        }
+      }
     } else {
       if (!this.keys) {
         throw new Error(`No private keys passed into Authentication`);
       }
 
-      const kid = await new Promise<string>((resolve, reject) => {
-        let signingKey: PrivateKey | undefined = undefined;
-        Object.values(this.keys!).forEach((key) => {
-          if (signingKey !== undefined) {
-            return;
-          } else {
-            // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
-            if (key.use && key.use === 'sig') {
-              signingKey = key;
-              resolve(key.kid);
-            }
-          }
-        });
-        reject('Could nto find a key with use equal to sig');
-      });
-      referenceToStoredKey = await this.getKeyReference(kid);
+      let sigKey: PrivateKey | undefined;
+      // for signing always use last key
+      const keys = Object.values(this.keys);
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i];
+        // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+        if (key.use && key.use === 'sig') {
+          sigKey = key;
+          break;
+        }
+      }
+      if (sigKey) {
+        referenceToStoredKey = await this.getKeyReference(sigKey.kid);
+      }
+    }
+    if (referenceToStoredKey === undefined) {
+      throw new Error('Could not find a key with use equal to sig');
     }
 
     const jwsCompactString = await this.keyStore.sign(referenceToStoredKey, content, ProtectionFormat.CompactJsonJws, this.factory, jwsHeaderParameters);

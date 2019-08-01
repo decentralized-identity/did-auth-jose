@@ -101,6 +101,7 @@ export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
       kid: this.kid,
       e: this.e,
       n: this.n,
+      use: this.use,
       defaultEncryptionAlgorithm: this.defaultEncryptionAlgorithm
     } as RsaPublicKey;
   }

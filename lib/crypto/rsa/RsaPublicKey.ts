@@ -7,8 +7,10 @@ import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typesc
  * @extends PublicKey
  */
 export default class RsaPublicKey extends PublicKey {
+  /** Key Type */
   kty = RecommendedKeyType.Rsa;
 
+  /** alg parameter */
   readonly defaultEncryptionAlgorithm: string = 'RSA-OAEP'; // should be -256
 
   /** Modulus */
@@ -35,8 +37,10 @@ export default class RsaPublicKey extends PublicKey {
       if (!jwk.n || !jwk.e) {
         throw new Error('JWK missing required parameters');
       }
-      this.n = jwk.n;
       this.e = jwk.e;
+      this.n = jwk.n;
+      this.key_ops = jwk.key_ops;
+      this.use = jwk.use;
     } else {
       throw new Error('Cannot parse RsaVerificationKey2018');
     }

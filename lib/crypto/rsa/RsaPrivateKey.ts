@@ -6,6 +6,7 @@ import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typesc
 const jose = require('node-jose');
 const keystore = jose.JWK.createKeyStore();
 
+/* tslint:disable:completed-docs */
 /**
  * Represents Other primes info (RFC7518 6.3.2.7)
  */
@@ -14,6 +15,7 @@ type OtherPrime = {
   d: string,
   t: string
 };
+/* tslint:enable:completed-docs */
 
 /**
  * Represents an Rsa private key
@@ -22,6 +24,7 @@ type OtherPrime = {
  */
 export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
 
+  /** the 'alg' parameter */
   readonly defaultSignAlgorithm: string = 'RS256';
 
   /** Private exponent as specified by RFC7518 6.3.2.1 */
@@ -95,12 +98,14 @@ export default class RsaPrivateKey extends RsaPublicKey implements PrivateKey {
     return RsaPrivateKey.wrapJwk(kid, keygen.toJSON(true));
   }
 
+  /** Gets the public key */
   getPublicKey (): PublicKey {
     return {
       kty: this.kty,
       kid: this.kid,
       e: this.e,
       n: this.n,
+      use: this.use,
       defaultEncryptionAlgorithm: this.defaultEncryptionAlgorithm
     } as RsaPublicKey;
   }

@@ -74,7 +74,7 @@ export default class Authentication {
       throw new Error(`A key by reference (keyReferences) or a key by value (keys) is required`);
     }
 
-    if (this.keys && this.keyReferences) {
+    if (this.keys && Object.keys(this.keys).length > 0 && (this.keyReferences && this.keyReferences.length > 0)) {
       throw new Error(`Do not mix a key by reference (keyReferences) with a key by value (keys) is required`);
     }
 
@@ -93,7 +93,7 @@ export default class Authentication {
 
     // Make sure the passed in key is stored in the key store
     let referenceToStoredKey: string;
-    if (this.keyReferences) {
+    if (this.keyReferences && this.keyReferences.length > 0) {
       // for signing always use last key
       referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
     } else {
@@ -172,7 +172,7 @@ export default class Authentication {
    */
   private async getKeyReference (iss: string): Promise<string> {
     let referenceToStoredKey: string;
-    if (this.keys) {
+    if (this.keys && Object.keys(this.keys).length > 0) {
       const key: PrivateKey | undefined = this.getKey(iss);
       if (!key) {
         throw new Error(`Could not find a key for ${iss}`);
@@ -264,9 +264,12 @@ export default class Authentication {
     // getting metadata for the request
     const jwsHeader = jwsToken.getHeader();
     const requestKid = jwsHeader.kid;
+    const requesterDocument = await this.getSignerDidDocumentFromJws(jwsToken);
     const requester = DidDocument.getDidFromKeyId(requestKid);
-    const requesterKey = await this.getPublicKey(jwsToken);
+    const requesterKey = await this.getPublicKey(jwsToken, requesterDocument);
     const nonce = this.getRequesterNonce(jwsToken);
+
+    const requesterKeys = await this.convertPublicKeys(requesterDocument);
 
     // Get the public key for validation
     const localPublicKey = await this.keyStore.get(keyReference, true) as PublicKey;
@@ -276,7 +279,7 @@ export default class Authentication {
       const accessTokenString = jwsHeader['did-access-token'];
       if (!accessTokenString) {
         // no access token was given, this should be a seperate endpoint request
-        return this.issueNewAccessToken(requester, nonce, keyReference, requesterKey);
+        return this.issueNewAccessToken(requester, nonce, keyReference, requesterKeys);
       }
 
       if (!await this.verifyJwt(localPublicKey, accessTokenString, requester)) {
@@ -289,6 +292,7 @@ export default class Authentication {
     return {
       localKeyId: localPublicKey.kid,
       requesterPublicKey: requesterKey,
+      requesterPublicKeys: requesterKeys,
       nonce,
       request: plaintext
     };
@@ -303,8 +307,7 @@ export default class Authentication {
   public async getAuthenticatedResponse (
     request: VerifiedRequest,
     response: string): Promise<Buffer> {
-
-    return this.signThenEncryptInternal(request.nonce, request.requesterPublicKey, response);
+    return this.signThenEncryptInternal(request.nonce, request.requesterPublicKeys, response);
   }
 
   /**
@@ -319,23 +322,13 @@ export default class Authentication {
     recipient: string,
     accessToken?: string
   ): Promise<Buffer> {
-
     const requesterNonce = uuid();
 
     const result = await this.resolver.resolve(recipient);
     const document: DidDocument = result.didDocument;
+    const publicKeys = await this.convertPublicKeys(document);
 
-    if (!document.publicKey) {
-      throw new Error(`Could not find public keys for ${recipient}`);
-    }
-
-    // perhaps a more intellegent key choosing algorithm could be implemented here
-    // TODO get the key based on kid
-    const documentKey = document.publicKey[0];
-
-    const publicKey = this.factory.constructPublicKey(documentKey);
-
-    return this.signThenEncryptInternal(requesterNonce, publicKey, content, accessToken);
+    return this.signThenEncryptInternal(requesterNonce, publicKeys, content, accessToken);
   }
 
   /**
@@ -345,7 +338,7 @@ export default class Authentication {
    */
   private async getPrivateKeyForJwe (jweToken: JweToken): Promise<string> {
     const keyId = jweToken.getHeader().kid;
-    if (this.keys) {
+    if (this.keys && Object.keys(this.keys).length > 0) {
       const key = this.keys[keyId];
       if (!key) {
         throw new Error(`Unable to decrypt request; encryption key '${keyId}' not found`);
@@ -366,23 +359,75 @@ export default class Authentication {
   }
 
   /**
+   * Given an array of public keys, returns a key with use 'enc'
+   * @param publicKeys Array of public keys
+   * @returns a public key with encryption use
+   */
+  private selectEncryptionKey (publicKeys: PublicKey[]): PublicKey {
+    if (publicKeys.length === 0) {
+      throw new Error('No Public Keys provided');
+    }
+    let encryptionKey: PublicKey | undefined = undefined;
+    publicKeys.forEach((key) => {
+      if (encryptionKey !== undefined) {
+        return;
+      }
+      // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+      if (key.use && key.use === 'enc') {
+        encryptionKey = key;
+      }
+    });
+    if (!encryptionKey) {
+      throw new Error('Could not find a usable encryption key');
+    } else {
+      return encryptionKey;
+    }
+  }
+
+  /**
+   * Gets @See PublicKey array from a @see DidDocument
+   * @param document DID Document to convert public keys from
+   * @returns an array of all understood public keys
+   */
+  private async convertPublicKeys (document: DidDocument): Promise<PublicKey[]> {
+    let documentKeys: PublicKey[] = [];
+    document.publicKey.forEach((key) => {
+      try {
+        const publicKey = this.factory.constructPublicKey(key);
+        documentKeys.push(publicKey);
+      } catch (error) {
+        console.log(`Unable to interpret key ${key.id}: ${error.message}`);
+      }
+    });
+    return documentKeys;
+  }
+
+  /**
    * Retrieves the PublicKey used to sign a JWS
    * @param request the JWE string
    * @returns The PublicKey the JWS used for signing
    */
-  private async getPublicKey (jwsToken: JwsToken): Promise<PublicKey> {
+  private async getPublicKey (jwsToken: JwsToken, document: DidDocument): Promise<PublicKey> {
     const jwsHeader = jwsToken.getHeader();
     const requestKid = jwsHeader.kid;
-    const requester = DidDocument.getDidFromKeyId(requestKid);
-
-    // get the Public Key
-    const result = await this.resolver.resolve(requester);
-    const document: DidDocument = result.didDocument;
     const documentKey = document.getPublicKey(requestKid);
     if (!documentKey) {
       throw new Error(`Unable to verify request; signature key ${requestKid} not found`);
     }
     return this.factory.constructPublicKey(documentKey);
+  }
+
+  /**
+   * Gets the DID document of the signer of the JWS token
+   * @param jwsToken JWS token in which to get the DID Document of the signing key
+   * @returns the Signers DID Document
+   */
+  private async getSignerDidDocumentFromJws (jwsToken: JwsToken): Promise<DidDocument> {
+    const jwsHeader = jwsToken.getHeader();
+    const requestKid = jwsHeader.kid;
+    const requester = DidDocument.getDidFromKeyId(requestKid);
+    const result = await this.resolver.resolve(requester);
+    return result.didDocument;
   }
 
   /**
@@ -397,32 +442,60 @@ export default class Authentication {
   /**
    * Forms a JWS using the local private key and content, then wraps in JWE using the requesterKey and nonce.
    * @param nonce Nonce to be included in the response
-   * @param requesterkey PublicKey in which to encrypt the response
+   * @param requesterkeys PublicKeys in which to find one to encrypt the response
    * @param content The content to be signed and encrypted
    * @returns An encrypted and signed form of the content
    */
   private async signThenEncryptInternal (
     nonce: string,
-    requesterkey: PublicKey,
+    requesterkeys: PublicKey[],
     content: string,
     accesstoken?: string
   ): Promise<Buffer> {
+
+    const requesterkey = this.selectEncryptionKey(requesterkeys);
+
     const jwsHeaderParameters: any = { 'did-requester-nonce': nonce };
     if (accesstoken) {
       jwsHeaderParameters['did-access-token'] = accesstoken;
     }
     // Make sure the passed in key is stored in the key store
-    let referenceToStoredKey: string;
-    if (this.keyReferences) {
+    let referenceToStoredKey: string | undefined;
+    if (this.keyReferences && this.keyReferences.length > 0) {
       // for signing always use last key
-      referenceToStoredKey = this.keyReferences[this.keyReferences.length - 1];
+      for (let i = 0; i < this.keyReferences.length; i++) {
+        let keyReference = this.keyReferences[i];
+        const key = await this.keyStore.get(keyReference, true);
+        if ('use' in key) {
+          // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+          if (key.use && key.use === 'sig') {
+            referenceToStoredKey = keyReference;
+            break;
+          }
+        }
+      }
     } else {
       if (!this.keys) {
         throw new Error(`No private keys passed into Authentication`);
       }
-      // Assumption, the last added property is the last and more recent key
-      const kid = Object.keys(this.keys)[Object.keys(this.keys).length - 1];
-      referenceToStoredKey = await this.getKeyReference(kid);
+
+      let sigKey: PrivateKey | undefined;
+      // for signing always use last key
+      const keys = Object.values(this.keys);
+      for (let i = 0; i < keys.length; i++) {
+        let key = keys[i];
+        // RFC 7517 4.2 values defined are case-sensitive "enc" and "sig"
+        if (key.use && key.use === 'sig') {
+          sigKey = key;
+          break;
+        }
+      }
+      if (sigKey) {
+        referenceToStoredKey = await this.getKeyReference(sigKey.kid);
+      }
+    }
+    if (referenceToStoredKey === undefined) {
+      throw new Error('Could not find a key with use equal to sig');
     }
 
     const jwsCompactString = await this.keyStore.sign(referenceToStoredKey, content, ProtectionFormat.CompactJsonJws, this.factory, jwsHeaderParameters);
@@ -439,13 +512,13 @@ export default class Authentication {
    * @param requesterKey the requesters key to encrypt the response with
    * @returns A new access token
    */
-  private async issueNewAccessToken (subjectDid: string, nonce: string, issuerKeyReference: string, requesterKey: PublicKey)
+  private async issueNewAccessToken (subjectDid: string, nonce: string, issuerKeyReference: string, requesterKeys: PublicKey[])
     : Promise<Buffer> {
     // Create a new access token.
     const accessToken = await this.createAccessToken(subjectDid, issuerKeyReference, this.tokenValidDurationInMinutes);
 
     // Sign then encrypt the new access token.
-    return this.signThenEncryptInternal(nonce, requesterKey, accessToken);
+    return this.signThenEncryptInternal(nonce, requesterKeys, accessToken);
   }
 
   /**

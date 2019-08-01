@@ -11,6 +11,7 @@ const ecKey = require('ec-key');
  */
 export class Secp256k1CryptoSuite implements CryptoSuite {
 
+  /** Symmetric key encrypters */
   getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
     return {};
   }

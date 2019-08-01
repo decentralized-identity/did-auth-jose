@@ -16,5 +16,7 @@ export default interface AuthenticationRequest {
   /** Request Nonce */
   nonce: string;
   /** Claims that are requested */
-  claims: {id_token: {[key: string]: any}};
+  claims: {
+    /** oidc id_token claim */
+    id_token: {[key: string]: any}};
 }

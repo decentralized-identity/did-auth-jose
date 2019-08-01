@@ -13,17 +13,20 @@ import PublicKey from '../../security/PublicKey';
  */
 export class RsaCryptoSuite implements CryptoSuite {
 
+  /** Symmetric key encrypters */
   getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
     return {};
   }
 
   /** Encryption algorithms */
   getEncrypters () {
+    const oaep = {
+      encrypt: RsaCryptoSuite.encryptRsaOaep,
+      decrypt: RsaCryptoSuite.decryptRsaOaep
+    };
     return {
-      'RSA-OAEP': {
-        encrypt: RsaCryptoSuite.encryptRsaOaep,
-        decrypt: RsaCryptoSuite.decryptRsaOaep
-      }
+      'RSA-OAEP': oaep,
+      'RSA-OAEP-256': oaep
     };
   }
 
@@ -41,6 +44,7 @@ export class RsaCryptoSuite implements CryptoSuite {
     };
   }
 
+  /** Public Key constructors */
   getKeyConstructors () {
     return {
       RsaVerificationKey2018: (keyData: IDidDocumentPublicKey) => { return new RsaPublicKey(keyData); }

@@ -16,10 +16,12 @@ export default class AesCryptoSuite implements CryptoSuite {
     return {};
   }
 
+  /** Public key constructors */
   getKeyConstructors (): PublicKeyConstructors {
     return {};
   }
 
+  /** Symmetric key algorithms */
   getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
     return {
       'A128GCM': {
@@ -56,7 +58,15 @@ export default class AesCryptoSuite implements CryptoSuite {
    * @returns a SymmetricEncrypter encrypt function
    */
   private encryptAesCbcHmacSha2 (keySize: number, hashSize: number): (plaintext: Buffer, additionalAuthenticatedData: Buffer) =>
-  Promise<{ciphertext: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer}> {
+  Promise<{
+    /** Ciphertext */
+    ciphertext: Buffer,
+    /** Initialization Vector */
+    initializationVector: Buffer,
+    /** Content Encryption Key */
+    key: Buffer,
+    /** Authentication Tag */
+    tag: Buffer}> {
     return async (plaintext: Buffer, additionalAuthenticatedData: Buffer) => {
       const mackey = this.generateSymmetricKey(keySize);
       const enckey = this.generateSymmetricKey(keySize);
@@ -110,7 +120,15 @@ export default class AesCryptoSuite implements CryptoSuite {
    * @returns a SymmetricEncrypter encrypt function
    */
   private encryptAesGcm (keySize: number): (plaintext: Buffer, additionalAuthenticatedData: Buffer) =>
-  Promise<{ciphertext: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer}> {
+  Promise<{
+    /** Ciphertext */
+    ciphertext: Buffer,
+    /** Initialization Vector */
+    initializationVector: Buffer,
+    /** Content Encryption Key */
+    key: Buffer,
+    /** Authentication Tag */
+    tag: Buffer}> {
     return async (plaintext: Buffer, additionalAuthenticatedData: Buffer) => {
       const key = this.generateSymmetricKey(keySize);
       const initializationVector = this.generateInitializationVector(96);

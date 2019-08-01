@@ -70,7 +70,15 @@ export interface SymmetricEncrypter {
    * @param additionalAuthenticatedData Data that will be integrity checked but not encrypted
    * @returns An object containing the corresponding ciphertext, initializationVector, key, and tag
    */
-  encrypt (plaintext: Buffer, additionalAuthenticatedData: Buffer): Promise<{ciphertext: Buffer, initializationVector: Buffer, key: Buffer, tag: Buffer}>;
+  encrypt (plaintext: Buffer, additionalAuthenticatedData: Buffer): Promise<{
+    /** Ciphertext */
+    ciphertext: Buffer,
+    /** Initialization Vector */
+    initializationVector: Buffer,
+    /** Content Encryption Key */
+    key: Buffer,
+    /** Authentication Tag */
+    tag: Buffer}>;
 
   /**
    * Given the ciphertext, additional authenticated data, initialization vector, key, and tag,

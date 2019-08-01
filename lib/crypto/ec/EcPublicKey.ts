@@ -7,6 +7,7 @@ import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typesc
  * @extends PublicKey
  */
 export default class EcPublicKey extends PublicKey {
+  /** key type */
   kty = RecommendedKeyType.Ec;
 
   /** curve */
@@ -38,7 +39,7 @@ export default class EcPublicKey extends PublicKey {
       this.x = jwk.x;
       this.y = jwk.y;
       this.key_ops = jwk.key_ops;
-      this.use = this.use;
+      this.use = jwk.use;
     } else {
       throw new Error('Cannot parse Elliptic Curve key.');
     }

@@ -114,7 +114,11 @@ export default class JwsToken extends JoseToken {
    * @param options Additional protected and header fields to include in the JWS
    */
   public async signAsFlattenedJson (jwk: PrivateKey,
-    options?: {protected?: { [name: string]: string }, header?: { [name: string]: string }}):
+    options?: {
+      /** Protected headers to include */
+      protected?: { [name: string]: string },
+      /** Unprotected headers to include */
+      header?: { [name: string]: string }}):
     Promise<FlatJsonJws> {
     // Steps according to RTC7515 5.1
     // 2. Compute encoded payload vlaue base64URL(JWS Payload)

@@ -66,6 +66,7 @@ export default class EcPrivateKey extends EcPublicKey implements PrivateKey {
     return EcPrivateKey.wrapJwk(kid, jwk);
   }
 
+  /** Gets the corresponding public key */
   getPublicKey (): PublicKey {
     return {
       kty: this.kty,

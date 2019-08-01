@@ -7,8 +7,10 @@ import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typesc
  * @extends PublicKey
  */
 export default class RsaPublicKey extends PublicKey {
+  /** Key Type */
   kty = RecommendedKeyType.Rsa;
 
+  /** alg parameter */
   readonly defaultEncryptionAlgorithm: string = 'RSA-OAEP'; // should be -256
 
   /** Modulus */

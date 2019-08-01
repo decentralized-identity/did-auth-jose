@@ -13,6 +13,7 @@ import PublicKey from '../../security/PublicKey';
  */
 export class RsaCryptoSuite implements CryptoSuite {
 
+  /** Symmetric key encrypters */
   getSymmetricEncrypters (): { [algorithm: string]: SymmetricEncrypter } {
     return {};
   }
@@ -43,6 +44,7 @@ export class RsaCryptoSuite implements CryptoSuite {
     };
   }
 
+  /** Public Key constructors */
   getKeyConstructors () {
     return {
       RsaVerificationKey2018: (keyData: IDidDocumentPublicKey) => { return new RsaPublicKey(keyData); }

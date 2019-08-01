@@ -7,6 +7,7 @@ import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typesc
  * @extends PublicKey
  */
 export default class EcPublicKey extends PublicKey {
+  /** key type */
   kty = RecommendedKeyType.Ec;
 
   /** curve */

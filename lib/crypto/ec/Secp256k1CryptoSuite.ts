@@ -6,8 +6,8 @@ import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typesc
 import { EcPrivateKey } from '../..';
 
 const ecKey = require('ec-key');
-const keyto = require('@trust/keyto')
-const ecies = require("ecies-parity");
+const keyto = require('@trust/keyto');
+const ecies = require('ecies-parity');
 /**
  * Encrypter plugin for Elliptic Curve P-256K1
  */
@@ -21,12 +21,12 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
   /** Encryption with Secp256k1 keys not supported */
   getEncrypters () {
     const ecies = {
-        encrypt: Secp256k1CryptoSuite.encryptSecp256k1,
-        decrypt: Secp256k1CryptoSuite.decryptSecp256k1
-      };
+      encrypt: Secp256k1CryptoSuite.encryptSecp256k1,
+      decrypt: Secp256k1CryptoSuite.decryptSecp256k1
+    };
     return {
-        'ECIES': ecies
-    };  
+      ECIES: ecies
+    };
   }
 
   /** Signing algorithms */
@@ -63,7 +63,7 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
     signature: string,
     jwk: PublicKey
   ): Promise<boolean> {
-    let rawJwk: EcPublicKey = <EcPublicKey>jwk;
+    let rawJwk: EcPublicKey = jwk as EcPublicKey;
     if (rawJwk.crv === 'K-256') {
       rawJwk.crv = 'P-256K';
     }
@@ -82,7 +82,7 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
    * @returns Signed payload in compact JWS format.
    */
   public static async sign (content: string, jwk: PrivateKey): Promise<string> {
-    let rawJwk: EcPrivateKey = <EcPrivateKey>jwk;
+    let rawJwk: EcPrivateKey = jwk as EcPrivateKey;
     if (rawJwk.crv === 'K-256') {
       rawJwk.crv = 'P-256K';
     }
@@ -91,31 +91,42 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
                        .update(content)
                        .sign('base64');
   }
-
-
-  public static encryptSecp256k1 (data: Buffer, jwk: PublicKey): Promise<Buffer> {
+  /**
+   * Encrypt the given content using the given public key in JWK format using ECIES.
+   *
+   * @param data Data to be encrypted.
+   * @param jwk Public key to encrypt data.
+   * @returns Encrypted data buffer.
+   */
+  public static async encryptSecp256k1 (data: Buffer, jwk: PublicKey): Promise<Buffer> {
     return new Promise<Buffer>((resolve) => {
-      let rawJwk: EcPublicKey = <EcPublicKey>jwk;
+      let rawJwk: EcPublicKey = jwk as EcPublicKey;
       rawJwk.crv = 'K-256';
       let pubJwk = keyto.from(rawJwk, 'jwk').toString('blk', 'public');
       let pubKey = Buffer.from(pubJwk, 'hex');
 
-      ecies.encrypt(pubKey, data).then(function(encryptedDataBuffer) {
+      ecies.encrypt(pubKey, data).then((encryptedDataBuffer: Buffer) => {
         resolve(encryptedDataBuffer);
       });
     });
   }
-
-  public static decryptSecp256k1 (data: Buffer, jwk: PrivateKey): Promise<Buffer> {
+  /**
+   * Decrypt the given content using the given private key in JWK format using ECIES.
+   *
+   * @param data Data to be decrypted.
+   * @param jwk Private key to decrypt data.
+   * @returns Decrypted data buffer.
+   */
+  public static async decryptSecp256k1 (data: Buffer, jwk: PrivateKey): Promise<Buffer> {
     return new Promise<Buffer>((resolve) => {
-      let rawJwk:EcPrivateKey = <EcPrivateKey>jwk;
+      let rawJwk: EcPrivateKey = jwk as EcPrivateKey;
       rawJwk.crv = 'K-256';
       let priJwk = keyto.from(rawJwk, 'jwk').toString('blk', 'private');
       let priKey = Buffer.from(priJwk, 'hex');
 
-      ecies.decrypt(priKey, data).then(function(decryptedDataBuffer) {
+      ecies.decrypt(priKey, data).then((decryptedDataBuffer: Buffer) => {
         resolve(decryptedDataBuffer);
-      });    
+      });
     });
   }
 }

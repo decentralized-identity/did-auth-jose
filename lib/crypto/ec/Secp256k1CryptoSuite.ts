@@ -3,8 +3,11 @@ import CryptoSuite, { SymmetricEncrypter } from '../../interfaces/CryptoSuite';
 import PrivateKey from '../../security/PrivateKey';
 import PublicKey from '../../security/PublicKey';
 import { IDidDocumentPublicKey } from '@decentralized-identity/did-common-typescript';
+import { EcPrivateKey } from '../..';
+import * as crypto from 'crypto';
 
-const ecKey = require('ec-key');
+const secp256k1 = require('secp256k1');
+const keyto = require('@trust/keyto');
 
 /**
  * Encrypter plugin for Elliptic Curve P-256K1
@@ -55,12 +58,22 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
     signature: string,
     jwk: PublicKey
   ): Promise<boolean> {
-    const publicKey = new ecKey(jwk);
-    const passedVerification: boolean = publicKey.createVerify('SHA256')
-                                         .update(signedContent)
-                                         .verify(signature, 'base64');
+    let rawJwk: EcPublicKey = jwk as EcPublicKey;
+    rawJwk.crv = 'K-256';
+    let pubJwk = keyto.from(rawJwk, 'jwk').toString('blk', 'public');
 
-    return passedVerification;
+    const sha256 = crypto.createHash('sha256');
+    sha256.update(signedContent);
+    const dataHash = sha256.digest('hex');
+    try {
+      const passedVerification: boolean = secp256k1.verify(
+          Buffer.from(dataHash, 'hex'), Buffer.from(signature, 'hex'),
+          Buffer.from(pubJwk, 'hex'));
+
+      return passedVerification;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
@@ -70,9 +83,16 @@ export class Secp256k1CryptoSuite implements CryptoSuite {
    * @returns Signed payload in compact JWS format.
    */
   public static async sign (content: string, jwk: PrivateKey): Promise<string> {
-    const privateKey = new ecKey(jwk);
-    return privateKey.createSign('SHA256')
-                       .update(content)
-                       .sign('base64');
+    let rawJwk: EcPrivateKey = jwk as EcPrivateKey;
+    rawJwk.crv = 'K-256';
+    let priJwk = keyto.from(rawJwk, 'jwk').toString('blk', 'private');
+    let priKey = Buffer.from(priJwk, 'hex');
+
+    const sha256 = crypto.createHash('sha256');
+    sha256.update(content);
+    const dataHash = sha256.digest('hex');
+
+    let sigObj = secp256k1.sign(Buffer.from(dataHash, 'hex'), priKey);
+    return sigObj.signature.toString('hex');
   }
 }

@@ -1,3 +1,5 @@
+WARNING THIS REPOSITORY HAS NOT BEEN AUDITED FOR CRYTPOGRAPHIC USAGE AND IS NO LONGER MAINTAINED. IT SHOULD NO LONGER BE USED.
+
 Decentralized Identity Authentication via JOSE
 ===
 `did-auth-jose` is a library that provides JOSE encryption, decryption, signing, and verifying capabilities through a key and algorithm extensible model, as well as two authentication flows for use with decentralized identities (DIDs).
